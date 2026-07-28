@@ -1,0 +1,6 @@
+export interface PeriodoLectivo {
+  id: number;
+  anio: number;
+  nombre: string;
+  esActivo: boolean;
+}

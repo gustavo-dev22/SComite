@@ -1,0 +1,16 @@
+@use "tailwindcss";
+
+/* Reseteo básico para evitar scroll no deseado */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: inherit;
+}

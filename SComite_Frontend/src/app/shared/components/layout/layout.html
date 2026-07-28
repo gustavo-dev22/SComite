@@ -1,0 +1,128 @@
+<div class="min-h-screen bg-slate-100 flex flex-col font-sans">
+
+  <!-- TOP HEADER -->
+  <header class="bg-slate-900 text-white h-16 flex items-center justify-between px-4 fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex items-center gap-3">
+      <!-- Botón Toggle Móvil -->
+      <button (click)="toggleSidebarMovil()" class="md:hidden p-2 rounded-lg text-slate-300 hover:bg-slate-800">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <!-- Logo / Marca -->
+      <div class="flex items-center gap-2">
+        <div class="w-11 h-11 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-sm">
+          SCA
+        </div>
+        <span class="font-bold text-lg tracking-wide hidden sm:inline-block">Sistema de Comité de Aula</span>
+      </div>
+
+      <!-- Botón Toggle Escritorio -->
+      <button (click)="toggleSidebar()" class="hidden md:flex p-2 ml-4 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h12M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Info del Usuario & Logout -->
+    <div class="flex items-center gap-4">
+      <div class="text-right hidden sm:block">
+        <p class="text-sm font-semibold text-slate-100 leading-tight">{{ authService.usuarioActual() }}</p>
+        <span class="text-xs text-blue-400 font-medium">Rol: {{ (authService.rolActual() || 'APODERADO') | uppercase }}</span>
+      </div>
+
+      <button (click)="cerrarSesion()" class="flex items-center gap-2 bg-slate-800 hover:bg-red-600 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        <span class="hidden md:inline">Salir</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- BODY CONTENT AREA -->
+  <div class="flex pt-16 flex-1">
+
+    <!-- OVERLAY MOBIL -->
+    @if (sidebarMovilAbierto()) {
+      <div (click)="toggleSidebarMovil()" class="fixed inset-0 bg-slate-900/60 z-30 md:hidden backdrop-blur-sm"></div>
+    }
+
+    <!-- SIDEBAR DINÁMICO -->
+    <aside 
+      class="bg-slate-900 text-slate-300 fixed md:sticky top-16 h-[calc(100vh-4rem)] z-40 transition-all duration-300 ease-in-out border-r border-slate-800 overflow-y-auto"
+      [ngClass]="{
+        'w-64': sidebarAbierto(),
+        'w-20': !sidebarAbierto(),
+        'translate-x-0': sidebarMovilAbierto(),
+        '-translate-x-full md:translate-x-0': !sidebarMovilAbierto()
+      }">
+
+      <nav class="p-3 space-y-1">
+        @for (item of authService.menuJerarquico(); track item.idObjeto) {
+          
+          <!-- Si el menú TIENE Submenús -->
+          @if (item.submenus.length > 0) {
+            <div>
+              <button 
+                (click)="toggleSubmenu(item.idObjeto)" 
+                class="w-full flex items-center justify-between p-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors group">
+                <div class="flex items-center gap-3">
+                  <i [class]="getIconClass(item.icono)" class="text-lg text-blue-400 group-hover:text-blue-300"></i>
+                  @if (sidebarAbierto()) {
+                    <span class="text-sm font-medium leading-none">{{ item.nombre }}</span>
+                  }
+                </div>
+                @if (sidebarAbierto()) {
+                  <svg 
+                    class="w-4 h-4 transition-transform duration-200" 
+                    [class.rotate-180]="menuDesplegado()[item.idObjeto]"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                }
+              </button>
+
+              <!-- Submenús Hijos -->
+              @if (sidebarAbierto() && menuDesplegado()[item.idObjeto]) {
+                <div class="ml-4 mt-1 pl-3 border-l-2 border-slate-700 space-y-1">
+                  @for (sub of item.submenus; track sub.idObjeto) {
+                    <a 
+                      [routerLink]="sub.url" 
+                      routerLinkActive="bg-blue-600 text-white font-semibold"
+                      class="flex items-center gap-2.5 p-2 rounded-md text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                      <i [class]="getIconClass(sub.icono, true)" class="text-xs"></i>
+                      <span>{{ sub.nombre }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          } 
+          
+          <!-- Si es un menú directo SIN Submenú -->
+          @else {
+            <a 
+              [routerLink]="item.url" 
+              routerLinkActive="bg-blue-600 text-white font-semibold"
+              class="flex items-center gap-3 p-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+              <i [class]="getIconClass(item.icono)" class="text-lg text-blue-400"></i>
+              @if (sidebarAbierto()) {
+                <span class="text-sm font-medium">{{ item.nombre }}</span>
+              }
+            </a>
+          }
+
+        }
+      </nav>
+    </aside>
+
+    <!-- MAIN MAIN CONTENT -->
+    <main class="flex-1 p-4 md:p-6 overflow-x-hidden min-w-0">
+      <router-outlet />
+    </main>
+
+  </div>
+</div>
