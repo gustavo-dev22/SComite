@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AulaComite.Api/AulaComite.Api.csproj" />
+  <Project Path="AulaComite.Application/AulaComite.Application.csproj" />
+  <Project Path="AulaComite.Domain/AulaComite.Domain.csproj" />
+  <Project Path="AulaComite.Infrastructure/AulaComite.Infrastructure.csproj" />
+</Solution>

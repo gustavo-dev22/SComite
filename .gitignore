@@ -1,0 +1,38 @@
+# ==========================================
+# Archivos de Registro y Salida Local (Logs)
+# ==========================================
+**/Logs/
+**/logs/
+*.log
+
+# ==========================================
+# .NET / C# (Visual Studio / VS Code)
+# ==========================================
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Archivos de configuración local o secretos
+**/appsettings.Local.json
+**/appsettings.Development.json
+
+# ==========================================
+# Angular / Node.js
+# ==========================================
+**/node_modules/
+**/dist/
+**/.angular/
+**/.vscode/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# Sistema Operativo
+# ==========================================
+.DS_Store
+Thumbs.db
