@@ -29,8 +29,33 @@
     <!-- Info del Usuario & Logout -->
     <div class="flex items-center gap-4">
       <div class="text-right hidden sm:block">
-        <p class="text-sm font-semibold text-slate-100 leading-tight">{{ authService.usuarioActual() }}</p>
-        <span class="text-xs text-blue-400 font-medium">Rol: {{ (authService.rolActual() || 'APODERADO') | uppercase }}</span>
+        <p class="text-sm font-semibold text-slate-100 leading-tight">
+          {{ authService.usuarioActual() }}
+        </p>
+
+        <!-- Selector Multi-Rol -->
+        @if (authService.rolesDisponibles().length > 1) {
+          <div class="relative mt-0.5 inline-block">
+            <select 
+              [value]="authService.rolActivoId()"
+              (change)="onRolChange($event)"
+              class="bg-slate-800 text-blue-300 font-bold text-xs py-0.5 px-2 pr-6 rounded border border-slate-700 hover:border-blue-500 focus:outline-none cursor-pointer appearance-none">
+              @for (rol of authService.rolesDisponibles(); track rol.idRol) {
+                <option 
+                  [value]="rol.idRol" 
+                  [selected]="rol.idRol === authService.rolActivoId()">
+                  ROL: {{ rol.nombreRol | uppercase }}
+                </option>
+              }
+            </select>
+            <i class="pi pi-chevron-down absolute right-1.5 top-2 text-[10px] text-blue-400 pointer-events-none"></i>
+          </div>
+        } @else {
+          <!-- Si solo posee 1 rol -->
+          <span class="text-xs text-blue-400 font-medium">
+            Rol: {{ authService.rolActual() | uppercase }}
+          </span>
+        }
       </div>
 
       <button (click)="cerrarSesion()" class="flex items-center gap-2 bg-slate-800 hover:bg-red-600 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200">

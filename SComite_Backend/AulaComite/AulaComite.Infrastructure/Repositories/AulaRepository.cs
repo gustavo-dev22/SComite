@@ -93,5 +93,16 @@ namespace AulaComite.Infrastructure.Repositories
             );
             return rows > 0;
         }
+
+        public async Task<Aula?> ObtenerPorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            const string sql = @"
+            SELECT Id, PeriodoId, Nivel, Grado, Seccion 
+            FROM Aulas
+            WHERE Id = @Id";
+
+            return await connection.QueryFirstOrDefaultAsync<Aula>(sql, new { Id = id });
+        }
     }
 }

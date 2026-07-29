@@ -67,6 +67,7 @@ try
         };
     });
 
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
@@ -119,7 +120,7 @@ try
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Ocurrió un error al aplicar las migraciones en la base de datos.");
+            Log.Warning("Atención al verificar migraciones: {Message}", ex.Message);
         }
     }
 

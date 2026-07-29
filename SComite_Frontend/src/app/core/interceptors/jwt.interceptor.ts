@@ -4,12 +4,10 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const token = sessionStorage.getItem('token_aula');
 
   if (token) {
-    const cloned = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
+    const authReq = req.clone({
+      headers: req.headers.set('Authorization', `Bearer ${token}`)
     });
-    return next(cloned);
+    return next(authReq);
   }
 
   return next(req);

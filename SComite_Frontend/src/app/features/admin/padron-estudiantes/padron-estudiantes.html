@@ -1,0 +1,211 @@
+<div class="p-6 bg-slate-50 min-h-full">
+
+  <!-- CABECERA -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Padrón de Estudiantes</h1>
+      <p class="text-sm text-slate-500">Listado de alumnos matriculados y sus apoderados asignados</p>
+    </div>
+
+    <button 
+      (click)="abrirModalCrear()"
+      [disabled]="!aulaSeleccionada()"
+      class="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm">
+      <i class="pi pi-user-plus"></i>
+      <span>Nuevo Estudiante</span>
+    </button>
+  </div>
+
+  <!-- FILTROS DE PERIODO Y AULA -->
+  <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">1. Periodo Lectivo</label>
+        <select 
+            (change)="onPeriodoChange($event)"
+            [value]="periodoSeleccionado()"
+            class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+            @for (p of periodos(); track p.id) {
+            <option [value]="p.id" [selected]="p.id === periodoSeleccionado()">
+                {{ p.nombre }}
+            </option>
+            }
+        </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">2. Aula / Sección</label>
+      <select 
+        (change)="onAulaChange($event)"
+        [value]="aulaSeleccionada()"
+        class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+        @if (aulas().length === 0) {
+          <option value="">No hay aulas registradas</option>
+        } @else {
+          @for (a of aulas(); track a.id) {
+            <option [value]="a.id">{{ a.nombreDisplay }}</option>
+          }
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- TABLA DE PADRÓN DE ESTUDIANTES -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <!-- BARRA DE TÍTULO / TOTAL DE ESTUDIANTES -->
+    @if (estudiantes().length > 0) {
+        <div class="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i class="pi pi-users text-slate-500 text-sm"></i>
+            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            Total de Estudiantes Matriculados
+            </span>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+            {{ estudiantes().length }} {{ estudiantes().length === 1 ? 'Estudiante' : 'Estudiantes' }}
+        </span>
+        </div>
+    }
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+          <th class="p-4">N° Doc</th>
+          <th class="p-4">Apellidos y Nombres</th>
+          <th class="p-4">Apoderado Asignado</th>
+          <th class="p-4">Teléfono Apoderado</th>
+          <th class="p-4 text-center">Estado</th>
+          <th class="p-4 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+        @if (cargando()) {
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-400">
+              <i class="pi pi-spin pi-spinner text-xl mr-2"></i>Cargando padrón...
+            </td>
+          </tr>
+        } @else if (estudiantes().length === 0) {
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-400">
+              No hay estudiantes matriculados en esta aula.
+            </td>
+          </tr>
+        } @else {
+          @for (e of estudiantes(); track e.id) {
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="p-4 font-mono text-xs">
+                <span class="font-bold text-slate-500">{{ e.tipoDocumento }}:</span> {{ e.numeroDocumento }}
+              </td>
+              <td class="p-4 font-semibold text-slate-900">{{ e.nombreCompleto }}</td>
+              <td class="p-4">
+                {{ e.nombreApoderado || 'Sin Asignar' }}
+              </td>
+              <td class="p-4 text-slate-600">
+                {{ e.telefonoApoderado || '-' }}
+              </td>
+              <td class="p-4 text-center">
+                @if (e.estado) {
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    Matriculado
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+                    Retirado
+                  </span>
+                }
+              </td>
+              <td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button 
+                    (click)="abrirModalEditar(e)" 
+                    title="Editar" 
+                    class="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button 
+                    (click)="eliminarEstudiante(e)" 
+                    title="Desactivar" 
+                    class="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL CREAR / EDITAR -->
+  @if (modalAbierto()) {
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+        
+        <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+          <h3 class="font-bold">{{ esEdicion() ? 'Editar Estudiante' : 'Registrar Estudiante' }}</h3>
+          <button (click)="cerrarModal()" class="text-slate-400 hover:text-white"><i class="pi pi-times"></i></button>
+        </div>
+
+        <form [formGroup]="estudianteForm" (ngSubmit)="guardarEstudiante()" class="p-6 space-y-4">
+          
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo Doc.</label>
+              <select formControlName="tipoDocumento" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white">
+                <option value="DNI">DNI</option>
+                <option value="CE">CE</option>
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Número de Documento</label>
+              <input type="text" formControlName="numeroDocumento" placeholder="Ej: 74839201" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Nombres</label>
+            <input type="text" formControlName="nombres" placeholder="Nombres del estudiante" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Apellido Paterno</label>
+              <input type="text" formControlName="apellidoPaterno" placeholder="Primer Apellido" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Apellido Materno</label>
+              <input type="text" formControlName="apellidoMaterno" placeholder="Segundo Apellido" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+          </div>
+
+          <hr class="border-slate-100 my-2" />
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Vincular Apoderado (de SASI)</label>
+            <select formControlName="usuarioIdApoderadoSasi" (change)="onApoderadoSelectChange($event)" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">-- Sin Apoderado Registrado --</option>
+              @for (a of apoderadosSasi(); track a.usuarioId) {
+                <option [value]="a.usuarioId">{{ a.nombreCompleto }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Teléfono de Contacto Apoderado</label>
+            <input type="text" formControlName="telefonoApoderado" placeholder="Ej: 987654321" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t">
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
+            <button type="submit" class="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm">
+              {{ esEdicion() ? 'Actualizar' : 'Guardar' }}
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  }
+
+</div>

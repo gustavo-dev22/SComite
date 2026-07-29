@@ -7,4 +7,5 @@ export interface Aula {
   nombreDisplay: string;
   estado: boolean;
   anioPeriodo: string;
+  anio: number;
 }

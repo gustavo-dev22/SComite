@@ -84,14 +84,34 @@ export class LoginComponent {
   }
 
   private obtenerRutaInicial(res: AuthResponse): string {
-    const objetos = res.sistemaComite.roles[0]?.objetos || [];
-    const primerSubmenuOmenu = objetos.find(o => o.activo && o.url && o.url !== '#');
+    const roles = res.sistemaComite?.roles || [];
+    const rolInicial = roles.find(r => r.esPrincipal) || roles[0];
 
-    // Retorna la URL quitando el '/' inicial si lo tuviera (ej: "/admin/aulas" -> "admin/aulas")
-    if (primerSubmenuOmenu?.url) {
-      return primerSubmenuOmenu.url.startsWith('/') ? primerSubmenuOmenu.url.substring(1) : primerSubmenuOmenu.url;
-    }
+    if (!rolInicial) return 'admin/periodos';
 
-    return 'admin/aulas';
+    const objetos = rolInicial.objetos || [];
+    const urlsSasi: string[] = [];
+
+    const aplanarObjetos = (lista: any[]) => {
+      for (const obj of lista) {
+        if (obj.activo && obj.url && obj.url !== '#' && obj.url !== '/') {
+          const urlLimpia = obj.url.startsWith('/') ? obj.url.substring(1) : obj.url;
+          urlsSasi.push(urlLimpia);
+        }
+        if (obj.subObjetos) aplanarObjetos(obj.subObjetos);
+        if (obj.hijos) aplanarObjetos(obj.hijos);
+      }
+    };
+
+    aplanarObjetos(objetos);
+
+    // Verificamos si la ruta existe en la tabla de rutas del Router de Angular
+    const rutasExistentes = this.router.config
+      .flatMap(r => r.children || [])
+      .map(c => c.path);
+
+    const rutaValida = urlsSasi.find(u => rutasExistentes.includes(u));
+
+    return rutaValida || 'admin/periodos';
   }
 }

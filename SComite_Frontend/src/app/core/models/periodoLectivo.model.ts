@@ -3,4 +3,6 @@ export interface PeriodoLectivo {
   anio: number;
   nombre: string;
   esActivo: boolean;
+  fechaInicio: string;
+  fechaFin: string;
 }

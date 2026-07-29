@@ -13,5 +13,6 @@ namespace AulaComite.Application.Common.Interfaces
         Task<bool> ActualizarEstadoAulaAsync(int id, bool estado);
         Task<bool> ActualizarAulaAsync(Aula aula);
         Task<bool> EliminarAulaLogicoAsync(int id);
+        Task<Aula?> ObtenerPorIdAsync(int id);
     }
 }

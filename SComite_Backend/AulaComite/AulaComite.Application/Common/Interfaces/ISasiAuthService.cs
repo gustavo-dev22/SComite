@@ -9,5 +9,6 @@ namespace AulaComite.Application.Common.Interfaces
     public interface ISasiAuthService
     {
         Task<AuthResultDto> AutenticarAsync(LoginRequestDto request);
+        Task<IEnumerable<UsuarioSasiDto>> ObtenerApoderadosAsync();
     }
 }

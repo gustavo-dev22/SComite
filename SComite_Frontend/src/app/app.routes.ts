@@ -17,9 +17,33 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [
             {
+                path: 'admin/periodos',
+                loadComponent: () => import('./features/admin/periodo/periodo').then(m => m.PeriodoComponent)
+            },
+            {
                 path: 'admin/aulas',
                 loadComponent: () => import('./features/admin/aula/aula').then(m => m.AulaComponent)
             },
+            {
+                path: 'admin/asignacion-comite',
+                loadComponent: () => import('./features/admin/asignacion-comite/asignacion-comite').then(m => m.AsignacionComiteComponent)
+            },
+            {
+                path: 'admin/estudiantes',
+                loadComponent: () => import('./features/admin/padron-estudiantes/padron-estudiantes').then(m => m.PadronEstudiantesComponent)
+            },
+            {
+                path: 'admin/logs',
+                loadComponent: () => import('./features/admin/logss/logs').then(m => m.LogsComponent)
+            },
+            {
+                path: 'mis-pagos',
+                loadComponent: () => import('./features/apoderado/mis-pagos/mis-pagos').then(m => m.MisPagosComponent)
+            },
+            {
+                path: 'tesoreria/cuotas',
+                loadComponent: () => import('./features/tesoreria/cuotas/cuotas').then(m => m.CuotasComponent)
+            }
         ]
     },
     {

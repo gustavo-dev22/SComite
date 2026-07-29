@@ -21,6 +21,14 @@ export class LayoutComponent implements OnInit {
     this.inicializarSubmenusAbiertos();
   }
 
+  // 🚀 Evento para alternar de rol
+  onRolChange(event: Event): void {
+    const idRol = Number((event.target as HTMLSelectElement).value);
+    this.authService.cambiarRol(idRol);
+    // Re-inicializamos los submenús abiertos para el nuevo árbol del menú
+    setTimeout(() => this.inicializarSubmenusAbiertos(), 100);
+  }
+
   private inicializarSubmenusAbiertos(): void {
     const estadoInicial: { [key: number]: boolean } = {};
     this.authService.menuJerarquico().forEach(item => {
@@ -93,7 +101,8 @@ export class LayoutComponent implements OnInit {
       'calendar': 'pi pi-calendar',
       'megaphone': 'pi pi-megaphone',
       'vote': 'pi pi-list-check',
-      'file-text': 'pi pi-file'
+      'file-text': 'pi pi-file',
+      'layers': 'pi pi-file'
     };
 
     return mapaIconos[icono] || `pi pi-${icono}`;

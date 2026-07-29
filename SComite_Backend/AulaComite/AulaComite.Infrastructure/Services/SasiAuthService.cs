@@ -63,5 +63,21 @@ namespace AulaComite.Infrastructure.Services
                 return new AuthResultDto { Exito = false, Mensaje = $"Error al conectar con el servidor de autenticación SASI: {ex.Message}" };
             }
         }
+
+        public async Task<IEnumerable<UsuarioSasiDto>> ObtenerApoderadosAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<SasiResponseDto<List<UsuarioSasiDto>>>(
+                    "sistemas/por-sistema-y-rol?sistemaId=7&rolNombre=Apoderado");
+
+                return response?.Datos ?? new List<UsuarioSasiDto>();
+            }
+            catch
+            {
+                // Retornar lista vacía si la API de SASI no está disponible
+                return new List<UsuarioSasiDto>();
+            }
+        }
     }
 }
