@@ -1,0 +1,286 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Registro de Gastos y Balance Mensual</h1>
+      <p class="text-slate-500 text-sm">Control de egresos y cuadre de caja mensual del Comité de Aula.</p>
+    </div>
+    
+    <button 
+      (click)="abrirModal()" 
+      [disabled]="!puedeRegistrarGasto()"
+      class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition">
+      <span>+ Registrar Gasto</span>
+    </button>
+  </div>
+
+  <!-- Filtro Superior Contextual en Cadena 1 -> 2 -> 3 -->
+  <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+    
+    <!-- Selector 1: Año Lectivo (SIEMPRE HABILITADO) -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo</label>
+      <select 
+        [value]="periodoSeleccionadoId() ?? ''" 
+        (change)="onPeriodoChange($event)"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+        <option value="">-- Seleccione Año --</option>
+        @for (p of periodos(); track p.id) {
+          <option [value]="p.id">Periodo {{ p.anio }} {{ p.esActivo ? '(Vigente)' : '' }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Selector 2: Aula - Sección (DEPENDIENTE DE 1) -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
+      <select 
+        [value]="aulaSeleccionadaId() ?? ''" 
+        (change)="onAulaChange($event)"
+        [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
+        
+        @if (!tienePeriodoSeleccionado()) {
+          <option value="">-- Seleccione Año Lectivo primero --</option>
+        } @else if (cargandoAulas()) {
+          <option value="">Cargando aulas...</option>
+        } @else if (aulas().length === 0) {
+          <option value="">-- No hay aulas registradas para este periodo --</option>
+        } @else {
+          <option value="">-- Seleccione Aula --</option>
+          @for (a of aulas(); track a.id) {
+            <option [value]="a.id">{{ a.nivel }} - {{ a.grado }}° "{{ a.seccion }}"</option>
+          }
+        }
+      </select>
+    </div>
+
+    <!-- Selector 3: MES DE CORTE / BALANCE (DEPENDIENTE DE 2) -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">3. Mes de Balance / Corte</label>
+      <select 
+        [value]="mesSeleccionado()" 
+        (change)="onMesChange($event)"
+        [disabled]="!tieneAulaSeleccionada()"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-indigo-700 font-bold outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
+        
+        @if (!tieneAulaSeleccionada()) {
+          <option value="">-- Seleccione Aula primero --</option>
+        } @else {
+          <option [value]="0">-- Todo el Año (Acumulado) --</option>
+          <option [value]="3">Marzo</option>
+          <option [value]="4">Abril</option>
+          <option [value]="5">Mayo</option>
+          <option [value]="6">Junio</option>
+          <option [value]="7">Julio</option>
+          <option [value]="8">Agosto</option>
+          <option [value]="9">Setiembre</option>
+          <option [value]="10">Octubre</option>
+          <option [value]="11">Noviembre</option>
+          <option [value]="12">Diciembre</option>
+        }
+      </select>
+    </div>
+
+  </div>
+
+  <!-- SOLO MOSTRAR BALANCE Y GASTOS SI HAY AULA SELECCIONADA -->
+  @if (!tieneAulaSeleccionada()) {
+    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
+      <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">S/</div>
+      <h3 class="text-slate-700 font-semibold mb-1">Seleccione Año Lectivo y Aula</h3>
+      <p class="text-slate-400 text-sm">Elija el aula y mes en los filtros para generar el corte de caja y ver los egresos.</p>
+    </div>
+  } @else if (cargando()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 animate-pulse">Cargando balance y lista de egresos...</p>
+    </div>
+  } @else {
+
+    <!-- TARJETAS DEL BALANCE MENSUAL REAL CON ARRASTRE HISTÓRICO -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      
+      <!-- Card 1: Saldo Arrastrado del Mes Anterior -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">1. Saldo Mes Anterior</span>
+        <span 
+          [class.text-emerald-600]="resumenCaja().saldoAnteriorArrastrado >= 0"
+          [class.text-rose-600]="resumenCaja().saldoAnteriorArrastrado < 0"
+          class="text-xl font-extrabold">
+          S/. {{ resumenCaja().saldoAnteriorArrastrado | number:'1.2-2' }}
+        </span>
+      </div>
+
+      <!-- Card 2: Ingresos del Mes -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">2. Ingresos del Mes</span>
+        <span class="text-xl font-extrabold text-emerald-600">+ S/. {{ resumenCaja().ingresosDelMes | number:'1.2-2' }}</span>
+      </div>
+
+      <!-- Card 3: Egresos / Gastos del Mes -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">3. Egresos del Mes</span>
+        <span class="text-xl font-extrabold text-rose-600">- S/. {{ resumenCaja().egresosDelMes | number:'1.2-2' }}</span>
+      </div>
+
+      <!-- Card 4: Saldo Disponible Real del Mes -->
+      <div class="bg-indigo-900 text-white p-4 rounded-xl shadow-sm">
+        <span class="text-[11px] font-bold text-indigo-200 uppercase block mb-1">4. Saldo Disponible Real</span>
+        <span class="text-2xl font-extrabold">S/. {{ resumenCaja().saldoDisponibleReal | number:'1.2-2' }}</span>
+      </div>
+
+    </div>
+
+    <!-- Tabla de Gastos del Mes -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold border-b border-slate-200">
+            <th class="p-3">Fecha</th>
+            <th class="p-3">Concepto / Detalle</th>
+            <th class="p-3">Categoría</th>
+            <th class="p-3 text-right">Monto</th>
+            <th class="p-3">Comprobante / Proveedor</th>
+            <th class="p-3">Registrado Por</th>
+            <th class="p-3 text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+          @for (g of gastosFiltradosMes(); track g.id) {
+            <tr class="hover:bg-slate-50 transition">
+              <td class="p-3 text-xs font-semibold text-slate-500">{{ g.fechaGasto | date:'dd/MM/yyyy' }}</td>
+              <td class="p-3">
+                <span class="block font-bold text-slate-800">{{ g.concepto }}</span>
+                @if (g.observacion) {
+                  <span class="block text-xs text-slate-400">{{ g.observacion }}</span>
+                }
+              </td>
+              <td class="p-3">
+                <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-700">
+                  {{ g.categoria }}
+                </span>
+              </td>
+              <td class="p-3 text-right font-extrabold text-rose-600">S/. {{ g.monto | number:'1.2-2' }}</td>
+              <td class="p-3">
+                <span class="font-medium text-xs text-slate-800">{{ g.tipoComprobante }}</span>
+                <span class="block text-xs text-slate-500">{{ g.numeroComprobante || 'Sin N°' }} {{ g.proveedor ? ' - ' + g.proveedor : '' }}</span>
+              </td>
+              <td class="p-3 text-xs text-slate-500 font-medium">{{ g.usuarioRegistro }}</td>
+              <td class="p-3 text-center">
+                <button 
+                  (click)="eliminarGasto(g)"
+                  title="Eliminar registro"
+                  class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="text-center py-8 text-slate-400">No hay egresos registrados para este mes.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+  }
+</div>
+
+<!-- Modal Formulario de Gasto -->
+@if (mostrarModal()) {
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <h2 class="text-lg font-bold text-slate-800 mb-1">Registrar Nuevo Gasto</h2>
+      <p class="text-xs text-slate-500 mb-4">Ingrese los datos del egreso efectuado para la rendición de cuentas.</p>
+
+      <form [formGroup]="gastoForm" (ngSubmit)="guardarGasto()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Concepto del Gasto</label>
+          <input 
+            type="text" 
+            formControlName="concepto" 
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" 
+            placeholder="Ej. Compra de kit de limpieza">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Categoría</label>
+            <select formControlName="categoria" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+              <option value="MATERIALES">Materiales</option>
+              <option value="MANTENIMIENTO">Mantenimiento</option>
+              <option value="ACTIVIDADES_EVENTOS">Actividades / Eventos</option>
+              <option value="REFRIGERIOS">Refrigerios</option>
+              <option value="OTROS">Otros Gastos</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Monto (S/.)</label>
+            <input 
+              type="number" 
+              formControlName="monto" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" 
+              placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha del Gasto</label>
+            <input 
+              type="date" 
+              formControlName="fechaGasto" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Comprobante</label>
+            <select formControlName="tipoComprobante" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+              <option value="BOLETA">Boleta de Venta</option>
+              <option value="FACTURA">Factura</option>
+              <option value="RECIBO_SIMPLE">Recibo Simple</option>
+              <option value="SIN_COMPROBANTE">Sin Comprobante</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">N° Comprobante</label>
+            <input 
+              type="text" 
+              formControlName="numeroComprobante" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" 
+              placeholder="Ej. B001-4589">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Proveedor / Tienda</label>
+            <input 
+              type="text" 
+              formControlName="proveedor" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" 
+              placeholder="Ej. Librería Tai Loy">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observación</label>
+          <textarea 
+            formControlName="observacion" 
+            rows="2" 
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" 
+            placeholder="Opcional..."></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-xs font-medium">Cancelar</button>
+          <button type="submit" [disabled]="gastoForm.invalid" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm disabled:opacity-50">Guardar Gasto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

@@ -42,7 +42,19 @@ export const routes: Routes = [
             },
             {
                 path: 'tesoreria/cuotas',
-                loadComponent: () => import('./features/tesoreria/cuotas/cuotas').then(m => m.CuotasComponent)
+                loadComponent: () => import('./features/comite/gestion-cuotas/gestion-cuotas').then(m => m.GestionCuotasComponent)
+            },
+            {
+                path: 'tesoreria/validar-pagos',
+                loadComponent: () => import('./features/comite/validar-comprobantes/validar-comprobantes').then(m => m.ValidarComprobantesComponent)
+            },
+            {
+                path: 'tesoreria/gastos',
+                loadComponent: () => import('./features/comite/registro-gastos/registro-gastos').then(m => m.RegistroGastosComponent)
+            },
+            {
+                path: 'tesoreria/balance',
+                loadComponent: () => import('./features/comite/balance-caja/balance-caja').then(m => m.BalanceCajaComponent)
             }
         ]
     },

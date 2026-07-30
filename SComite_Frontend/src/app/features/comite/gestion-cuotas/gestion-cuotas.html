@@ -1,0 +1,265 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header con Título -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Gestión de Cuotas y Aportes</h1>
+      <p class="text-slate-500 text-sm">Apertura y seguimiento de compromisos financieros del Comité de Aula.</p>
+    </div>
+    
+    <button 
+      (click)="abrirModal()" 
+      [disabled]="!puedeCrearCuota()"
+      class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition">
+      <span>+ Nueva Cuota</span>
+    </button>
+  </div>
+
+  <!-- Barra de Filtro / Selector Contextual -->
+  <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    
+    <!-- Selector 1: Periodo Lectivo (SIEMPRE HABILITADO) -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Año Lectivo / Periodo</label>
+      <select 
+        [value]="periodoSeleccionadoId() ?? ''" 
+        (change)="onPeriodoChange($event)"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+        <option value="">-- Seleccione Año Lectivo --</option>
+        @for (p of periodos(); track p.id) {
+          <option [value]="p.id">
+            Periodo {{ p.anio }} {{ p.esActivo ? '(Vigente)' : '' }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <!-- Selector 2: Aula - Sección (SOLO HABILITADO SI HAY PERIODO SELECCIONADO) -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Aula - Sección</label>
+      <select 
+        [value]="aulaSeleccionadaId() ?? ''" 
+        (change)="onAulaChange($event)"
+        [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
+        
+        @if (!tienePeriodoSeleccionado()) {
+          <option value="">-- Seleccione Año Lectivo primero --</option>
+        } @else if (cargandoAulas()) {
+          <option value="">Cargando aulas...</option>
+        } @else if (aulas().length === 0) {
+          <option value="">-- No hay aulas registradas para este periodo --</option>
+        } @else {
+          <option value="">-- Seleccione Aula --</option>
+          @for (a of aulas(); track a.id) {
+            <option [value]="a.id">
+              {{ a.nivel }} - {{ a.grado }}° "{{ a.seccion }}"
+            </option>
+          }
+        }
+      </select>
+    </div>
+
+  </div>
+
+  <!-- Contenido Principal -->
+  @if (!tieneAulaSeleccionada()) {
+    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
+      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">i</div>
+      <h3 class="text-slate-700 font-semibold mb-1">Seleccione un Año Lectivo y Aula</h3>
+      <p class="text-slate-400 text-sm">Para consultar o aperturar las cuotas del comité, elija el aula en los filtros superiores.</p>
+    </div>
+  } @else if (cargando()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 animate-pulse">Cargando compromisos de pago del aula...</p>
+    </div>
+  } @else {
+
+    <!-- Sub-Filtro por Tipo de Cuota -->
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-xs font-semibold text-slate-500 uppercase">Filtrar:</span>
+      <button 
+        (click)="filtroTipoCuota.set('TODOS')" 
+        [class.bg-indigo-600]="filtroTipoCuota() === 'TODOS'"
+        [class.text-white]="filtroTipoCuota() === 'TODOS'"
+        [class.bg-white]="filtroTipoCuota() !== 'TODOS'"
+        class="px-3 py-1 rounded-full text-xs font-medium border border-slate-200 transition">
+        Todas ({{ cuotas().length }})
+      </button>
+      <button 
+        (click)="filtroTipoCuota.set('RECURRENTE_MENSUAL')" 
+        [class.bg-indigo-600]="filtroTipoCuota() === 'RECURRENTE_MENSUAL'"
+        [class.text-white]="filtroTipoCuota() === 'RECURRENTE_MENSUAL'"
+        [class.bg-white]="filtroTipoCuota() !== 'RECURRENTE_MENSUAL'"
+        class="px-3 py-1 rounded-full text-xs font-medium border border-slate-200 transition">
+        Caja Chica Mensual
+      </button>
+      <button 
+        (click)="filtroTipoCuota.set('EXTRAORDINARIA')" 
+        [class.bg-indigo-600]="filtroTipoCuota() === 'EXTRAORDINARIA'"
+        [class.text-white]="filtroTipoCuota() === 'EXTRAORDINARIA'"
+        [class.bg-white]="filtroTipoCuota() !== 'EXTRAORDINARIA'"
+        class="px-3 py-1 rounded-full text-xs font-medium border border-slate-200 transition">
+        Actividades / Únicas
+      </button>
+    </div>
+
+    <!-- Grid de Cuotas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (cuota of cuotasFiltradas(); track cuota.id) {
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between hover:border-indigo-300 transition">
+          <div>
+            <div class="flex justify-between items-start mb-3">
+              <span 
+                [class.bg-emerald-100]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                [class.text-emerald-800]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                [class.bg-purple-100]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                [class.text-purple-800]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                class="px-2.5 py-1 text-xs font-semibold rounded-full">
+                {{ cuota.tipoCuota === 'RECURRENTE_MENSUAL' ? 'Mensual' : 'Actividad' }}
+              </span>
+              <span class="text-xs text-slate-400">Vence: {{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+            </div>
+
+            <h3 class="text-base font-bold text-slate-800 mb-1 leading-snug">{{ cuota.concepto }}</h3>
+            <p class="text-2xl font-extrabold text-indigo-600 mb-4">S/. {{ cuota.montoIndividual | number:'1.2-2' }} <span class="text-xs text-slate-400 font-normal">/ por estudiante</span></p>
+
+            <!-- Barra de Progreso de Recaudación -->
+            <div class="mb-4">
+              <div class="flex justify-between text-xs text-slate-600 mb-1">
+                <span>Recaudado: S/. {{ cuota.totalMontoRecaudado | number:'1.2-2' }}</span>
+                <span>Meta: S/. {{ cuota.totalMontoEsperado | number:'1.2-2' }}</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" [style.width.%]="(cuota.totalMontoRecaudado / cuota.totalMontoEsperado) * 100 || 0"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen de Cumplimiento -->
+          <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 text-center text-xs">
+            <div class="bg-slate-50 p-2 rounded-lg">
+              <span class="block font-bold text-emerald-600 text-sm">{{ cuota.estudiantesAlDia }}</span>
+              <span class="text-slate-500">Al día</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-lg">
+              <span class="block font-bold text-amber-600 text-sm">{{ cuota.estudiantesPendientes }}</span>
+              <span class="text-slate-500">Pendientes</span>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+          <p class="text-slate-500">No hay cuotas que coincidan con el filtro seleccionado.</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Modal Formulario -->
+@if (mostrarModal()) {
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      
+      <!-- Selector de Pestañas -->
+      <div class="bg-slate-100 p-1 rounded-xl flex gap-1 mb-5 border border-slate-200">
+        <button 
+          type="button"
+          (click)="tipoModal.set('EVENTUAL')"
+          [class.bg-white]="tipoModal() === 'EVENTUAL'"
+          [class.text-indigo-600]="tipoModal() === 'EVENTUAL'"
+          [class.shadow-sm]="tipoModal() === 'EVENTUAL'"
+          [class.text-slate-500]="tipoModal() !== 'EVENTUAL'"
+          class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center">
+          Cuota / Actividad Única
+        </button>
+
+        <button 
+          type="button"
+          (click)="tipoModal.set('MENSUAL')"
+          [class.bg-white]="tipoModal() === 'MENSUAL'"
+          [class.text-indigo-600]="tipoModal() === 'MENSUAL'"
+          [class.shadow-sm]="tipoModal() === 'MENSUAL'"
+          [class.text-slate-500]="tipoModal() !== 'MENSUAL'"
+          class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center">
+          Caja Chica Mensual
+        </button>
+      </div>
+
+      <!-- FORMULARIO 1: Cuota Eventual -->
+      @if (tipoModal() === 'EVENTUAL') {
+        <form [formGroup]="cuotaForm" (ngSubmit)="guardarCuota()" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Concepto / Motivo</label>
+            <input type="text" formControlName="concepto" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Ej. Cuota Día del Maestro">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Monto (S/.)</label>
+              <input type="number" formControlName="montoIndividual" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">F. Vencimiento</label>
+              <input type="date" formControlName="fechaVencimiento" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observación</label>
+            <textarea formControlName="observacion" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Opcional..."></textarea>
+          </div>
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm">Cancelar</button>
+            <button type="submit" [disabled]="cuotaForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold">Guardar Cuota</button>
+          </div>
+        </form>
+      }
+
+      <!-- FORMULARIO 2: Programación Mensual -->
+      @if (tipoModal() === 'MENSUAL') {
+        <form [formGroup]="cuotaMensualForm" (ngSubmit)="guardarCuotaMensual()" class="space-y-4">
+          <div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg text-xs">
+            Se programarán o reajustarán las cuotas mensuales desde el mes elegido hasta Diciembre.
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Concepto Base</label>
+            <input type="text" formControlName="conceptoBase" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">A Partir del Mes</label>
+              <select formControlName="mesInicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                <option [value]="3">Marzo</option>
+                <option [value]="4">Abril</option>
+                <option [value]="5">Mayo</option>
+                <option [value]="6">Junio</option>
+                <option [value]="7">Julio</option>
+                <option [value]="8">Agosto</option>
+                <option [value]="9">Setiembre</option>
+                <option [value]="10">Octubre</option>
+                <option [value]="11">Noviembre</option>
+                <option [value]="12">Diciembre</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Monto Mensual (S/.)</label>
+              <input type="number" formControlName="montoMensual" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Día Límite de Pago en el Mes</label>
+            <input type="number" formControlName="diaVencimiento" min="1" max="28" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Ej. Día 10">
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm">Cancelar</button>
+            <button type="submit" [disabled]="cuotaMensualForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold">Programar Cuotas</button>
+          </div>
+        </form>
+      }
+
+    </div>
+  </div>
+}

@@ -14,3 +14,103 @@ body {
 *:after {
     box-sizing: inherit;
 }
+
+/* ===================================================
+   ESTILOS OFICIALES PARA IMPRESIÓN / PDF (1 HOJA A4)
+   =================================================== */
+@media print {
+  /* 🚀 1. ELIMINAR 100% ENCABEZADOS Y PIES DEL NAVEGADOR (URL, Fecha/Hora, Título) */
+  @page {
+    size: A4 portrait;
+    margin: 0 !important; /* Margin 0 remueve los headers/footers nativos del navegador */
+  }
+
+  /* 🚀 2. OCULTAR TODO EL SISTEMA/LAYOUT INTERACTIVO */
+  header, nav, sidebar, footer,
+  .no-print,
+  button,
+  select,
+  .filter-bar {
+    display: none !important;
+  }
+
+  /* 🚀 3. LIMPIEZA TOTAL DE CONTENEDORES Y BORDES */
+  html, body, main, .min-h-screen, div {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  body {
+    font-family: 'Arial', sans-serif !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 🚀 4. PADDING REPOSITORIO PARA LA HOJA A4 IMPRESA */
+  .print-only {
+    display: block !important;
+    width: 100% !important;
+    padding: 15mm 15mm 15mm 15mm !important; /* Margen físico de la hoja */
+    box-sizing: border-box !important;
+  }
+
+  /* Evitar saltos de página no deseados */
+  .print-only, table, tr, div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Estilos limpios y profesionales de las tablas en el PDF */
+  .print-only table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 12px !important;
+  }
+
+  .print-only th, 
+  .print-only td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .print-only th {
+    background-color: #f8fafc !important;
+    font-weight: bold !important;
+    color: #1e293b !important;
+  }
+
+  /* Separación para bloques del informe impreso */
+  .print-section {
+    margin-top: 2rem !important;    /* 🚀 Separación amplia hacia arriba */
+    margin-bottom: 1.25rem !important;
+  }
+
+  .print-title {
+    margin-bottom: 0.75rem !important; /* Separación entre el título I, II, III y su tabla */
+    padding-bottom: 0.25rem !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+  }
+}
+
+/* Ocultar documento impreso en la pantalla de trabajo */
+.print-only {
+  display: none;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.print-only table {
+  background-color: #ffffff !important;
+}
+
+.print-only th {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}

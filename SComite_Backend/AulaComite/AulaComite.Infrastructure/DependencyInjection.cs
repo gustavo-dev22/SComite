@@ -27,6 +27,9 @@ namespace AulaComite.Infrastructure
             services.AddScoped<IEstudianteRepository, EstudianteRepository>();
             services.AddScoped<IPeriodoRepository, PeriodoRepository>();
             services.AddScoped<ILogRepository, LogRepository>();
+            services.AddScoped<ICuotaRepository, CuotaRepository>();
+            services.AddScoped<IGastoRepository, GastoRepository>();
+            services.AddScoped<IBalanceRepository, BalanceRepository>();
 
             return services;
         }

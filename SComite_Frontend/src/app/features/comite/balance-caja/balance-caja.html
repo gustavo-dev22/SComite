@@ -1,0 +1,394 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- ======================================================= -->
+  <!-- VISTA INTERACTIVA SISTEMA (PANTALLA DE TRABAJO)         -->
+  <!-- ======================================================= -->
+  <div class="no-print">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">Balance y Corte Mensual de Caja</h1>
+        <p class="text-slate-500 text-sm">Documento de rendición de cuentas para dirección del colegio y asamblea de padres.</p>
+      </div>
+      
+      <button 
+        (click)="descargarPdfDirecto()" 
+        [disabled]="!tieneAulaSeleccionada() || descargandoPdf()"
+        class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition cursor-pointer">
+        <span>{{ descargandoPdf() ? '⏳ Generando PDF...' : '📥 Descargar PDF' }}</span>
+      </button>
+    </div>
+
+    <!-- Filtro Superior Contextual 1 -> 2 -> 3 -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      
+      <!-- Selector 1: Año Lectivo -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo</label>
+        <select 
+          [value]="periodoSeleccionadoId() ?? ''" 
+          (change)="onPeriodoChange($event)"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm cursor-pointer">
+          <option value="">-- Seleccione Año --</option>
+          @for (p of periodos(); track p.id) {
+            <option [value]="p.id">Periodo {{ p.anio }} {{ p.esActivo ? '(Vigente)' : '' }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Selector 2: Aula - Sección -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
+        <select 
+          [value]="aulaSeleccionadaId() ?? ''" 
+          (change)="onAulaChange($event)"
+          [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer">
+          
+          @if (!tienePeriodoSeleccionado()) {
+            <option value="">-- Seleccione Año Lectivo primero --</option>
+          } @else if (cargandoAulas()) {
+            <option value="">Cargando aulas...</option>
+          } @else if (aulas().length === 0) {
+            <option value="">-- No hay aulas registradas para este periodo --</option>
+          } @else {
+            <option value="">-- Seleccione Aula --</option>
+            @for (a of aulas(); track a.id) {
+              <option [value]="a.id">{{ a.nivel }} - {{ a.grado }}° "{{ a.seccion }}"</option>
+            }
+          }
+        </select>
+      </div>
+
+      <!-- Selector 3: Mes de Balance / Rendición -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">3. Mes de Rendición / Corte</label>
+        <select 
+          [value]="mesSeleccionado()" 
+          (change)="onMesChange($event)"
+          [disabled]="!tieneAulaSeleccionada()"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-indigo-700 font-bold outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer">
+          
+          @if (!tieneAulaSeleccionada()) {
+            <option value="">-- Seleccione Aula primero --</option>
+          } @else {
+            <option [value]="0">-- Acumulado Todo el Año --</option>
+            <option [value]="3">Marzo</option>
+            <option [value]="4">Abril</option>
+            <option [value]="5">Mayo</option>
+            <option [value]="6">Junio</option>
+            <option [value]="7">Julio</option>
+            <option [value]="8">Agosto</option>
+            <option [value]="9">Setiembre</option>
+            <option [value]="10">Octubre</option>
+            <option [value]="11">Noviembre</option>
+            <option [value]="12">Diciembre</option>
+          }
+        </select>
+      </div>
+
+    </div>
+
+    @if (!tieneAulaSeleccionada()) {
+      <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">📊</div>
+        <h3 class="text-slate-700 font-semibold mb-1">Seleccione los Filtros Superiores</h3>
+        <p class="text-slate-400 text-sm">Elija el Año, Aula y Mes para generar la hoja de balance oficial.</p>
+      </div>
+    } @else if (cargando()) {
+      <div class="text-center py-16">
+        <p class="text-slate-500 animate-pulse">Generando estado de rendimiento...</p>
+      </div>
+    } @else {
+
+      <!-- BANNER CONSOLIDADO EN PANTALLA INTERACTIVA -->
+      <div class="bg-gradient-to-r from-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-lg mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div>
+          <span class="text-xs font-bold text-indigo-200 uppercase tracking-wider block mb-1">
+            Saldo Disponible Final en Caja
+          </span>
+          <h2 class="text-4xl font-black">S/. {{ consolidado().saldoNetoEnCaja | number:'1.2-2' }}</h2>
+          <p class="text-xs text-indigo-300 mt-2">
+            Dinero neto en efectivo o cuenta bancaria del comité al término del periodo seleccionado.
+          </p>
+        </div>
+
+        <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 min-w-[240px]">
+          <div class="flex justify-between text-xs font-bold mb-1">
+            <span>Cumplimiento Total</span>
+            <span class="text-emerald-400">{{ consolidado().porcentajeCumplimiento | number:'1.1-1' }}%</span>
+          </div>
+          <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden mb-2">
+            <div class="bg-emerald-400 h-2 rounded-full transition-all duration-500" [style.width.%]="consolidado().porcentajeCumplimiento"></div>
+          </div>
+          <span class="text-[11px] text-slate-300 block">
+            Morosidad / Pendiente: <strong class="text-amber-300">S/. {{ consolidado().totalPorCobrar | number:'1.2-2' }}</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- CUADRO EJECUTIVO DE CARDS RESUMEN -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">1. Saldo Mes Anterior</span>
+          <span [class.text-emerald-600]="consolidado().saldoAnteriorArrastrado >= 0" [class.text-rose-600]="consolidado().saldoAnteriorArrastrado < 0" class="text-xl font-extrabold">
+            S/. {{ consolidado().saldoAnteriorArrastrado | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">2. Ingresos del Mes</span>
+          <span class="text-xl font-extrabold text-emerald-600">+ S/. {{ consolidado().totalIngresosMes | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">3. Egresos del Mes</span>
+          <span class="text-xl font-extrabold text-rose-600">- S/. {{ consolidado().totalEgresosMes | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl shadow-sm">
+          <span class="text-[11px] font-bold text-emerald-800 uppercase block mb-1">4. Saldo Cierre del Mes</span>
+          <span class="text-xl font-extrabold text-emerald-700">S/. {{ consolidado().saldoNetoEnCaja | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <!-- TARJETAS DE DESGLOSE DE PANTALLA -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        
+        <!-- INGRESOS RECAUDADOS -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Ingresos Recaudados en el Periodo
+            </h3>
+            <span class="text-lg font-extrabold text-emerald-600">S/. {{ consolidado().totalIngresosMes | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+              <div>
+                <span class="block font-semibold text-xs text-slate-700">Caja Chica Mensual</span>
+                <span class="text-[11px] text-slate-400">Cuotas ordinarias pagadas</span>
+              </div>
+              <span class="font-bold text-slate-800 text-sm">S/. {{ consolidado().ingresosMensuales | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+              <div>
+                <span class="block font-semibold text-xs text-slate-700">Actividades / Extraordinarias</span>
+                <span class="text-[11px] text-slate-400">Cuotas de eventos / actividades</span>
+              </div>
+              <span class="font-bold text-slate-800 text-sm">S/. {{ consolidado().ingresosExtraordinarios | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EGRESOS POR CATEGORÍA -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+              Egresos por Categoría
+            </h3>
+            <span class="text-lg font-extrabold text-rose-600">S/. {{ consolidado().totalEgresosMes | number:'1.2-2' }}</span>
+          </div>
+
+          <div class="space-y-2">
+            @for (cat of gastosCategorias(); track cat.categoria) {
+              <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg text-xs">
+                <span class="font-bold text-slate-700">
+                  {{ cat.categoria }} <span class="text-slate-400 font-normal">({{ cat.cantidadRegistros }} egresos)</span>
+                </span>
+                <span class="font-bold text-rose-600">S/. {{ cat.totalMonto | number:'1.2-2' }}</span>
+              </div>
+            } @empty {
+              <p class="text-center py-6 text-slate-400 text-xs">No hubo egresos registrados en este periodo.</p>
+            }
+          </div>
+        </div>
+
+      </div>
+
+    }
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 🚀 MODAL / SPINNER DE DESCARGA (SOLO SE MUESTRA AL PULSAR BOTÓN) -->
+  <!-- ======================================================= -->
+  @if (descargandoPdf()) {
+    <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
+      <div style="background-color: #ffffff; padding: 1rem 2rem; border-radius: 9999px; display: flex; gap: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+        <div style="width: 1.25rem; height: 1.25rem; border: 3px solid #4f46e5; border-top-color: transparent; border-radius: 50%;" class="animate-spin"></div>
+        <span style="font-size: 0.875rem; font-weight: 700; color: #1e293b;">Procesando y descargando PDF...</span>
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================= -->
+  <!-- 🚀 CONTENEDOR OCULTO PARA EL PDF (NUNCA ESTORBA LA PANTALLA) -->
+  <!-- ======================================================= -->
+  @if (tieneAulaSeleccionada()) {
+    <div id="reporte-imprimible-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 2rem; width: 210mm;">
+      
+      <!-- Cabecera Institucional -->
+      <div class="text-center mb-6 pb-3" style="border-bottom: 2px solid #0f172a;">
+        <h1 class="text-base font-bold uppercase tracking-wide" style="color: #0f172a;">Informe de Rendición de Cuentas de Caja</h1>
+        <h2 class="text-xs font-semibold mt-1" style="color: #334155;">Comité de Aula - {{ aulaNombreActual() }}</h2>
+        <p class="text-[10px] mt-0.5" style="color: #64748b;">
+          Año Lectivo {{ anioActual() }} | <strong>{{ nombreMesActual() }}</strong> | Fecha de Emisión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+        </p>
+      </div>
+
+      <!-- CUADRO I: RESUMEN EJECUTIVO -->
+      <div style="padding-top: 1.5rem; margin-bottom: 1.25rem;">
+        <h3 class="text-[11px] font-bold uppercase pb-1 mb-3" style="color: #0f172a; border-bottom: 1px solid #cbd5e1;">
+          I. CUADRO GENERAL DE CAJA (RESUMEN EJECUTIVO)
+        </h3>
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="font-bold" style="background-color: #f1f5f9; color: #334155;">
+              <th class="text-left p-2">Concepto / Movimiento</th>
+              <th class="text-right p-2">Monto (S/.)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="font-medium p-2">1. Saldo Inicial Arrastrado del Mes Anterior</td>
+              <td class="text-right font-bold p-2">S/. {{ consolidado().saldoAnteriorArrastrado | number:'1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td class="font-medium p-2" style="color: #065f46;">(+) Total Ingresos Recaudados en el Mes</td>
+              <td class="text-right font-bold p-2" style="color: #047857;">+ S/. {{ consolidado().totalIngresosMes | number:'1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td class="font-medium p-2" style="color: #9f1239;">(-) Total Egresos y Gastos del Mes</td>
+              <td class="text-right font-bold p-2" style="color: #be123c;">- S/. {{ consolidado().totalEgresosMes | number:'1.2-2' }}</td>
+            </tr>
+            <tr class="font-extrabold text-xs" style="background-color: #f8fafc;">
+              <td class="p-2" style="color: #0f172a;">(=) SALDO NETO DISPONIBLE EN CAJA AL CIERRE</td>
+              <td class="text-right p-2" style="color: #312e81;">S/. {{ consolidado().saldoNetoEnCaja | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CUADRO II: DESGLOSE DE INGRESOS -->
+      <div style="padding-top: 1.5rem; margin-bottom: 1.25rem;">
+        <h3 class="text-[11px] font-bold uppercase pb-1 mb-3" style="color: #0f172a; border-bottom: 1px solid #cbd5e1;">
+          II. DESGLOSE DE INGRESOS RECAUDADOS
+        </h3>
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="font-bold" style="background-color: #f1f5f9; color: #334155;">
+              <th class="text-left p-2">Tipo de Aporte</th>
+              <th class="text-right p-2">Monto Recaudado (S/.)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="p-2">Caja Chica Mensual (Aportes Ordinarios)</td>
+              <td class="text-right font-semibold p-2">S/. {{ consolidado().ingresosMensuales | number:'1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td class="p-2">Cuotas Extraordinarias / Actividades</td>
+              <td class="text-right font-semibold p-2">S/. {{ consolidado().ingresosExtraordinarios | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 🚀 CUADRO III: DESGLOSE DETALLADO CON ALINEACIÓN VERTICAL Y HORIZONTAL FORZADA -->
+      <div style="padding-top: 1.5rem; margin-bottom: 1.5rem;">
+        <h3 class="text-[11px] font-bold uppercase pb-1 mb-3" style="color: #0f172a; border-bottom: 1px solid #cbd5e1;">
+          III. DESGLOSE DETALLADO DE EGRESOS POR CATEGORÍA Y CONCEPTO
+        </h3>
+        <table class="w-full text-xs" style="border-collapse: collapse; width: 100%;">
+          <thead>
+            <tr class="font-bold" style="background-color: #f1f5f9; color: #334155;">
+              <th class="p-2 text-center" style="border: 1px solid #cbd5e1; width: 22%; vertical-align: middle !important;">Categoría</th>
+              <th class="p-2 text-center" style="border: 1px solid #cbd5e1; width: 38%; vertical-align: middle !important;">Concepto / Detalle de Gasto</th>
+              <th class="p-2 text-center" style="border: 1px solid #cbd5e1; width: 22%; vertical-align: middle !important;">Comprobante / N°</th>
+              <th class="p-2 text-center" style="border: 1px solid #cbd5e1; width: 18%; vertical-align: middle !important;">Monto (S/.)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of gastosAgrupados(); track g.id) {
+              <tr>
+                <!-- 🚀 Celda de Categoría Agrupada (Rowspan): Centrada Horizontal y Verticalmente -->
+                @if (g.esPrimerItemDelGrupo) {
+                  <td 
+                    [attr.rowspan]="g.rowspan" 
+                    class="p-2 font-bold text-center uppercase" 
+                    style="border: 1px solid #cbd5e1; background-color: #f8fafc; color: #1e293b; vertical-align: middle !important; text-align: center !important;">
+                    {{ g.categoria }}
+                  </td>
+                }
+                
+                <!-- Concepto / Detalle -->
+                <td class="p-2 text-center font-medium" style="border: 1px solid #cbd5e1; vertical-align: middle !important; text-align: center !important;">
+                  {{ g.concepto }} {{ g.proveedor ? ' (' + g.proveedor + ')' : '' }}
+                </td>
+
+                <!-- Comprobante / N° -->
+                <td class="p-2 text-center" style="border: 1px solid #cbd5e1; color: #64748b; vertical-align: middle !important; text-align: center !important;">
+                  {{ g.tipoComprobante }} {{ g.numeroComprobante ? 'N° ' + g.numeroComprobante : '' }}
+                </td>
+
+                <!-- Monto -->
+                <td class="p-2 text-center font-semibold" style="border: 1px solid #cbd5e1; color: #be123c; vertical-align: middle !important; text-align: center !important;">
+                  S/. {{ g.monto | number:'1.2-2' }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="p-3 text-center" style="border: 1px solid #cbd5e1; color: #64748b; vertical-align: middle !important;">
+                  No se registraron egresos en este periodo.
+                </td>
+              </tr>
+            }
+          </tbody>
+          
+          <!-- Foot con Alineación a la Derecha pero Centrado Verticalmente -->
+          @if (gastosAgrupados().length > 0) {
+            <tfoot>
+              <tr class="font-bold" style="background-color: #f8fafc;">
+                <td colspan="3" class="p-2 text-right uppercase" style="border: 1px solid #cbd5e1; color: #0f172a; vertical-align: middle !important; text-align: right !important;">
+                  Total Egresos Ejecutados:
+                </td>
+                <td class="p-2 text-center font-extrabold" style="border: 1px solid #cbd5e1; color: #be123c; vertical-align: middle !important; text-align: center !important;">
+                  S/. {{ consolidado().totalEgresosMes | number:'1.2-2' }}
+                </td>
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
+
+      <!-- FIRMAS DINÁMICAS EN 2X2 -->
+      <div class="max-w-xl mx-auto grid grid-cols-2 gap-x-20 gap-y-10 text-center text-xs" style="padding-top: 2rem;">
+        <div>
+          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
+          <span class="block font-bold text-sm" style="color: #0f172a;">Presidente(a)</span>
+          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().presidente }}</span>
+        </div>
+        <div>
+          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
+          <span class="block font-bold text-sm" style="color: #0f172a;">Tesorero(a)</span>
+          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().tesorero }}</span>
+        </div>
+        <div>
+          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
+          <span class="block font-bold text-sm" style="color: #0f172a;">Secretario(a)</span>
+          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().secretario }}</span>
+        </div>
+        <div>
+          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
+          <span class="block font-bold text-sm" style="color: #0f172a;">Vocal</span>
+          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().vocal }}</span>
+        </div>
+      </div>
+
+    </div>
+  }
+</div>
