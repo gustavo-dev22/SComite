@@ -1,0 +1,102 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">Configuración Institucional</h1>
+    <p class="text-slate-500 text-sm">Parámetros generales de la Institución Educativa e identidad visual para documentos oficiales.</p>
+  </div>
+
+  @if (cargando()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 animate-pulse">Cargando parámetros institucionales...</p>
+    </div>
+  } @else {
+
+    <div class="max-w-4xl mx-auto space-y-6">
+
+      @if (mensajeExito()) {
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-sm font-semibold flex items-center gap-2">
+          <span>✅</span> {{ mensajeExito() }}
+        </div>
+      }
+
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        
+        <!-- Bloque 1: Identidad e Insignia -->
+        <div>
+          <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100 mb-4">
+            1. Identidad e Insignia Oficial
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            
+            <!-- Vista previa del Logo -->
+            <div class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center">
+              @if (formDatos().urlLogo) {
+                <img [src]="formDatos().urlLogo" alt="Logo Colegio" class="w-32 h-32 object-contain mb-3 rounded-lg">
+                <button (click)="removerLogo()" type="button" class="text-xs font-bold text-rose-600 hover:text-rose-800 cursor-pointer">
+                  🗑️ Quitar Logo
+                </button>
+              } @else {
+                <div class="w-20 h-20 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center text-3xl font-bold mb-2">🏫</div>
+                <span class="text-xs font-bold text-slate-500 block mb-2">Sin Insignia</span>
+              }
+
+              <label class="mt-2 inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition">
+                <span>📁 Cargar Logo</span>
+                <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden">
+              </label>
+            </div>
+
+            <div class="md:col-span-2 space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre de la Institución Educativa *</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="formDatos().nombreInstitucion" 
+                  placeholder="Ej: I.E. 2084 MARIA PARADO DE BELLIDO" 
+                  class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 font-bold uppercase text-slate-800">
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Bloque 2: Contacto y Ubicación -->
+        <div>
+          <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100 mb-4">
+            2. Dirección y Datos de Contacto
+          </h2>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Dirección del Colegio</label>
+              <input 
+                type="text" 
+                [(ngModel)]="formDatos().direccion" 
+                placeholder="Ej: Av. Universitaria N° 4580, Los Olivos - Lima" 
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900">
+            </div>
+          </div>
+        </div>
+
+        <!-- Pie Botón Guardar -->
+        <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+          <span class="text-xs text-slate-400">
+            Última actualización: <strong>{{ formDatos().fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</strong> por <strong>{{ formDatos().usuarioActualizacion || 'SISTEMA' }}</strong>
+          </span>
+
+          <button 
+            (click)="guardar()" 
+            [disabled]="guardando() || !formDatos().nombreInstitucion?.trim()"
+            class="px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-sm font-bold shadow-md transition disabled:bg-slate-300 cursor-pointer">
+            {{ guardando() ? 'Guardando...' : '💾 Guardar Configuración' }}
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  }
+</div>

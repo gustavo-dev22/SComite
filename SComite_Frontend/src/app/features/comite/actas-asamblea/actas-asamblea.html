@@ -1,0 +1,322 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">Actas de Asamblea de Padres</h1>
+        <p class="text-slate-500 text-sm">Libro digital de acuerdos, resoluciones y actas firmadas por la asamblea.</p>
+      </div>
+    </div>
+
+    <button 
+      (click)="abrirModalNuevo()" 
+      [disabled]="!tieneAulaSeleccionada()"
+      class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition cursor-pointer">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      <span>Registrar Nueva Acta</span>
+    </button>
+  </div>
+
+  <!-- Filtro Superior Contextual 1 -> 2 -->
+  <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo</label>
+      <select 
+        [value]="periodoSeleccionadoId() ?? ''" 
+        (change)="onPeriodoChange($event)"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-sm cursor-pointer">
+        <option value="">-- Seleccione Año --</option>
+        @for (p of periodos(); track p.id) {
+          <option [value]="p.id">Periodo {{ p.anio }} {{ p.esActivo ? '(Vigente)' : '' }}</option>
+        }
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
+      <select 
+        [value]="aulaSeleccionadaId() ?? ''" 
+        (change)="onAulaChange($event)"
+        [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer">
+        @if (!tienePeriodoSeleccionado()) {
+          <option value="">-- Seleccione Año Lectivo primero --</option>
+        } @else if (cargandoAulas()) {
+          <option value="">Cargando aulas...</option>
+        } @else if (aulas().length === 0) {
+          <option value="">-- No hay aulas registradas --</option>
+        } @else {
+          <option value="">-- Seleccione Aula --</option>
+          @for (a of aulas(); track a.id) {
+            <option [value]="a.id">{{ a.nivel }} - {{ a.grado }}° "{{ a.seccion }}"</option>
+          }
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  @if (!tieneAulaSeleccionada()) {
+    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
+      <div class="w-12 h-12 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">📄</div>
+      <h3 class="text-slate-700 font-semibold mb-1">Seleccione el Año y Aula</h3>
+      <p class="text-slate-400 text-sm">Elija los filtros para consultar o registrar las actas de asamblea.</p>
+    </div>
+  } @else if (cargando()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 animate-pulse">Cargando libro de actas...</p>
+    </div>
+  } @else {
+
+    <!-- Feed / Grid de Actas -->
+    <div class="space-y-4 max-w-5xl mx-auto">
+      @for (a of actas(); track a.id) {
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+  
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                <span class="bg-slate-900 text-white text-xs font-black px-3 py-1.5 rounded-lg tracking-wider">
+                    {{ a.numeroActa }}
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase" [ngClass]="getEstadoClass(a.estadoActa)">
+                    {{ a.estadoActa === 'APROBADA' ? '✅ APROBADA' : '📝 BORRADOR' }}
+                </span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button 
+                        (click)="descargarPdfActa(a)" 
+                        title="Descargar Acta en PDF"
+                        class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                        <span>📥 Exportar PDF</span>
+                    </button>
+                    <button (click)="abrirModalEditar(a)" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Editar">✏️</button>
+                    <button (click)="eliminarActa(a.id)" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Eliminar">🗑️</button>
+                </div>
+            </div>
+
+            <div class="py-4">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
+                <span>📅 Fecha de Asamblea: {{ a.fechaReunion | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800 mb-3">{{ a.titulo }}</h2>
+
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <span class="text-xs font-bold text-slate-500 uppercase block mb-1">Puntos Tratados y Acuerdos:</span>
+                <p class="text-slate-700 text-sm whitespace-pre-line leading-relaxed">{{ a.agendaAcuerdos }}</p>
+                </div>
+            </div>
+
+            @if (a.urlDocumentoPdf) {
+                <div class="mb-4">
+                <a [href]="a.urlDocumentoPdf" target="_blank" class="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl transition">
+                    📄 Ver Documento Escaneado con Firmas (PDF / Drive)
+                </a>
+                </div>
+            }
+
+            <!-- 🚀 FOOTER DE AUDITORÍA COMPLETO -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-100 text-xs text-slate-400">
+                <div>
+                <span>Creado por: <strong class="text-slate-700">{{ a.usuarioRegistro }}</strong> el {{ a.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+
+                <!-- Muestra última edición solo si existe un usuario de actualización -->
+                @if (a.usuarioActualizacion) {
+                <div class="text-amber-700 font-medium">
+                    <span>✏️ Editado por: <strong class="text-amber-800">{{ a.usuarioActualizacion }}</strong> el {{ a.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                }
+            </div>
+
+        </div>
+      } @empty {
+        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <p class="text-slate-400 text-sm">No hay actas de asamblea registradas para esta aula en el periodo seleccionado.</p>
+        </div>
+      }
+    </div>
+
+  }
+
+  <!-- Modal Formulario -->
+  @if (mostrarModal()) {
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
+        <h3 class="text-lg font-bold text-slate-800 mb-4">
+          {{ formActa().id === 0 ? 'Registrar Acta de Asamblea' : 'Editar Acta' }}
+        </h3>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Código / N° de Acta *</label>
+              <input 
+                type="text" 
+                [(ngModel)]="formActa().numeroActa" 
+                (input)="onInputToUppercase('numeroActa')"
+                placeholder="Ej: ACTA-001-2026" 
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 uppercase">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fecha de Asamblea *</label>
+              <input 
+                type="date" 
+                [(ngModel)]="formActa().fechaReunion" 
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Título de la Asamblea *</label>
+            <input 
+              type="text" 
+              [(ngModel)]="formActa().titulo" 
+              (input)="onInputToUppercase('titulo')"
+              placeholder="Ej: ASAMBLEA ORDINARIA - APROBACIÓN DE CUOTA DE INICIO" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 uppercase">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Estado del Acta *</label>
+            <select [(ngModel)]="formActa().estadoActa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer">
+                <option value="BORRADOR">📝 Borrador (En Redacción / Edición)</option>
+                <option value="APROBADA">✅ Aprobada (Oficial y Publicada)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Puntos Tratados y Acuerdos *</label>
+            <textarea [(ngModel)]="formActa().agendaAcuerdos" rows="5" placeholder="Detalle los puntos de la agenda y acuerdos acordados por los padres..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">URL Enlace del Documento PDF / Escaneado</label>
+            <input type="text" [(ngModel)]="formActa().urlDocumentoPdf" placeholder="Ej: https://drive.google.com/file/d/..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+          <button (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-50 transition cursor-pointer">Cancelar</button>
+          <button (click)="guardarActa()" [disabled]="guardando()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition disabled:bg-slate-300 cursor-pointer">
+            {{ guardando() ? 'Guardando...' : 'Guardar Acta' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ======================================================= -->
+<!-- 🚀 MODAL / SPINNER DE DESCARGA PDF -->
+<!-- ======================================================= -->
+@if (descargandoPdf()) {
+  <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background-color: #ffffff; padding: 1rem 2rem; border-radius: 9999px; display: flex; gap: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+      <div style="width: 1.25rem; height: 1.25rem; border: 3px solid #0f172a; border-top-color: transparent; border-radius: 50%;" class="animate-spin"></div>
+      <span style="font-size: 0.875rem; font-weight: 700; color: #1e293b;">Generando PDF de Acta de Asamblea...</span>
+    </div>
+  </div>
+}
+
+<!-- ======================================================= -->
+<!-- 🚀 CONTENEDOR OCULTO PARA IMPRESIÓN OFICIAL DEL ACTA (A4 - SIN TAILWIND) -->
+<!-- ======================================================= -->
+<div id="acta-imprimible-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 40px; width: 210mm; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box;">
+  
+  @if (actaParaPdf()) {
+    <!-- Cabecera Institucional -->
+    <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #0f172a;">
+      <h1 style="font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; margin: 0;">ACTA OFICIAL DE ASAMBLEA DE PADRES DE FAMILIA</h1>
+      <h2 style="font-size: 14px; font-weight: 700; margin-top: 4px; color: #334155; margin-bottom: 0;">Comité de Aula - {{ aulaNombreActual() }}</h2>
+      <p style="font-size: 12px; color: #64748b; margin-top: 4px; margin-bottom: 0;">Año Lectivo {{ anioActual() }} | Institución Educativa</p>
+    </div>
+
+    <!-- Ficha de Datos del Acta -->
+    <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <tr>
+          <td style="width: 50%; padding-bottom: 8px; vertical-align: top;">
+            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Código / N° de Acta:</span>
+            <strong style="font-size: 14px; color: #0f172a; font-family: monospace;">{{ actaParaPdf()?.numeroActa }}</strong>
+          </td>
+          <td style="width: 50%; padding-bottom: 8px; vertical-align: top;">
+            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Estado del Documento:</span>
+            <strong style="font-size: 13px; color: #047857; text-transform: uppercase;">{{ actaParaPdf()?.estadoActa }}</strong>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 50%; vertical-align: top;">
+            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Fecha de Celebración:</span>
+            <span style="color: #1e293b; font-weight: 600;">{{ actaParaPdf()?.fechaReunion | date:'dd/MM/yyyy' }}</span>
+          </td>
+          <td style="width: 50%; vertical-align: top;">
+            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Registrado Por:</span>
+            <span style="color: #1e293b; font-weight: 600;">{{ actaParaPdf()?.usuarioRegistro }}</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Título y Agenda -->
+    <div style="margin-bottom: 24px;">
+      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px;">Agenda / Asunto Principal:</span>
+      <h2 style="font-size: 15px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0; line-height: 1.3;">{{ actaParaPdf()?.titulo }}</h2>
+    </div>
+
+    <!-- Puntos Tratados y Acuerdos -->
+    <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; margin-bottom: 32px; min-height: 240px; background-color: #ffffff;">
+      <h3 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #0f172a; padding-bottom: 8px; margin-top: 0; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+        Puntos Tratados y Acuerdos Aprobados por la Asamblea:
+      </h3>
+      <p style="font-size: 12px; color: #1e293b; white-space: pre-line; line-height: 1.6; margin: 0;">
+        {{ actaParaPdf()?.agendaAcuerdos }}
+      </p>
+    </div>
+
+    <!-- Pie de Firmas Oficiales (Comité de Aula 2x2 Tabla Nativa) -->
+    <div style="margin-top: 48px; padding-top: 16px;">
+      <p style="font-size: 10px; text-align: center; color: #64748b; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 0.5px;">
+        En fe de conformidad y ratificación de los acuerdos tomados, firman los miembros del comité de aula:
+      </p>
+
+      <table style="width: 80%; margin: 0 auto; border-collapse: separate; border-spacing: 40px 30px; text-align: center; font-size: 11px;">
+        <tr>
+          <td style="width: 50%; vertical-align: bottom;">
+            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
+            <strong style="display: block; color: #0f172a; font-size: 12px;">Presidente(a)</strong>
+            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().presidente }}</span>
+          </td>
+          <td style="width: 50%; vertical-align: bottom;">
+            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
+            <strong style="display: block; color: #0f172a; font-size: 12px;">Tesorero(a)</strong>
+            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().tesorero }}</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 50%; vertical-align: bottom;">
+            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
+            <strong style="display: block; color: #0f172a; font-size: 12px;">Secretario(a)</strong>
+            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().secretario }}</span>
+          </td>
+          <td style="width: 50%; vertical-align: bottom;">
+            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
+            <strong style="display: block; color: #0f172a; font-size: 12px;">Vocal</strong>
+            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().vocal }}</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Pie de página -->
+    <div style="text-align: center; margin-top: 32px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8;">
+      Documento emitido desde el Sistema de Comité de Aula (SCA) - Fecha de impresión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+    </div>
+  }
+
+</div>

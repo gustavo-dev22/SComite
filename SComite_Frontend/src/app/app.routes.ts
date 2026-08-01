@@ -17,6 +17,10 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [
             {
+                path: 'admin/institucion-educativa',
+                loadComponent: () => import('./features/admin/ie/ie').then(m => m.IeComponent)
+            },
+            {
                 path: 'admin/periodos',
                 loadComponent: () => import('./features/admin/periodo/periodo').then(m => m.PeriodoComponent)
             },
@@ -31,6 +35,10 @@ export const routes: Routes = [
             {
                 path: 'admin/estudiantes',
                 loadComponent: () => import('./features/admin/padron-estudiantes/padron-estudiantes').then(m => m.PadronEstudiantesComponent)
+            },
+            {
+                path: 'admin/auditoria-cajas',
+                loadComponent: () => import('./features/admin/resumen-caja/resumen-caja').then(m => m.ResumenCajaComponent)
             },
             {
                 path: 'admin/logs',
@@ -67,6 +75,14 @@ export const routes: Routes = [
             {
                 path: 'actividades/cronograma',
                 loadComponent: () => import('./features/comite/cronograma-actividades/cronograma-actividades').then(m => m.CronogramaActividadesComponent)
+            },
+            {
+                path: 'comunidad/anuncios',
+                loadComponent: () => import('./features/comite/muro-anuncios/muro-anuncios').then(m => m.MuroAnunciosComponent)
+            },
+            {
+                path: 'comunidad/actas',
+                loadComponent: () => import('./features/comite/actas-asamblea/actas-asamblea').then(m => m.ActasAsambleaComponent)
             }
         ]
     },

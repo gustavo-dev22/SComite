@@ -1,0 +1,25 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
+import { Observable } from 'rxjs';
+import { AnuncioComite } from '../models/anuncio.model';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AnuncioService {
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/anuncios`;
+
+  getAnunciosPorAula(aulaId: number, anio: number): Observable<AnuncioComite[]> {
+    return this.http.get<AnuncioComite[]>(`${this.apiUrl}/aula/${aulaId}?anio=${anio}`);
+  }
+
+  guardarAnuncio(anuncio: Partial<AnuncioComite>): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(this.apiUrl, anuncio);
+  }
+
+  eliminarAnuncio(id: number, aulaId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
+  }
+}

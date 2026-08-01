@@ -1,0 +1,197 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-sm">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">Muro de Comunicados Oficiales</h1>
+        <p class="text-slate-500 text-sm">Cartelera digital de avisos, citaciones y notas informativas del Comité.</p>
+      </div>
+    </div>
+
+    <button 
+      (click)="abrirModalNuevo()" 
+      [disabled]="!tieneAulaSeleccionada()"
+      class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition cursor-pointer">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      <span>Nuevo Comunicado</span>
+    </button>
+  </div>
+
+  <!-- Filtro Superior Contextual 1 -> 2 -->
+  <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo</label>
+      <select 
+        [value]="periodoSeleccionadoId() ?? ''" 
+        (change)="onPeriodoChange($event)"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm cursor-pointer">
+        <option value="">-- Seleccione Año --</option>
+        @for (p of periodos(); track p.id) {
+          <option [value]="p.id">Periodo {{ p.anio }} {{ p.esActivo ? '(Vigente)' : '' }}</option>
+        }
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
+      <select 
+        [value]="aulaSeleccionadaId() ?? ''" 
+        (change)="onAulaChange($event)"
+        [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer">
+        @if (!tienePeriodoSeleccionado()) {
+          <option value="">-- Seleccione Año Lectivo primero --</option>
+        } @else if (cargandoAulas()) {
+          <option value="">Cargando aulas...</option>
+        } @else if (aulas().length === 0) {
+          <option value="">-- No hay aulas registradas --</option>
+        } @else {
+          <option value="">-- Seleccione Aula --</option>
+          @for (a of aulas(); track a.id) {
+            <option [value]="a.id">{{ a.nivel }} - {{ a.grado }}° "{{ a.seccion }}"</option>
+          }
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  @if (!tieneAulaSeleccionada()) {
+    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
+      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">📢</div>
+      <h3 class="text-slate-700 font-semibold mb-1">Seleccione el Año y Aula</h3>
+      <p class="text-slate-400 text-sm">Elija los filtros para revisar o publicar comunicados.</p>
+    </div>
+  } @else if (cargando()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 animate-pulse">Cargando cartelera de comunicados...</p>
+    </div>
+  } @else {
+
+    <!-- Feed de Comunicados Card Layout -->
+    <div class="max-w-4xl mx-auto space-y-4">
+      @for (a of anuncios(); track a.id) {
+        <div 
+          [class.border-indigo-400]="a.esFijado" 
+          [class.ring-2]="a.esFijado" 
+          [class.ring-indigo-100]="a.esFijado" 
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative transition hover:shadow-md">
+          
+          <!-- Badge Superior -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider" [ngClass]="getCategoriaBadgeClass(a.categoria)">
+                {{ a.categoria }}
+              </span>
+              @if (a.esFijado) {
+                <span class="bg-indigo-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  📌 Fijado en el Muro
+                </span>
+              }
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button (click)="abrirModalEditar(a)" class="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Editar">✏️</button>
+              <button (click)="eliminarAnuncio(a.id)" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Eliminar">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Título y Contenido -->
+          <h2 class="text-lg font-bold text-slate-800 mb-2">{{ a.titulo }}</h2>
+          <p class="text-slate-600 text-sm whitespace-pre-line leading-relaxed mb-4">{{ a.contenido }}</p>
+
+          <!-- Adjunto si existe -->
+          @if (a.urlAdjunto) {
+            <div class="mb-4">
+              <a [href]="a.urlAdjunto" target="_blank" class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-indigo-300 text-indigo-600 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                📎 Ver documento adjunto / Enlace oficial
+              </a>
+            </div>
+          }
+
+          <!-- Footer Metadatos -->
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-400">
+            <span>Publicado por: <strong class="text-slate-700">{{ a.usuarioRegistro }}</strong></span>
+            
+            <div class="flex items-center gap-3">
+                <!-- 🚀 Métrica de Alcance / Vistas -->
+                <span class="inline-flex items-center gap-1 font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full" title="Cantidad de visualizaciones por apoderados">
+                👁️ {{ a.cantidadVistas || a.cantidadVistas || 0 }} vistas
+                </span>
+                <span>📅 {{ a.fechaPublicacion | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+        </div>
+
+        </div>
+      } @empty {
+        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <p class="text-slate-400 text-sm">No hay comunicados publicados en el muro para esta aula.</p>
+        </div>
+      }
+    </div>
+
+  }
+
+  <!-- Modal Formulario -->
+  @if (mostrarModal()) {
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
+        <h3 class="text-lg font-bold text-slate-800 mb-4">
+          {{ formAnuncio().id === 0 ? 'Publicar Comunicado Oficial' : 'Editar Comunicado' }}
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Título del Comunicado *</label>
+            <input 
+              type="text" 
+              [(ngModel)]="formAnuncio().titulo" 
+              placeholder="Ej: CITACIÓN A ASAMBLEA EXTRAORDINARIA DE PADRES" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Categoría *</label>
+              <select [(ngModel)]="formAnuncio().categoria" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="INFORMATIVO">Informativo</option>
+                <option value="URGENTE">Urgente</option>
+                <option value="CITACION">Citación</option>
+                <option value="TESORERIA">Tesorería</option>
+                <option value="EVENTO">Evento</option>
+              </select>
+            </div>
+
+            <div class="flex items-center pt-5">
+              <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                <input type="checkbox" [(ngModel)]="formAnuncio().esFijado" class="w-4 h-4 text-indigo-600 rounded">
+                <span>📌 Fijar en la parte superior</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Contenido del Mensaje *</label>
+            <textarea [(ngModel)]="formAnuncio().contenido" rows="5" placeholder="Escriba aquí el detalle del comunicado..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">URL / Enlace Adjunto (Opcional)</label>
+            <input type="text" [(ngModel)]="formAnuncio().urlAdjunto" placeholder="Ej: https://drive.google.com/... o enlace de circular" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+          <button (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-50 transition cursor-pointer">Cancelar</button>
+          <button (click)="guardarAnuncio()" [disabled]="guardando()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition disabled:bg-indigo-300 cursor-pointer">
+            {{ guardando() ? 'Publicando...' : 'Publicar Comunicado' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

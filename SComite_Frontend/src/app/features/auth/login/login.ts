@@ -65,6 +65,7 @@ export class LoginComponent {
         });
 
         const rutaInicial = this.obtenerRutaInicial(res);
+        console.log('Ruta inicial determinada:', rutaInicial);
         this.router.navigate([rutaInicial]);
       },
       error: (err) => {
@@ -87,31 +88,70 @@ export class LoginComponent {
     const roles = res.sistemaComite?.roles || [];
     const rolInicial = roles.find(r => r.esPrincipal) || roles[0];
 
-    if (!rolInicial) return 'admin/periodos';
+    if (!rolInicial) return 'login';
 
     const objetos = rolInicial.objetos || [];
-    const urlsSasi: string[] = [];
 
-    const aplanarObjetos = (lista: any[]) => {
-      for (const obj of lista) {
-        if (obj.activo && obj.url && obj.url !== '#' && obj.url !== '/') {
-          const urlLimpia = obj.url.startsWith('/') ? obj.url.substring(1) : obj.url;
-          urlsSasi.push(urlLimpia);
+    const obtenerNumeroOrden = (obj: any): number => {
+      if (obj.orden !== undefined && obj.orden !== null) return Number(obj.orden);
+      if (obj.posicion !== undefined && obj.posicion !== null) return Number(obj.posicion);
+      if (obj.id !== undefined && obj.id !== null) return Number(obj.id);
+      return 0;
+    };
+
+    const ordenarLista = (lista: any[]) => {
+      return [...lista].sort((a, b) => obtenerNumeroOrden(a) - obtenerNumeroOrden(b));
+    };
+
+    const urlsEnOrdenLectura: string[] = [];
+
+    const recorrerMenu = (nodos: any[]) => {
+      const nodosOrdenados = ordenarLista(nodos);
+
+      for (const nodo of nodosOrdenados) {
+        if (!nodo || nodo.activo === false) continue;
+
+        if (nodo.url && nodo.url !== '#' && nodo.url !== '/' && nodo.url !== 'javascript:void(0);') {
+          const urlLimpia = nodo.url.startsWith('/') ? nodo.url.substring(1) : nodo.url;
+          urlsEnOrdenLectura.push(urlLimpia);
         }
-        if (obj.subObjetos) aplanarObjetos(obj.subObjetos);
-        if (obj.hijos) aplanarObjetos(obj.hijos);
+
+        const hijos = nodo.subObjetos || nodo.hijos || [];
+        if (hijos.length > 0) {
+          recorrerMenu(hijos);
+        }
       }
     };
 
-    aplanarObjetos(objetos);
+    recorrerMenu(objetos);
 
-    // Verificamos si la ruta existe en la tabla de rutas del Router de Angular
+    // Obtener todas las rutas declaradas en Angular
     const rutasExistentes = this.router.config
       .flatMap(r => r.children || [])
       .map(c => c.path);
 
-    const rutaValida = urlsSasi.find(u => rutasExistentes.includes(u));
+    // 🚀 FILTRO DINÁMICO DE PÁGINAS DE ATERRIZAJE (LANDING)
+    // Ningún usuario debe aterrizar en mantenimiento, logs o auditorías al iniciar sesión.
+    const esRutaUtilitariaSistema = (url: string): boolean => {
+      const urlLower = url.toLowerCase();
+      return urlLower.includes('mantenimiento') || 
+            urlLower.includes('logs') || 
+            urlLower.includes('auditoria') || 
+            urlLower.includes('seguridad/');
+    };
 
-    return rutaValida || 'admin/periodos';
+    // 1. Buscar la primera ruta operativa válida que coincida en Angular y SASI (excluyendo utilitarios)
+    const primeraRutaOperativa = urlsEnOrdenLectura.find(url => 
+      rutasExistentes.includes(url) && !esRutaUtilitariaSistema(url)
+    );
+
+    if (primeraRutaOperativa) {
+      return primeraRutaOperativa;
+    }
+
+    // 2. Si solo tuviera permisos a herramientas de sistema, tomar la primera disponible
+    const primeraRutaCualquiera = urlsEnOrdenLectura.find(url => rutasExistentes.includes(url));
+
+    return primeraRutaCualquiera || 'login';
   }
 }
