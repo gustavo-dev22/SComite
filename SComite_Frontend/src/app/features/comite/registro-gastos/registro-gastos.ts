@@ -198,6 +198,7 @@ export class RegistroGastosComponent implements OnInit {
     this.resumenCaja.set({
       saldoAnteriorArrastrado: 0,
       ingresosDelMes: 0,
+      montoDonacionesMes: 0,
       egresosDelMes: 0,
       saldoDisponibleReal: 0
     });

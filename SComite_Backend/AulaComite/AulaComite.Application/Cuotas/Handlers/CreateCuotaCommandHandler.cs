@@ -32,7 +32,8 @@ namespace AulaComite.Application.Cuotas.Handlers
                 Concepto = request.Concepto,
                 MontoIndividual = request.MontoIndividual,
                 FechaVencimiento = request.FechaVencimiento,
-                Observacion = request.Observacion
+                Observacion = request.Observacion,
+                ActividadId = request.ActividadId
             };
 
             int id = await _cuotaRepository.CrearCuotaMasivaAsync(cuota);

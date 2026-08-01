@@ -2,6 +2,7 @@ export interface BalanceConsolidado {
   saldoAnteriorArrastrado: number;
   ingresosMensuales: number;
   ingresosExtraordinarios: number;
+  ingresosDonaciones: number;
   totalIngresosMes: number;
   totalEgresosMes: number;
   saldoNetoEnCaja: number;

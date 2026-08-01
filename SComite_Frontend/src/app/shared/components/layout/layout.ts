@@ -102,7 +102,9 @@ export class LayoutComponent implements OnInit {
       'megaphone': 'pi pi-megaphone',
       'vote': 'pi pi-list-check',
       'file-text': 'pi pi-file',
-      'layers': 'pi pi-file'
+      'layers': 'pi pi-file',
+      'trash': 'pi pi-trash',
+      'gift': 'pi pi-gift'
     };
 
     return mapaIconos[icono] || `pi pi-${icono}`;

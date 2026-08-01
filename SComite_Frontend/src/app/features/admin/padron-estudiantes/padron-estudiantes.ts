@@ -52,6 +52,13 @@ export class PadronEstudiantesComponent implements OnInit {
     this.cargarApoderadosSasi();
   }
 
+  onInputToUppercase(controlName: string): void {
+    const control = this.estudianteForm.get(controlName);
+    if (control && control.value) {
+      control.patchValue(control.value.toUpperCase(), { emitEvent: false });
+    }
+  }
+
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().subscribe(data => {
       this.periodos.set(data);

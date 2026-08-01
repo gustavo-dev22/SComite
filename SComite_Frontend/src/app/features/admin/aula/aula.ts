@@ -32,6 +32,13 @@ export class AulaComponent implements OnInit {
     seccion: ['', [Validators.required]]
   });
 
+  onInputToUppercase(controlName: string): void {
+    const control = this.aulaForm.get(controlName);
+    if (control && control.value) {
+      control.patchValue(control.value.toUpperCase(), { emitEvent: false });
+    }
+  }
+
   ngOnInit(): void {
     this.cargarPeriodos();
     this.cargarAulas();

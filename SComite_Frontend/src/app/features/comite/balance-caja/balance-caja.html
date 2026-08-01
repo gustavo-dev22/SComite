@@ -181,6 +181,15 @@
               </div>
               <span class="font-bold text-slate-800 text-sm">S/. {{ consolidado().ingresosExtraordinarios | number:'1.2-2' }}</span>
             </div>
+
+            <!-- 🚀 NUEVO ITEM: DONACIONES Y APORTES VOLUNTARIOS -->
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+              <div>
+                <span class="block font-semibold text-xs text-amber-800">Donaciones / Aportes Voluntarios</span>
+                <span class="text-[11px] text-slate-400">Aportes extraordinarios sin cuota</span>
+              </div>
+              <span class="font-bold text-slate-800 text-sm">S/. {{ consolidado().ingresosDonaciones | number:'1.2-2' }}</span>
+            </div>
           </div>
         </div>
 
@@ -293,6 +302,10 @@
             <tr>
               <td class="p-2">Cuotas Extraordinarias / Actividades</td>
               <td class="text-right font-semibold p-2">S/. {{ consolidado().ingresosExtraordinarios | number:'1.2-2' }}</td>
+            </tr>
+            <tr>
+              <td class="p-2">Donaciones y Aportes Voluntarios</td>
+              <td class="text-right font-semibold p-2">S/. {{ consolidado().ingresosDonaciones | number:'1.2-2' }}</td>
             </tr>
           </tbody>
         </table>

@@ -24,7 +24,7 @@ export class LogsComponent implements OnInit {
   modalDetalleAbierto = signal<boolean>(false);
 
   modulosDisponibles = ['AUTH', 'AULAS', 'ESTUDIANTES', 'COMITE', 'PERIODOS', 'TESORERIA'];
-  nivelesDisponibles = ['INFO', 'WARNING', 'ERROR', 'CRITICAL'];
+  nivelesDisponibles = ['INFO', 'WARN', 'ERROR', 'CRITICAL'];
 
   filtrosForm: FormGroup = this.fb.group({
     fechaInicio: [''],
@@ -109,7 +109,7 @@ export class LogsComponent implements OnInit {
   getNivelBadgeClass(nivel: string): string {
     switch (nivel.toUpperCase()) {
       case 'INFO': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'WARNING': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'WARN': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'ERROR': return 'bg-rose-100 text-rose-800 border-rose-200';
       case 'CRITICAL': return 'bg-purple-100 text-purple-900 border-purple-300 font-bold';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';

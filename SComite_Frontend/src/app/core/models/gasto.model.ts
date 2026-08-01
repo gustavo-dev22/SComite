@@ -16,6 +16,7 @@ export interface GastoComite {
 export interface ResumenCajaAula {
   saldoAnteriorArrastrado: number;
   ingresosDelMes: number;
+  montoDonacionesMes?: number;
   egresosDelMes: number;
   saldoDisponibleReal: number;
 }

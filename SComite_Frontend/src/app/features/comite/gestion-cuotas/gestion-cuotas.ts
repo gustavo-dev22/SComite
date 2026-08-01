@@ -6,6 +6,8 @@ import { Cuota } from '../../../core/models/cuota.model';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
+import { ActividadService } from '../../../core/services/actividad.service';
+import { ActividadComite } from '../../../core/models/actividad.model';
 
 @Component({
   selector: 'app-gestion-cuotas',
@@ -17,10 +19,12 @@ export class GestionCuotasComponent implements OnInit {
   private fb = inject(FormBuilder);
   private cuotaService = inject(CuotaService);
   private aulaService = inject(AulaService);
+  private actividadService = inject(ActividadService);
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   cuotas = signal<Cuota[]>([]);
+  actividades = signal<ActividadComite[]>([]);
 
   periodoSeleccionadoId = signal<number | null>(null);
   aulaSeleccionadaId = signal<number | null>(null);
@@ -44,6 +48,7 @@ export class GestionCuotasComponent implements OnInit {
   });
 
   cuotaForm: FormGroup = this.fb.group({
+    actividadId: [null],
     concepto: ['', [Validators.required, Validators.maxLength(150)]],
     montoIndividual: [0, [Validators.required, Validators.min(1)]],
     fechaVencimiento: ['', Validators.required],
@@ -75,6 +80,7 @@ export class GestionCuotasComponent implements OnInit {
     this.aulaSeleccionadaId.set(null);
     this.aulas.set([]);
     this.cuotas.set([]);
+    this.actividades.set([]);
 
     if (id && id > 0) {
       this.cargarAulasPorPeriodo(id);
@@ -98,9 +104,11 @@ export class GestionCuotasComponent implements OnInit {
 
     this.aulaSeleccionadaId.set(aulaId);
     this.cuotas.set([]);
+    this.actividades.set([]);
 
     if (aulaId && aulaId > 0) {
       this.cargarCuotas(aulaId);
+      this.cargarActividadesDelAula(aulaId);
     }
   }
 
@@ -115,12 +123,60 @@ export class GestionCuotasComponent implements OnInit {
     });
   }
 
+  cargarActividadesDelAula(aulaId: number): void {
+    const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
+    const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
+
+    this.actividadService.getActividadesPorAula(aulaId, anio).subscribe({
+      next: (data) => this.actividades.set(data)
+    });
+  }
+
+  onActividadChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    const actividadId = value ? Number(value) : null;
+
+    if (actividadId) {
+      const act = this.actividades().find(a => a.id === actividadId);
+      if (act) {
+        // Formatear fecha y autocompletar campos
+        const fechaFormatted = new Date(act.fechaProgramada).toISOString().split('T')[0];
+
+        this.cuotaForm.patchValue({
+          concepto: `Cuota: ${act.nombreActividad}`,
+          montoIndividual: act.cuotaSugeridaPorAlumno,
+          fechaVencimiento: fechaFormatted,
+          observacion: `VINCULADA A ACTIVIDAD: ${act.nombreActividad}. ${act.descripcion || ''}`
+        });
+
+        // Deshabilitar edición directa de los datos vinculados
+        this.cuotaForm.get('concepto')?.disable();
+        this.cuotaForm.get('montoIndividual')?.disable();
+        this.cuotaForm.get('fechaVencimiento')?.disable();
+      }
+    } else {
+      // Si se desmarca, habilitar edición libre
+      this.cuotaForm.get('concepto')?.enable();
+      this.cuotaForm.get('montoIndividual')?.enable();
+      this.cuotaForm.get('fechaVencimiento')?.enable();
+
+      this.cuotaForm.patchValue({
+        concepto: '',
+        montoIndividual: 0,
+        fechaVencimiento: '',
+        observacion: ''
+      });
+    }
+  }
+
   guardarCuota(): void {
     const aulaId = this.aulaSeleccionadaId();
     if (this.cuotaForm.invalid || !aulaId) return;
 
+    const rawValue = this.cuotaForm.getRawValue();
+
     const payload = {
-      ...this.cuotaForm.value,
+      ...rawValue,
       aulaId: aulaId
     };
 
@@ -156,7 +212,13 @@ export class GestionCuotasComponent implements OnInit {
 
   abrirModal(): void {
     if (!this.puedeCrearCuota()) return;
-    this.cuotaForm.reset({ montoIndividual: 0 });
+
+    this.cuotaForm.get('concepto')?.enable();
+    this.cuotaForm.get('montoIndividual')?.enable();
+    this.cuotaForm.get('fechaVencimiento')?.enable();
+
+    this.cuotaForm.reset({ actividadId: null, montoIndividual: 0 });
+    
     this.cuotaMensualForm.reset({
       conceptoBase: 'Aporte Fondo de Caja Chica',
       montoMensual: 10,

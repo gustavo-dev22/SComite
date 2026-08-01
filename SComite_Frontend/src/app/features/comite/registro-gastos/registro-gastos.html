@@ -98,36 +98,61 @@
     </div>
   } @else {
 
-    <!-- TARJETAS DEL BALANCE MENSUAL REAL CON ARRASTRE HISTÓRICO -->
+    <!-- TARJETAS DEL BALANCE MENSUAL REAL CON ARRASTRE HISTÓRICO Y DONACIONES -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       
       <!-- Card 1: Saldo Arrastrado del Mes Anterior -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">1. Saldo Mes Anterior</span>
-        <span 
-          [class.text-emerald-600]="resumenCaja().saldoAnteriorArrastrado >= 0"
-          [class.text-rose-600]="resumenCaja().saldoAnteriorArrastrado < 0"
-          class="text-xl font-extrabold">
-          S/. {{ resumenCaja().saldoAnteriorArrastrado | number:'1.2-2' }}
-        </span>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">1. Saldo Mes Anterior</span>
+          <span 
+            [class.text-emerald-600]="resumenCaja().saldoAnteriorArrastrado >= 0"
+            [class.text-rose-600]="resumenCaja().saldoAnteriorArrastrado < 0"
+            class="text-xl font-extrabold">
+            S/. {{ resumenCaja().saldoAnteriorArrastrado | number:'1.2-2' }}
+          </span>
+        </div>
+        <span class="text-[10px] text-slate-400 mt-2 block">Acumulado hasta mes previo</span>
       </div>
 
-      <!-- Card 2: Ingresos del Mes -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">2. Ingresos del Mes</span>
-        <span class="text-xl font-extrabold text-emerald-600">+ S/. {{ resumenCaja().ingresosDelMes | number:'1.2-2' }}</span>
+      <!-- Card 2: Ingresos del Mes (CON INDICADOR DESTACADO DE DONACIONES) -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between relative overflow-hidden">
+        <div>
+          <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">2. Ingresos del Mes</span>
+          <span class="text-xl font-extrabold text-emerald-600">+ S/. {{ resumenCaja().ingresosDelMes | number:'1.2-2' }}</span>
+        </div>
+
+        <!-- 🚀 INSIGNIA O ETIQUETA SI HAY DONACIONES EN EL MES -->
+        @if ((resumenCaja().montoDonacionesMes || 0) > 0) {
+          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 inline-flex items-center gap-1">
+              🎁 Incluye Donación:
+            </span>
+            <span class="font-extrabold text-amber-700">
+              S/. {{ resumenCaja().montoDonacionesMes | number:'1.2-2' }}
+            </span>
+          </div>
+        } @else {
+          <span class="text-[10px] text-slate-400 mt-2 block">Cuotas ordinarias y extraordinarias</span>
+        }
       </div>
 
       <!-- Card 3: Egresos / Gastos del Mes -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">3. Egresos del Mes</span>
-        <span class="text-xl font-extrabold text-rose-600">- S/. {{ resumenCaja().egresosDelMes | number:'1.2-2' }}</span>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-bold text-slate-400 uppercase block mb-1">3. Egresos del Mes</span>
+          <span class="text-xl font-extrabold text-rose-600">- S/. {{ resumenCaja().egresosDelMes | number:'1.2-2' }}</span>
+        </div>
+        <span class="text-[10px] text-slate-400 mt-2 block">Gastos ejecutados</span>
       </div>
 
       <!-- Card 4: Saldo Disponible Real del Mes -->
-      <div class="bg-indigo-900 text-white p-4 rounded-xl shadow-sm">
-        <span class="text-[11px] font-bold text-indigo-200 uppercase block mb-1">4. Saldo Disponible Real</span>
-        <span class="text-2xl font-extrabold">S/. {{ resumenCaja().saldoDisponibleReal | number:'1.2-2' }}</span>
+      <div class="bg-indigo-900 text-white p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-[11px] font-bold text-indigo-200 uppercase block mb-1">4. Saldo Disponible Real</span>
+          <span class="text-2xl font-extrabold">S/. {{ resumenCaja().saldoDisponibleReal | number:'1.2-2' }}</span>
+        </div>
+        <span class="text-[10px] text-indigo-300 mt-2 block">Neto en caja al corte</span>
       </div>
 
     </div>

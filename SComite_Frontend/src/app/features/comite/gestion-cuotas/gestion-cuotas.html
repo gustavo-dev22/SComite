@@ -20,7 +20,7 @@
     
     <!-- Selector 1: Periodo Lectivo (SIEMPRE HABILITADO) -->
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Año Lectivo / Periodo</label>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo / Periodo</label>
       <select 
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
@@ -36,7 +36,7 @@
 
     <!-- Selector 2: Aula - Sección (SOLO HABILITADO SI HAY PERIODO SELECCIONADO) -->
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Aula - Sección</label>
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
       <select 
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
@@ -157,9 +157,9 @@
   }
 </div>
 
-<!-- Modal Formulario -->
+<!-- Modal Formulario con Integración a Cronograma de Actividades -->
 @if (mostrarModal()) {
-  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
       
       <!-- Selector de Pestañas -->
@@ -171,7 +171,7 @@
           [class.text-indigo-600]="tipoModal() === 'EVENTUAL'"
           [class.shadow-sm]="tipoModal() === 'EVENTUAL'"
           [class.text-slate-500]="tipoModal() !== 'EVENTUAL'"
-          class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center">
+          class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center cursor-pointer">
           Cuota / Actividad Única
         </button>
 
@@ -182,7 +182,7 @@
           [class.text-indigo-600]="tipoModal() === 'MENSUAL'"
           [class.shadow-sm]="tipoModal() === 'MENSUAL'"
           [class.text-slate-500]="tipoModal() !== 'MENSUAL'"
-          class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center">
+          class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center cursor-pointer">
           Caja Chica Mensual
         </button>
       </div>
@@ -190,27 +190,63 @@
       <!-- FORMULARIO 1: Cuota Eventual -->
       @if (tipoModal() === 'EVENTUAL') {
         <form [formGroup]="cuotaForm" (ngSubmit)="guardarCuota()" class="space-y-4">
+          
+          <!-- 🚀 SELECTOR OPCIONAL: Vincular Actividad del Cronograma -->
+          <div>
+            <label class="block text-xs font-semibold text-indigo-700 uppercase mb-1">
+              📌 Vincular con Actividad del Cronograma (Opcional)
+            </label>
+            <select 
+              formControlName="actividadId" 
+              (change)="onActividadChange($event)"
+              class="w-full border border-indigo-200 rounded-lg px-3 py-2 bg-indigo-50/50 text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-medium cursor-pointer">
+              <option [value]="null">-- Registro Manual Libre (Sin Actividad) --</option>
+              @for (act of actividades(); track act.id) {
+                <option [value]="act.id">
+                  📅 {{ act.nombreActividad }} (S/. {{ act.cuotaSugeridaPorAlumno | number:'1.2-2' }})
+                </option>
+              }
+            </select>
+          </div>
+
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Concepto / Motivo</label>
-            <input type="text" formControlName="concepto" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Ej. Cuota Día del Maestro">
+            <input 
+              type="text" 
+              formControlName="concepto" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500" 
+              placeholder="Ej. Cuota Día del Maestro">
           </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Monto (S/.)</label>
-              <input type="number" formControlName="montoIndividual" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+              <input 
+                type="number" 
+                formControlName="montoIndividual" 
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500">
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">F. Vencimiento</label>
-              <input type="date" formControlName="fechaVencimiento" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+              <input 
+                type="date" 
+                formControlName="fechaVencimiento" 
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500">
             </div>
           </div>
+
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observación</label>
-            <textarea formControlName="observacion" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Opcional..."></textarea>
+            <textarea 
+              formControlName="observacion" 
+              rows="2" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" 
+              placeholder="Opcional..."></textarea>
           </div>
+
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm">Cancelar</button>
-            <button type="submit" [disabled]="cuotaForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold">Guardar Cuota</button>
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm cursor-pointer">Cancelar</button>
+            <button type="submit" [disabled]="cuotaForm.invalid" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-lg text-sm font-semibold cursor-pointer">Guardar Cuota</button>
           </div>
         </form>
       }
@@ -229,7 +265,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">A Partir del Mes</label>
-              <select formControlName="mesInicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+              <select formControlName="mesInicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm cursor-pointer">
                 <option [value]="3">Marzo</option>
                 <option [value]="4">Abril</option>
                 <option [value]="5">Mayo</option>
@@ -254,8 +290,8 @@
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm">Cancelar</button>
-            <button type="submit" [disabled]="cuotaMensualForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold">Programar Cuotas</button>
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm cursor-pointer">Cancelar</button>
+            <button type="submit" [disabled]="cuotaMensualForm.invalid" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-lg text-sm font-semibold cursor-pointer">Programar Cuotas</button>
           </div>
         </form>
       }

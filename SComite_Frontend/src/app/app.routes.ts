@@ -37,6 +37,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/admin/logss/logs').then(m => m.LogsComponent)
             },
             {
+                path: 'seguridad/mantenimiento',
+                loadComponent: () => import('./features/admin/mantenimiento-sistema/mantenimiento-sistema').then(m => m.MantenimientoSistemaComponent)
+            },
+            {
                 path: 'mis-pagos',
                 loadComponent: () => import('./features/apoderado/mis-pagos/mis-pagos').then(m => m.MisPagosComponent)
             },
@@ -49,12 +53,20 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/comite/validar-comprobantes/validar-comprobantes').then(m => m.ValidarComprobantesComponent)
             },
             {
+                path: 'tesoreria/donaciones',
+                loadComponent: () => import('./features/comite/gestion-donaciones/gestion-donaciones').then(m => m.GestionDonacionesComponent)
+            },
+            {
                 path: 'tesoreria/gastos',
                 loadComponent: () => import('./features/comite/registro-gastos/registro-gastos').then(m => m.RegistroGastosComponent)
             },
             {
                 path: 'tesoreria/balance',
                 loadComponent: () => import('./features/comite/balance-caja/balance-caja').then(m => m.BalanceCajaComponent)
+            },
+            {
+                path: 'actividades/cronograma',
+                loadComponent: () => import('./features/comite/cronograma-actividades/cronograma-actividades').then(m => m.CronogramaActividadesComponent)
             }
         ]
     },

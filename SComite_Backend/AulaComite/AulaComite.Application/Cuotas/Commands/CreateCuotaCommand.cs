@@ -10,6 +10,7 @@ namespace AulaComite.Application.Cuotas.Commands
         string Concepto,
         decimal MontoIndividual,
         DateTime FechaVencimiento,
-        string? Observacion
+        string? Observacion,
+        int? ActividadId
     ) : IRequest<int>;
 }

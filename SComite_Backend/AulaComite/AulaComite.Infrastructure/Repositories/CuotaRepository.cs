@@ -28,7 +28,8 @@ namespace AulaComite.Infrastructure.Repositories
                     cuota.Concepto,
                     cuota.MontoIndividual,
                     cuota.FechaVencimiento,
-                    cuota.Observacion
+                    cuota.Observacion,
+                    cuota.ActividadId
                 },
                 commandType: CommandType.StoredProcedure
             );

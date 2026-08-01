@@ -24,6 +24,7 @@ namespace AulaComite.Domain.Entities
     {
         public decimal SaldoAnteriorArrastrado { get; set; }
         public decimal IngresosDelMes { get; set; }
+        public decimal MontoDonacionesMes { get; set; }
         public decimal EgresosDelMes { get; set; }
         public decimal SaldoDisponibleReal { get; set; }
     }
