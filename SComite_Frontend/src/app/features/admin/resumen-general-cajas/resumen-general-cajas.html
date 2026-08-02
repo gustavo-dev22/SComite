@@ -1,0 +1,206 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header con Filtros y Exportación -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Resumen General de Cajas</h1>
+      <p class="text-slate-500 text-sm">Auditoría financiera consolidada de todos los comités de aula.</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Filtro de Periodo -->
+      <div>
+        <select (change)="onPeriodoChange($event)" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer shadow-sm">
+          @for (p of periodos(); track p.id) {
+            <option [value]="p.id" [selected]="p.id === periodoSeleccionadoId()">Año Lectivo {{ p.anio }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Filtro por Nivel -->
+      <div>
+        <select (change)="onNivelChange($event)" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer shadow-sm">
+          <option value="">Todos los Niveles</option>
+          <option value="INICIAL">Inicial</option>
+          <option value="PRIMARIA">Primaria</option>
+          <option value="SECUNDARIA">Secundaria</option>
+        </select>
+      </div>
+
+      <!-- Botón Exportar PDF -->
+      <button 
+        (click)="exportarPdf()" 
+        [disabled]="cargando() || !dataConsolidada()"
+        class="inline-flex items-center gap-2 bg-slate-900 hover:bg-black text-white text-sm font-bold px-4 py-2 rounded-xl transition shadow-md disabled:bg-slate-300 cursor-pointer">
+        <span>📥 Exportar Consolidado PDF</span>
+      </button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 font-semibold animate-pulse">Consolidando estados financieros institucionales...</p>
+    </div>
+  } @else if (dataConsolidada()) {
+
+    <!-- TARJETAS DE MÉTRICAS GLOBALES (KPIs) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Recaudado (Ingresos)</span>
+        <span class="text-2xl font-black text-emerald-700">S/. {{ dataConsolidada()?.totalIngresosInstitucional | number:'1.2-2' }}</span>
+        <span class="text-[11px] text-slate-400 block mt-1">Suma de cuotas y donaciones</span>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Ejecutado (Egresos)</span>
+        <span class="text-2xl font-black text-rose-700">S/. {{ dataConsolidada()?.totalEgresosInstitucional | number:'1.2-2' }}</span>
+        <span class="text-[11px] text-slate-400 block mt-1">Gastos sustentados en actas/boletas</span>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Saldo Neto Institucional</span>
+        <span class="text-2xl font-black text-indigo-900">S/. {{ dataConsolidada()?.saldoNetoInstitucional | number:'1.2-2' }}</span>
+        <span class="text-[11px] text-slate-400 block mt-1">Fondo total disponible en colegios</span>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Estado de Auditoría</span>
+        <div class="flex items-center gap-2 text-xs font-bold mt-1">
+          <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg">✅ {{ dataConsolidada()?.aulasAlDia }} Al Día</span>
+          <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg">⚪ {{ dataConsolidada()?.aulasSinMovimiento }} Sin Mov.</span>
+          @if ((dataConsolidada()?.aulasEnAlerta || 0) > 0) {
+            <span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-lg">⚠️ {{ dataConsolidada()?.aulasEnAlerta }} Alerta</span>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TABLA AUDITORA DE AULAS -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">
+          Detalle Financiero por Aula ({{ dataConsolidada()?.totalAulas }} Aulas Evaluadas)
+        </h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100 text-slate-600 text-xs uppercase font-extrabold border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Aula / Grado</th>
+              <th class="p-3.5">Nivel</th>
+              <th class="p-3.5 text-right">Ingresos (S/.)</th>
+              <th class="p-3.5 text-right">Egresos (S/.)</th>
+              <th class="p-3.5 text-right">Saldo Neto (S/.)</th>
+              <th class="p-3.5 text-center">Estado Financiero</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-medium">
+            @for (aula of dataConsolidada()?.detalleAulas; track aula.aulaId) {
+              <tr class="hover:bg-slate-50 transition">
+                <td class="p-3.5 font-bold text-slate-900">{{ aula.nombreAula }}</td>
+                <td class="p-3.5 uppercase text-xs font-semibold text-slate-500">{{ aula.nivel }}</td>
+                <td class="p-3.5 text-right font-semibold text-emerald-700">+ S/. {{ aula.totalIngresos | number:'1.2-2' }}</td>
+                <td class="p-3.5 text-right font-semibold text-rose-700">- S/. {{ aula.totalEgresos | number:'1.2-2' }}</td>
+                <td class="p-3.5 text-right font-bold text-slate-900">S/. {{ aula.saldoNeto | number:'1.2-2' }}</td>
+                <td class="p-3.5 text-center">
+                  <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase" [ngClass]="getEstadoBadgeClass(aula.estadoFinanciero)">
+                    {{ aula.estadoFinanciero === 'AL_DIA' ? '✅ Al Día' : (aula.estadoFinanciero === 'SIN_MOVIMIENTO' ? '⚪ Sin Movimiento' : '🚨 En Rojo') }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="p-8 text-center text-slate-400">No se encontraron aulas registradas para el año y nivel seleccionado.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  }
+
+</div>
+
+<!-- ======================================================= -->
+<!-- 🚀 CONTENEDOR OCULTO PARA IMPRESIÓN DEL REPORT PDF (A4) -->
+<!-- ======================================================= -->
+<div id="reporte-resumen-general-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 35px; width: 210mm; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box;">
+  
+  <!-- Cabecera Institucional con Logo (85px) -->
+  <div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <tr>
+        @if (institucion()?.urlLogo) {
+          <td style="width: 95px; vertical-align: middle; padding-right: 18px;">
+            <img [src]="institucion()?.urlLogo" alt="Logo Colegio" style="width: 85px; height: 85px; object-fit: contain; display: block; margin: 0 auto;">
+          </td>
+        }
+        <td style="vertical-align: middle;">
+          <h1 style="font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin: 0;">
+            {{ institucion()?.nombreInstitucion || 'INSTITUCIÓN EDUCATIVA' }}
+          </h1>
+          <p style="font-size: 10.5px; color: #475569; margin: 3px 0 0 0; font-weight: 600;">
+            CONSOLIDADO GENERAL DE AUDITORÍA FINANCIERA DE CAJAS
+          </p>
+          <p style="font-size: 10px; color: #64748b; margin-top: 2px; margin-bottom: 0;">
+            Año Lectivo {{ anioActual() }} | Fecha de Emisión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+          </p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Resumen de Totales Institucionales -->
+  <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+      <tr>
+        <td style="width: 33%; vertical-align: top;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 9px;">Total Recaudado Institucional:</span>
+          <strong style="font-size: 13px; color: #047857;">S/. {{ dataConsolidada()?.totalIngresosInstitucional | number:'1.2-2' }}</strong>
+        </td>
+        <td style="width: 33%; vertical-align: top;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 9px;">Total Egresos Ejecutados:</span>
+          <strong style="font-size: 13px; color: #be123c;">S/. {{ dataConsolidada()?.totalEgresosInstitucional | number:'1.2-2' }}</strong>
+        </td>
+        <td style="width: 33%; vertical-align: top;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 9px;">Saldo Neto Disponible:</span>
+          <strong style="font-size: 13px; color: #1e1b4b;">S/. {{ dataConsolidada()?.saldoNetoInstitucional | number:'1.2-2' }}</strong>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Tabla del PDF -->
+  <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;">
+    <thead>
+      <tr style="background-color: #f1f5f9; color: #0f172a; font-weight: 800; border-bottom: 2px solid #cbd5e1;">
+        <th style="padding: 8px; text-align: left;">Aula / Grado</th>
+        <th style="padding: 8px; text-align: left;">Nivel</th>
+        <th style="padding: 8px; text-align: right;">Ingresos (S/.)</th>
+        <th style="padding: 8px; text-align: right;">Egresos (S/.)</th>
+        <th style="padding: 8px; text-align: right;">Saldo Neto (S/.)</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (aula of dataConsolidada()?.detalleAulas; track aula.aulaId) {
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 8px; font-weight: 700; color: #0f172a;">{{ aula.nombreAula }}</td>
+          <td style="padding: 8px; color: #475569; text-transform: uppercase;">{{ aula.nivel }}</td>
+          <td style="padding: 8px; text-align: right; color: #047857; font-weight: 600;">S/. {{ aula.totalIngresos | number:'1.2-2' }}</td>
+          <td style="padding: 8px; text-align: right; color: #be123c; font-weight: 600;">S/. {{ aula.totalEgresos | number:'1.2-2' }}</td>
+          <td style="padding: 8px; text-align: right; font-weight: 800; color: #0f172a;">S/. {{ aula.saldoNeto | number:'1.2-2' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <!-- Pie de página -->
+  <div style="text-align: center; margin-top: 30px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 9px; color: #94a3b8;">
+    Documento Oficial de Auditoría emitido desde el Sistema SASI - Fecha de impresión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+  </div>
+
+</div>

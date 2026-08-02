@@ -7,6 +7,8 @@ import { Aula } from '../../../core/models/aula.model';
 import { BalanceConsolidado, GastoCategoriaResumen, GastoComiteDTO, GastoDetalleAgrupado } from '../../../core/models/balance.model';
 import { ComiteService } from '../../../core/services/comite.service';
 import { ComiteIntegrante } from '../../../core/models/comiteIntegrante.model';
+import { InstitucionService } from '../../../core/services/institucion.service';
+import { InstitucionEducativa } from '../../../core/models/institucion.model';
 
 declare var html2canvas: any;
 declare var jspdf: any;
@@ -21,6 +23,7 @@ export class BalanceCajaComponent implements OnInit {
   private balanceService = inject(BalanceService);
   private aulaService = inject(AulaService);
   private comiteService = inject(ComiteService);
+  private institucionService = inject(InstitucionService);
 
   // Listas
   periodos = signal<PeriodoLectivo[]>([]);
@@ -28,6 +31,7 @@ export class BalanceCajaComponent implements OnInit {
   gastosCategorias = signal<GastoCategoriaResumen[]>([]);
   gastosDetalles = signal<GastoComiteDTO[]>([]);
   integrantesComiteRaw = signal<ComiteIntegrante[]>([]);
+  institucion = signal<InstitucionEducativa | null>(null);
 
   // Consolidado Financiero
   consolidado = signal<BalanceConsolidado>({
@@ -75,7 +79,7 @@ export class BalanceCajaComponent implements OnInit {
   aulaNombreActual = computed(() => {
     const id = this.aulaSeleccionadaId();
     const aula = this.aulas().find(a => a.id === id);
-    return aula ? `${aula.nivel} - ${aula.grado}° "${aula.seccion}"` : '';
+    return aula ? `${aula.nivel} - ${aula.grado} "${aula.seccion}"` : '';
   });
 
   anioActual = computed(() => {
@@ -133,11 +137,21 @@ export class BalanceCajaComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPeriodos();
+    this.cargarDatosInstitucion();
   }
 
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().subscribe({
       next: (data) => this.periodos.set(data)
+    });
+  }
+
+  cargarDatosInstitucion(): void {
+    this.institucionService.getConfiguracion().subscribe({
+      next: (data) => {
+        if (data) this.institucion.set(data);
+      },
+      error: () => console.warn('No se pudieron cargar los datos de la institución educativa.')
     });
   }
 

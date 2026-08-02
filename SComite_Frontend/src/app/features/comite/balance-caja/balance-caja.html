@@ -241,12 +241,36 @@
     <div id="reporte-imprimible-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 2rem; width: 210mm;">
       
       <!-- Cabecera Institucional -->
-      <div class="text-center mb-6 pb-3" style="border-bottom: 2px solid #0f172a;">
-        <h1 class="text-base font-bold uppercase tracking-wide" style="color: #0f172a;">Informe de Rendición de Cuentas de Caja</h1>
-        <h2 class="text-xs font-semibold mt-1" style="color: #334155;">Comité de Aula - {{ aulaNombreActual() }}</h2>
-        <p class="text-[10px] mt-0.5" style="color: #64748b;">
-          Año Lectivo {{ anioActual() }} | <strong>{{ nombreMesActual() }}</strong> | Fecha de Emisión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
-        </p>
+      <div style="border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <tr>
+            <!-- Logo de la IE (Ampliado de 65px a 85px) -->
+            @if (institucion()?.urlLogo) {
+              <td style="width: 130px; vertical-align: middle; padding-right: 18px;">
+                <img 
+                  [src]="institucion()?.urlLogo" 
+                  alt="Logo Colegio" 
+                  style="width: 130px; height: 130px; object-fit: contain; display: block; margin: 0 auto;">
+              </td>
+            }
+            
+            <!-- Datos Oficiales de la IE y Título del Reporte -->
+            <td style="vertical-align: middle;">
+              <h1 style="font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin: 0; line-height: 1.25; letter-spacing: 0.3px;">
+                {{ institucion()?.nombreInstitucion || 'INSTITUCIÓN EDUCATIVA' }}
+              </h1>
+
+              <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #e2e8f0;">
+                <h2 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #1e293b; margin: 0;">
+                  INFORME DE RENDICIÓN DE CUENTAS DE CAJA - COMITÉ DE AULA {{ aulaNombreActual() }}
+                </h2>
+                <p style="font-size: 10px; color: #64748b; margin-top: 2px; margin-bottom: 0;">
+                  Año Lectivo {{ anioActual() }} | Periodo: <strong>{{ nombreMesActual() }}</strong> | Fecha de Emisión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
 
       <!-- CUADRO I: RESUMEN EJECUTIVO -->
@@ -377,31 +401,6 @@
           }
         </table>
       </div>
-
-      <!-- FIRMAS DINÁMICAS EN 2X2 -->
-      <div class="max-w-xl mx-auto grid grid-cols-2 gap-x-20 gap-y-10 text-center text-xs" style="padding-top: 2rem;">
-        <div>
-          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
-          <span class="block font-bold text-sm" style="color: #0f172a;">Presidente(a)</span>
-          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().presidente }}</span>
-        </div>
-        <div>
-          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
-          <span class="block font-bold text-sm" style="color: #0f172a;">Tesorero(a)</span>
-          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().tesorero }}</span>
-        </div>
-        <div>
-          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
-          <span class="block font-bold text-sm" style="color: #0f172a;">Secretario(a)</span>
-          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().secretario }}</span>
-        </div>
-        <div>
-          <div class="mb-2 h-10" style="border-bottom: 1px solid #94a3b8;"></div>
-          <span class="block font-bold text-sm" style="color: #0f172a;">Vocal</span>
-          <span class="block font-semibold text-xs mt-1" style="color: #475569;">{{ firmasComite().vocal }}</span>
-        </div>
-      </div>
-
     </div>
   }
 </div>

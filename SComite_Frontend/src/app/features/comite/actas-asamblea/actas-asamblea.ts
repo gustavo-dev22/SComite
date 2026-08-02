@@ -9,6 +9,8 @@ import { Aula } from '../../../core/models/aula.model';
 import { ActaAsambleaComite } from '../../../core/models/acta.model';
 import { ComiteService } from '../../../core/services/comite.service';
 import { ComiteIntegrante } from '../../../core/models/comiteIntegrante.model';
+import { InstitucionService } from '../../../core/services/institucion.service';
+import { InstitucionEducativa } from '../../../core/models/institucion.model';
 
 declare var html2canvas: any;
 declare var jspdf: any;
@@ -24,11 +26,13 @@ export class ActasAsambleaComponent implements OnInit {
   private aulaService = inject(AulaService);
   private authService = inject(AuthService);
   private comiteService = inject(ComiteService);
+  private institucionService = inject(InstitucionService);
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   actas = signal<ActaAsambleaComite[]>([]);
   integrantesComiteRaw = signal<ComiteIntegrante[]>([]);
+  institucion = signal<InstitucionEducativa | null>(null);
 
   periodoSeleccionadoId = signal<number | null>(null);
   aulaSeleccionadaId = signal<number | null>(null);
@@ -60,7 +64,7 @@ export class ActasAsambleaComponent implements OnInit {
   aulaNombreActual = computed(() => {
     const id = this.aulaSeleccionadaId();
     const aula = this.aulas().find(a => a.id === id);
-    return aula ? `${aula.nivel} - ${aula.grado}° "${aula.seccion}"` : '';
+    return aula ? `${aula.nivel} - ${aula.grado} "${aula.seccion}"` : '';
   });
 
   anioActual = computed(() => {
@@ -86,11 +90,21 @@ export class ActasAsambleaComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPeriodos();
+    this.cargarDatosInstitucion();
   }
 
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().subscribe({
       next: (data) => this.periodos.set(data)
+    });
+  }
+
+  cargarDatosInstitucion(): void {
+    this.institucionService.getConfiguracion().subscribe({
+      next: (data) => {
+        if (data) this.institucion.set(data);
+      },
+      error: () => console.warn('No se pudieron cargar los datos de la institución educativa.')
     });
   }
 

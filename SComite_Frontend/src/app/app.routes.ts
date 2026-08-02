@@ -38,7 +38,7 @@ export const routes: Routes = [
             },
             {
                 path: 'admin/auditoria-cajas',
-                loadComponent: () => import('./features/admin/resumen-caja/resumen-caja').then(m => m.ResumenCajaComponent)
+                loadComponent: () => import('./features/admin/resumen-general-cajas/resumen-general-cajas').then(m => m.ResumenGeneralCajasComponent)
             },
             {
                 path: 'admin/logs',

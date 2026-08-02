@@ -231,10 +231,36 @@
   
   @if (actaParaPdf()) {
     <!-- Cabecera Institucional -->
-    <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #0f172a;">
-      <h1 style="font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; margin: 0;">ACTA OFICIAL DE ASAMBLEA DE PADRES DE FAMILIA</h1>
-      <h2 style="font-size: 14px; font-weight: 700; margin-top: 4px; color: #334155; margin-bottom: 0;">Comité de Aula - {{ aulaNombreActual() }}</h2>
-      <p style="font-size: 12px; color: #64748b; margin-top: 4px; margin-bottom: 0;">Año Lectivo {{ anioActual() }} | Institución Educativa</p>
+    <div style="border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <tr>
+          <!-- Logo de la IE (85px x 85px) -->
+          @if (institucion()?.urlLogo) {
+            <td style="width: 95px; vertical-align: middle; padding-right: 18px;">
+              <img 
+                [src]="institucion()?.urlLogo" 
+                alt="Logo Colegio" 
+                style="width: 85px; height: 85px; object-fit: contain; display: block; margin: 0 auto;">
+            </td>
+          }
+          
+          <!-- Datos Oficiales de la IE y Título del Acta -->
+          <td style="vertical-align: middle;">
+            <h1 style="font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin: 0; line-height: 1.25; letter-spacing: 0.3px;">
+              {{ institucion()?.nombreInstitucion || 'INSTITUCIÓN EDUCATIVA' }}
+            </h1>
+
+            <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #e2e8f0;">
+              <h2 style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #1e293b; margin: 0;">
+                ACTA OFICIAL DE ASAMBLEA DE PADRES DE FAMILIA
+              </h2>
+              <p style="font-size: 11px; font-weight: 700; color: #334155; margin-top: 2px; margin-bottom: 0;">
+                Comité de Aula - {{ aulaNombreActual() }} | Año Lectivo {{ anioActual() }}
+              </p>
+            </div>
+          </td>
+        </tr>
+      </table>
     </div>
 
     <!-- Ficha de Datos del Acta -->
@@ -277,40 +303,6 @@
       <p style="font-size: 12px; color: #1e293b; white-space: pre-line; line-height: 1.6; margin: 0;">
         {{ actaParaPdf()?.agendaAcuerdos }}
       </p>
-    </div>
-
-    <!-- Pie de Firmas Oficiales (Comité de Aula 2x2 Tabla Nativa) -->
-    <div style="margin-top: 48px; padding-top: 16px;">
-      <p style="font-size: 10px; text-align: center; color: #64748b; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 0.5px;">
-        En fe de conformidad y ratificación de los acuerdos tomados, firman los miembros del comité de aula:
-      </p>
-
-      <table style="width: 80%; margin: 0 auto; border-collapse: separate; border-spacing: 40px 30px; text-align: center; font-size: 11px;">
-        <tr>
-          <td style="width: 50%; vertical-align: bottom;">
-            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
-            <strong style="display: block; color: #0f172a; font-size: 12px;">Presidente(a)</strong>
-            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().presidente }}</span>
-          </td>
-          <td style="width: 50%; vertical-align: bottom;">
-            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
-            <strong style="display: block; color: #0f172a; font-size: 12px;">Tesorero(a)</strong>
-            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().tesorero }}</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="width: 50%; vertical-align: bottom;">
-            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
-            <strong style="display: block; color: #0f172a; font-size: 12px;">Secretario(a)</strong>
-            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().secretario }}</span>
-          </td>
-          <td style="width: 50%; vertical-align: bottom;">
-            <div style="border-bottom: 1px solid #64748b; height: 30px; margin-bottom: 6px;"></div>
-            <strong style="display: block; color: #0f172a; font-size: 12px;">Vocal</strong>
-            <span style="color: #475569; display: block; margin-top: 2px;">{{ firmasComite().vocal }}</span>
-          </td>
-        </tr>
-      </table>
     </div>
 
     <!-- Pie de página -->
