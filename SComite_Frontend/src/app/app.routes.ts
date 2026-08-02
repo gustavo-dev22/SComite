@@ -83,6 +83,14 @@ export const routes: Routes = [
             {
                 path: 'comunidad/actas',
                 loadComponent: () => import('./features/comite/actas-asamblea/actas-asamblea').then(m => m.ActasAsambleaComponent)
+            },
+            {
+                path: 'aula/anuncios',
+                loadComponent: () => import('./features/apoderado/muros-comunicados/muros-comunicados').then(m => m.MurosComunicadosComponent)
+            },
+            {
+                path: 'aula/cronograma',
+                loadComponent: () => import('./features/apoderado/cronograma-eventos/cronograma-eventos').then(m => m.CronogramaEventosComponent)
             }
         ]
     },

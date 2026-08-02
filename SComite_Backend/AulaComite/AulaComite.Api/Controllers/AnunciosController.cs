@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using AulaComite.Application.Anuncios.Commands;
+﻿using AulaComite.Application.Anuncios.Commands;
 using AulaComite.Application.Anuncios.Queries;
+using AulaComite.Application.Comite.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AulaComite.Api.Controllers
 {
@@ -23,7 +24,6 @@ namespace AulaComite.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Guardar([FromBody] GuardarAnuncioCommand command)
         {
-            // 🚀 Si por alguna razón el usuarioRegistro viene vacío, extraerlo del token JWT / Identity
             var usuarioNombre = !string.IsNullOrWhiteSpace(command.UsuarioRegistro)
                 ? command.UsuarioRegistro
                 : (User.Identity?.Name ?? "Comité de Aula");
@@ -40,6 +40,13 @@ namespace AulaComite.Api.Controllers
             var ok = await _mediator.Send(new EliminarAnuncioCommand(id, aulaId));
             if (!ok) return NotFound(new { message = "No se encontró el comunicado." });
             return Ok(new { message = "Comunicado eliminado correctamente." });
+        }
+
+        [HttpGet("auditoria-vistas/{anuncioId}")]
+        public async Task<IActionResult> GetAuditoriaVistas(int anuncioId)
+        {
+            var result = await _mediator.Send(new GetAuditoriaLecturasAnuncioQuery(anuncioId));
+            return Ok(result);
         }
     }
 }

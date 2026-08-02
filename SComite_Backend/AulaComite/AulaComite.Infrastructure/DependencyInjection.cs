@@ -37,6 +37,7 @@ namespace AulaComite.Infrastructure
             services.AddScoped<IActaAsambleaRepository, ActaAsambleaRepository>();
             services.AddScoped<IInstitucionRepository, InstitucionRepository>();
             services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
+            services.AddScoped<IApoderadoRepository, ApoderadoRepository>();
 
             return services;
         }

@@ -1,1 +1,135 @@
-<p>mis-pagos works!</p>
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Mis Pagos y Pendientes</h1>
+      <p class="text-slate-500 text-sm">Estado de cuenta y notificaciones de pago del comité de aula.</p>
+    </div>
+
+    <!-- 🚀 SELECTOR / CHIPS DE SELECCIÓN DE HIJO SI TIENE MÁS DE 1 -->
+    @if (hijos().length > 1) {
+      <div class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 uppercase px-2">Seleccionar Hijo:</span>
+        @for (hijo of hijos(); track hijo.estudianteId) {
+          <button 
+            (click)="onSeleccionarHijo(hijo.estudianteId)"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+            [ngClass]="hijo.estudianteId === estudianteSeleccionadoId() ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'">
+            {{ hijo.nombreEstudiante }} ({{ hijo.nombreAula }})
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (cargandoHijos() || cargandoCuotas()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 font-semibold animate-pulse">Cargando estado de cuenta del estudiante...</p>
+    </div>
+  } @else if (hijoActual() && resumen()) {
+
+    <!-- FICHA Y MEDIOS DE PAGO ESPECÍFICOS DEL AULA DEL HIJO -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      
+      <!-- Total Pendiente del Hijo -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Pendiente ({{ hijoActual()?.nombreEstudiante }})</span>
+          <span class="text-3xl font-black text-rose-700">S/. {{ resumen()?.totalPendiente | number:'1.2-2' }}</span>
+        </div>
+        @if ((resumen()?.cantidadVencidas || 0) > 0) {
+          <span class="text-xs font-bold text-rose-600 mt-2 block">⚠️ {{ resumen()?.cantidadVencidas }} cuota(s) vencida(s)</span>
+        } @else {
+          <span class="text-xs text-slate-400 mt-2 block">Al día con las cuotas de este salón</span>
+        }
+      </div>
+
+      <!-- Total Pagado del Hijo -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Aportado / Validado</span>
+          <span class="text-3xl font-black text-emerald-700">S/. {{ resumen()?.totalPagado | number:'1.2-2' }}</span>
+        </div>
+        <span class="text-xs text-slate-400 mt-2 block">Verificado por Tesorería del Aula</span>
+      </div>
+
+      <!-- Datos del Tesorero Específico del Aula -->
+      <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-2xl p-5 shadow-sm">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-200 block mb-1">
+          Tesorería Aula {{ hijoActual()?.nombreAula }}
+        </span>
+        <div class="mt-1">
+          <p class="text-sm font-bold">{{ hijoActual()?.tesoreroNombre || 'Tesorero de Aula' }}</p>
+          <p class="text-xs text-indigo-200">
+            📱 Yape / Plin / Cel: <strong class="text-white font-mono text-sm">{{ hijoActual()?.tesoreroTelefono || 'No registrado' }}</strong>
+          </p>
+        </div>
+        <p class="text-[11px] text-indigo-300 mt-3 pt-2 border-t border-indigo-800/80">
+          Notifique sus abonos directo al WhatsApp del Tesorero de esta aula.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- TABLA DE CRONOGRAMA DE CUOTAS DEL ESTUDIANTE -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">
+          Cronograma de Cuotas - {{ hijoActual()?.nombreEstudiante }} ({{ hijoActual()?.nombreAula }})
+        </h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100 text-slate-600 text-xs uppercase font-extrabold border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Concepto</th>
+              <th class="p-3.5">Tipo</th>
+              <th class="p-3.5">Vencimiento</th>
+              <th class="p-3.5 text-right">Monto (S/.)</th>
+              <th class="p-3.5 text-center">Estado</th>
+              <th class="p-3.5 text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-medium">
+            @for (cuota of resumen()?.cuotas; track cuota.cuotaId) {
+              <tr class="hover:bg-slate-50 transition">
+                <td class="p-3.5 font-bold text-slate-900">{{ cuota.concepto }}</td>
+                <td class="p-3.5 text-xs font-bold text-slate-500 uppercase">{{ cuota.tipoCuota }}</td>
+                <td class="p-3.5 text-xs font-semibold text-slate-600">{{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                <td class="p-3.5 text-right font-extrabold text-slate-900">S/. {{ cuota.montoTotalCuota | number:'1.2-2' }}</td>
+                <td class="p-3.5 text-center">
+                  <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase" [ngClass]="getBadgeClass(cuota.estadoVisual)">
+                    {{ cuota.estadoVisual === 'PAGADO' ? '✅ Pagado' : (cuota.estadoVisual === 'VENCIDO' ? '🚨 Vencido' : '⏳ Pendiente') }}
+                  </span>
+                </td>
+                <td class="p-3.5 text-center">
+                  @if (cuota.estadoVisual === 'PAGADO') {
+                    <span class="text-xs text-emerald-700 font-bold">✓ Validado</span>
+                  } @else {
+                    <button 
+                      (click)="notificarPorWhatsApp(cuota)"
+                      class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm cursor-pointer">
+                      <span>📱 Notificar Pago por WhatsApp</span>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="p-8 text-center text-slate-400">No hay cuotas asignadas para este estudiante.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  } @else {
+    <div class="bg-white rounded-2xl p-8 text-center border border-slate-200">
+      <p class="text-slate-500 font-semibold">No se encontraron estudiantes asociados a su usuario de apoderado.</p>
+    </div>
+  }
+
+</div>

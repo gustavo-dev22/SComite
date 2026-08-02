@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { AnuncioComite } from '../models/anuncio.model';
+import { AnuncioComite, ResumenAuditoriaAnuncio } from '../models/anuncio.model';
 
 @Injectable({
   providedIn: 'root',
@@ -21,5 +21,9 @@ export class AnuncioService {
 
   eliminarAnuncio(id: number, aulaId: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
+  }
+
+  getAuditoriaVistas(anuncioId: number): Observable<ResumenAuditoriaAnuncio> {
+    return this.http.get<ResumenAuditoriaAnuncio>(`${this.apiUrl}/auditoria-vistas/${anuncioId}`);
   }
 }

@@ -1,0 +1,106 @@
+<div class="p-6 bg-slate-50 min-h-screen">
+  
+  <!-- Header con selector Multi-hijo (Sin botones de crear/editar) -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-sm">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">Muro de Comunicados Oficiales</h1>
+        <p class="text-slate-500 text-sm">Cartelera digital de avisos, citaciones y notas informativas del Comité.</p>
+      </div>
+    </div>
+
+    <!-- Selector Multi-hijo -->
+    @if (hijos().length > 1) {
+      <div class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 uppercase px-2">Seleccionar Hijo:</span>
+        @for (hijo of hijos(); track hijo.estudianteId) {
+          <button 
+            (click)="onSeleccionarHijo(hijo.estudianteId)"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+            [ngClass]="hijo.estudianteId === estudianteSeleccionadoId() ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'">
+            {{ hijo.nombreEstudiante }} ({{ hijo.nombreAula }})
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (cargandoHijos() || cargandoAnuncios()) {
+    <div class="text-center py-16">
+      <p class="text-slate-500 font-semibold animate-pulse">Cargando comunicados del salón...</p>
+    </div>
+  } @else if (hijoActual()) {
+
+    <!-- FEED DE COMUNICADOS EXCLUSIVO APODERADO -->
+    <div class="max-w-4xl mx-auto space-y-4">
+      @for (a of anuncios(); track a.id) {
+        <div 
+          (click)="marcarComoLeido(a)"
+          (mouseenter)="marcarComoLeido(a)"
+          [class.border-indigo-400]="a.esFijado" 
+          [class.ring-2]="a.esFijado" 
+          [class.ring-indigo-100]="a.esFijado" 
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative transition hover:shadow-md cursor-pointer">
+          
+          <!-- Header de Tarjeta: Categoria y Flag Leído (SIN BOTONES DE ACCIÓN) -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider" [ngClass]="getCategoriaBadgeClass(a.categoria)">
+                {{ a.categoria }}
+              </span>
+              @if (a.esFijado) {
+                <span class="bg-indigo-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  📌 Fijado en el Muro
+                </span>
+              }
+            </div>
+
+            <div>
+              @if (!a.leido) {
+                <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full animate-pulse">
+                  ● Nuevo
+                </span>
+              } @else {
+                <span class="text-xs text-emerald-600 font-bold">✓ Visto</span>
+              }
+            </div>
+          </div>
+
+          <!-- Título y Contenido -->
+          <h2 class="text-lg font-bold text-slate-800 mb-2">{{ a.titulo }}</h2>
+          <p class="text-slate-600 text-sm whitespace-pre-line leading-relaxed mb-4">{{ a.contenido }}</p>
+
+          <!-- Documento Adjunto si existe -->
+          @if (a.urlAdjunto) {
+            <div class="mb-4">
+              <a [href]="a.urlAdjunto" target="_blank" (click)="$event.stopPropagation()" class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-indigo-300 text-indigo-600 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                📎 Ver documento adjunto / Enlace oficial
+              </a>
+            </div>
+          }
+
+          <!-- Footer: Autor y Vistas -->
+          <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-400">
+            <span>Publicado por: <strong class="text-slate-700">{{ a.usuarioRegistro }}</strong></span>
+            
+            <div class="flex items-center gap-3">
+              <span>📅 {{ a.fechaPublicacion | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+
+        </div>
+      } @empty {
+        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <p class="text-slate-400 text-sm">No hay comunicados publicados en el muro para esta aula.</p>
+        </div>
+      }
+    </div>
+
+  }
+
+</div>

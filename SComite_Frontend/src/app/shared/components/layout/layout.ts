@@ -104,7 +104,8 @@ export class LayoutComponent implements OnInit {
       'file-text': 'pi pi-file',
       'layers': 'pi pi-file',
       'trash': 'pi pi-trash',
-      'gift': 'pi pi-gift'
+      'gift': 'pi pi-gift',
+      'message-square': 'pi pi-whatsapp'
     };
 
     return mapaIconos[icono] || `pi pi-${icono}`;

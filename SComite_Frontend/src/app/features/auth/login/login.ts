@@ -65,7 +65,6 @@ export class LoginComponent {
         });
 
         const rutaInicial = this.obtenerRutaInicial(res);
-        console.log('Ruta inicial determinada:', rutaInicial);
         this.router.navigate([rutaInicial]);
       },
       error: (err) => {

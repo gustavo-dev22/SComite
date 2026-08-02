@@ -1,0 +1,33 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
+import { AnuncioApoderado, EventoCronogramaApoderado, HijoApoderado, ResumenPagosApoderado } from '../models/apoderado.model';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ApoderadoService {
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/apoderado`;
+
+  getMisHijos(anio: number): Observable<HijoApoderado[]> {
+    return this.http.get<HijoApoderado[]>(`${this.apiUrl}/mis-hijos?anio=${anio}`);
+  }
+
+  getCuotasPendientes(estudianteId: number, anio: number): Observable<ResumenPagosApoderado> {
+    return this.http.get<ResumenPagosApoderado>(`${this.apiUrl}/cuotas-pendientes?estudianteId=${estudianteId}&anio=${anio}`);
+  }
+
+  getAnunciosMuro(estudianteId: number, anio: number): Observable<AnuncioApoderado[]> {
+    return this.http.get<AnuncioApoderado[]>(`${this.apiUrl}/anuncios-muro?estudianteId=${estudianteId}&anio=${anio}`);
+  }
+
+  marcarLecturaAnuncio(anuncioId: number, estudianteId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/marcar-lectura-anuncio`, { anuncioId, estudianteId });
+  }
+
+  getCronogramaEventos(estudianteId: number, anio: number): Observable<EventoCronogramaApoderado[]> {
+    return this.http.get<EventoCronogramaApoderado[]>(`${this.apiUrl}/cronograma-eventos?estudianteId=${estudianteId}&anio=${anio}`);
+  }
+}

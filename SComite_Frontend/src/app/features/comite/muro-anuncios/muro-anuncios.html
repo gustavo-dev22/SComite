@@ -119,8 +119,18 @@
             
             <div class="flex items-center gap-3">
                 <!-- 🚀 Métrica de Alcance / Vistas -->
-                <span class="inline-flex items-center gap-1 font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full" title="Cantidad de visualizaciones por apoderados">
-                👁️ {{ a.cantidadVistas || a.cantidadVistas || 0 }} vistas
+                <span 
+                  (click)="abrirModalVistas(a)"
+                  class="inline-flex items-center gap-1 font-semibold text-slate-600 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-2.5 py-0.5 rounded-full transition cursor-pointer" 
+                  title="Haz clic para ver la lista de apoderados que leyeron este comunicado">
+                  👁️ 
+                  @if ((a.cantidadVistas || 0) === 0) {
+                    0 visualizaciones
+                  } @else if (a.cantidadVistas === 1) {
+                    1 vista
+                  } @else {
+                    {{ a.cantidadVistas }} vistas
+                  }
                 </span>
                 <span>📅 {{ a.fechaPublicacion | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
@@ -191,6 +201,111 @@
             {{ guardando() ? 'Publicando...' : 'Publicar Comunicado' }}
           </button>
         </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL DE AUDITORÍA Y CONTROL DE VISTAS POR APODERADO -->
+  @if (mostrarModalAuditoria()) {
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-100">
+        
+        <!-- Encabezado Modal -->
+        <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-sm">Control de Confirmación de Lectura</h3>
+            <p class="text-xs text-indigo-200 truncate max-w-lg">{{ anuncioAuditoriaTitulo() }}</p>
+          </div>
+          <button (click)="cerrarModalAuditoria()" class="text-slate-400 hover:text-white transition cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <!-- Filtros y Métricas Rápidas -->
+        <div class="bg-slate-50 p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-1.5">
+            <button 
+              (click)="filtroAuditoria.set('TODOS')"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+              [ngClass]="filtroAuditoria() === 'TODOS' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'">
+              Todos ({{ resumenAuditoria()?.totalEstudiantesAula || 0 }})
+            </button>
+            <button 
+              (click)="filtroAuditoria.set('LEIDOS')"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+              [ngClass]="filtroAuditoria() === 'LEIDOS' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'">
+              Vistas ({{ resumenAuditoria()?.totalLeidos || 0 }})
+            </button>
+            <button 
+              (click)="filtroAuditoria.set('PENDIENTES')"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+              [ngClass]="filtroAuditoria() === 'PENDIENTES' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'">
+              Pendientes ({{ resumenAuditoria()?.totalPendientes || 0 }})
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla de Lecturas con Scroll Normal -->
+        <div class="p-4 max-h-96 overflow-y-auto">
+          @if (cargandoAuditoria()) {
+            <div class="text-center py-12 text-slate-400 font-semibold animate-pulse">
+              Cargando lista de lectura por apoderado...
+            </div>
+          } @else {
+            <table class="w-full text-left text-xs border-collapse">
+              <!-- 🚀 Encabezado estático/normal (Sin sticky) -->
+              <thead class="bg-slate-100 text-slate-700 uppercase font-extrabold">
+                <tr>
+                  <th class="p-3 rounded-l-lg">Estudiante</th>
+                  <th class="p-3">Apoderado / Contacto</th>
+                  <th class="p-3 text-center">Estado</th>
+                  <th class="p-3 text-right rounded-r-lg">Fecha Lectura</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 font-medium">
+                @for (item of lecturasFiltradas(); track item.estudianteId) {
+                  <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-bold text-slate-800">{{ item.nombreEstudiante }}</td>
+                    <td class="p-3 text-slate-600">
+                      <span class="block font-semibold text-slate-800">{{ item.nombreApoderado }}</span>
+                      @if (item.telefonoApoderado) {
+                        <span class="text-[11px] text-emerald-600 font-mono font-bold flex items-center gap-1 mt-0.5">
+                          📱 {{ item.telefonoApoderado }}
+                        </span>
+                      }
+                    </td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                      @if (item.leido) {
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          ✓ Visto
+                        </span>
+                      } @else {
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                          ⏳ Pendiente
+                        </span>
+                      }
+                    </td>
+                    <td class="p-3 text-right text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                      {{ item.fechaLectura ? (item.fechaLectura | date:'dd/MM/yyyy HH:mm') : '-' }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="p-8 text-center text-slate-400 font-medium">No hay registros para mostrar en esta lista.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="p-3 bg-slate-50 border-t border-slate-100 text-right">
+          <button (click)="cerrarModalAuditoria()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer">
+            Cerrar
+          </button>
+        </div>
+
       </div>
     </div>
   }

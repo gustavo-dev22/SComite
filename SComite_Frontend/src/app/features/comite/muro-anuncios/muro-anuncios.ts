@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AnuncioService } from '../../../core/services/anuncio.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
-import { AnuncioComite } from '../../../core/models/anuncio.model';
+import { AnuncioComite, ResumenAuditoriaAnuncio } from '../../../core/models/anuncio.model';
 import { Aula } from '../../../core/models/aula.model';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -44,6 +44,21 @@ export class MuroAnunciosComponent implements OnInit {
 
   tienePeriodoSeleccionado = computed(() => this.periodoSeleccionadoId() !== null && this.periodoSeleccionadoId()! > 0);
   tieneAulaSeleccionada = computed(() => this.aulaSeleccionadaId() !== null && this.aulaSeleccionadaId()! > 0);
+
+  mostrarModalAuditoria = signal<boolean>(false);
+  cargandoAuditoria = signal<boolean>(false);
+  resumenAuditoria = signal<ResumenAuditoriaAnuncio | null>(null);
+  anuncioAuditoriaTitulo = signal<string>('');
+  filtroAuditoria = signal<'TODOS' | 'LEIDOS' | 'PENDIENTES'>('TODOS');
+
+  lecturasFiltradas = computed(() => {
+    const lista = this.resumenAuditoria()?.lecturas || [];
+    const filtro = this.filtroAuditoria();
+
+    if (filtro === 'LEIDOS') return lista.filter(x => x.leido);
+    if (filtro === 'PENDIENTES') return lista.filter(x => !x.leido);
+    return lista;
+  });
 
   ngOnInit(): void {
     this.cargarPeriodos();
@@ -172,5 +187,25 @@ export class MuroAnunciosComponent implements OnInit {
       case 'EVENTO': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
+  }
+
+  abrirModalVistas(anuncio: AnuncioComite): void {
+    this.anuncioAuditoriaTitulo.set(anuncio.titulo);
+    this.mostrarModalAuditoria.set(true);
+    this.cargandoAuditoria.set(true);
+    this.filtroAuditoria.set('TODOS');
+
+    this.anuncioService.getAuditoriaVistas(anuncio.id).subscribe({
+      next: (data) => {
+        this.resumenAuditoria.set(data);
+        this.cargandoAuditoria.set(false);
+      },
+      error: () => this.cargandoAuditoria.set(false)
+    });
+  }
+
+  cerrarModalAuditoria(): void {
+    this.mostrarModalAuditoria.set(false);
+    this.resumenAuditoria.set(null);
   }
 }

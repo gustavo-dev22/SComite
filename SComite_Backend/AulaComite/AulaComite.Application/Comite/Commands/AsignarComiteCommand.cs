@@ -10,6 +10,7 @@ namespace AulaComite.Application.Comite.Commands
         string UsuarioIdSasi,
         string NombreCompleto,
         string Email,
+        string? Celular,
         string Cargo
     ) : IRequest<int>;
 }

@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Data;
-using AulaComite.Domain.Entities;
+﻿using AulaComite.Application.Comite.Dtos;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Domain.Entities;
 using Dapper;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Text;
 
 namespace AulaComite.Infrastructure.Repositories
 {
@@ -46,6 +47,16 @@ namespace AulaComite.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure
             );
             return rows > 0;
+        }
+
+        public async Task<IEnumerable<AuditoriaLecturaDto>> ObtenerAuditoriaLecturasAsync(int anuncioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.QueryAsync<AuditoriaLecturaDto>(
+                "sp_Comite_ObtenerAuditoriaLecturasAnuncio",
+                new { AnuncioId = anuncioId },
+                commandType: CommandType.StoredProcedure
+            );
         }
     }
 }
