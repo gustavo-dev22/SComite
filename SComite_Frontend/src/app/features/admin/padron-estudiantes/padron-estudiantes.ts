@@ -9,6 +9,7 @@ import { Estudiante } from '../../../core/models/estudiante.model';
 import { UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-padron-estudiantes',
@@ -46,6 +47,11 @@ export class PadronEstudiantesComponent implements OnInit {
     nombreApoderado: [''],
     telefonoApoderado: ['']
   });
+
+  modalCargaMasivaAbierto = signal<boolean>(false);
+  procesandoArchivo = signal<boolean>(false);
+  registrosPrevios = signal<any[]>([]);
+  nombreArchivoCargado = signal<string>('');
 
   ngOnInit(): void {
     this.cargarPeriodos();
@@ -236,6 +242,136 @@ export class PadronEstudiantesComponent implements OnInit {
           },
           error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo desactivar.', 'error')
         });
+      }
+    });
+  }
+
+  /* CARGA MASIVA */
+
+  abrirModalCargaMasiva(): void {
+    if (!this.aulaSeleccionada()) {
+      Swal.fire('Atención', 'Debe seleccionar un aula antes de realizar la carga masiva.', 'warning');
+      return;
+    }
+    this.registrosPrevios.set([]);
+    this.nombreArchivoCargado.set('');
+    this.modalCargaMasivaAbierto.set(true);
+  }
+
+  cerrarModalCargaMasiva(): void {
+    this.modalCargaMasivaAbierto.set(false);
+    this.registrosPrevios.set([]);
+  }
+
+  // 🚀 1. Generar y Descargar Plantilla Excel (.xlsx) Nativa
+  descargarPlantillaExcel(): void {
+    const dataPlantilla = [
+      {
+        TipoDocumento: 'DNI',
+        NumeroDocumento: '74839201',
+        Nombres: 'JUAN CARLOS',
+        ApellidoPaterno: 'GARCIA',
+        ApellidoMaterno: 'PEREZ',
+        NombreApoderado: 'PEDRO GARCIA PEREZ', // 👈 Nombre tal como figura en SASI (Opcional)
+        TelefonoApoderado: '987654321'
+      },
+      {
+        TipoDocumento: 'DNI',
+        NumeroDocumento: '71234567',
+        Nombres: 'MARIA FERNANDA',
+        ApellidoPaterno: 'TORRES',
+        ApellidoMaterno: 'LOPEZ',
+        NombreApoderado: '',
+        TelefonoApoderado: ''
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(dataPlantilla);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Estudiantes');
+
+    worksheet['!cols'] = [
+      { wch: 15 }, { wch: 18 }, { wch: 22 }, { wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 18 }
+    ];
+
+    XLSX.writeFile(workbook, 'Plantilla_Importacion_Estudiantes.xlsx');
+  }
+
+  // 🚀 2. Lectura y procesamiento de archivos Excel (.xlsx / .xls) y CSV
+  onArchivoSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.nombreArchivoCargado.set(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      const jsonResult: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+      const estudiantesParsed = jsonResult.map((row: any) => ({
+        tipoDocumento: String(row.TipoDocumento || row.tipoDocumento || 'DNI').trim(),
+        numeroDocumento: String(row.NumeroDocumento || row.numeroDocumento || '').trim(),
+        nombres: String(row.Nombres || row.nombres || '').trim().toUpperCase(),
+        apellidoPaterno: String(row.ApellidoPaterno || row.apellidoPaterno || '').trim().toUpperCase(),
+        apellidoMaterno: String(row.ApellidoMaterno || row.apellidoMaterno || '').trim().toUpperCase(),
+        usuarioIdApoderadoSasi: String(row.UsuarioIdApoderadoSasi || row.usuarioIdApoderadoSasi || '').trim(),
+        nombreApoderado: String(row.NombreApoderado || row.nombreApoderado || '').trim(),
+        telefonoApoderado: String(row.TelefonoApoderado || row.telefonoApoderado || '').trim()
+      }));
+
+      this.registrosPrevios.set(estudiantesParsed);
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+
+  // 🚀 3. Envío al backend y despliegue del Reporte de Resultados SWAL
+  procesarCargaMasiva(): void {
+    const lista = this.registrosPrevios();
+    if (lista.length === 0 || !this.aulaSeleccionada()) return;
+
+    this.procesandoArchivo.set(true);
+
+    this.estudianteService.cargaMasiva(this.aulaSeleccionada()!, lista).subscribe({
+      next: (res) => {
+        this.procesandoArchivo.set(false);
+        this.cerrarModalCargaMasiva();
+
+        // Construcción del reporte de detalles
+        let detallesHtml = `
+          <div class="text-left text-xs font-sans mt-3">
+            <p class="mb-2"><strong>Procesados:</strong> ${res.registrosProcesados} | <strong>Insertados:</strong> <span class="text-emerald-600 font-bold">${res.registrosInsertados}</span> | <strong>Omitidos:</strong> <span class="text-rose-600 font-bold">${res.registrosOmitidos}</span></p>
+        `;
+
+        if (res.detallesObservaciones && res.detallesObservaciones.length > 0) {
+          detallesHtml += `
+            <div class="max-h-40 overflow-y-auto bg-slate-100 p-2.5 rounded-lg border border-slate-200 font-mono text-[11px] space-y-1 text-slate-700">
+              ${res.detallesObservaciones.map((obs: string) => `<div>• ${obs}</div>`).join('')}
+            </div>
+          `;
+        }
+        detallesHtml += `</div>`;
+
+        Swal.fire({
+          icon: res.registrosInsertados > 0 ? 'success' : 'warning',
+          title: 'Resultado de la Carga Masiva',
+          html: detallesHtml,
+          confirmButtonColor: '#2563eb'
+        });
+
+        this.cargarEstudiantes(this.aulaSeleccionada()!);
+      },
+      error: (err) => {
+        this.procesandoArchivo.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo completar la carga masiva.', 'error');
       }
     });
   }

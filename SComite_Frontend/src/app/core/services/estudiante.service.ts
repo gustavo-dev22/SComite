@@ -26,4 +26,8 @@ export class EstudianteService {
   eliminarEstudiante(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
+
+  cargaMasiva(aulaId: number, estudiantes: any[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/carga-masiva`, { aulaId, estudiantes });
+  }
 }

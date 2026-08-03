@@ -5,6 +5,7 @@ using AulaComite.Application.Common.Interfaces;
 using AulaComite.Domain.Entities;
 using Dapper;
 using System.Data;
+using AulaComite.Application.Estudiantes.Dtos;
 
 namespace AulaComite.Infrastructure.Repositories
 {
@@ -80,6 +81,45 @@ namespace AulaComite.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure
             );
             return rows > 0;
+        }
+
+        public async Task<int> CargaMasivaEstudiantesAsync(int aulaId, IEnumerable<EstudianteImportacionItemDto> listaEstudiantes)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+
+            var dt = new DataTable();
+            dt.Columns.Add("TipoDocumento", typeof(string));
+            dt.Columns.Add("NumeroDocumento", typeof(string));
+            dt.Columns.Add("Nombres", typeof(string));
+            dt.Columns.Add("ApellidoPaterno", typeof(string));
+            dt.Columns.Add("ApellidoMaterno", typeof(string));
+            dt.Columns.Add("UsuarioIdApoderadoSasi", typeof(string));
+            dt.Columns.Add("NombreApoderado", typeof(string));
+            dt.Columns.Add("TelefonoApoderado", typeof(string));
+
+            foreach (var item in listaEstudiantes)
+            {
+                dt.Rows.Add(
+                    item.TipoDocumento,
+                    item.NumeroDocumento,
+                    item.Nombres,
+                    item.ApellidoPaterno,
+                    item.ApellidoMaterno,
+                    item.UsuarioIdApoderadoSasi ?? (object)DBNull.Value,
+                    item.NombreApoderado ?? (object)DBNull.Value,
+                    item.TelefonoApoderado ?? (object)DBNull.Value
+                );
+            }
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@AulaId", aulaId);
+            parameters.Add("@Estudiantes", dt.AsTableValuedParameter("EstudianteCargaMasivaType"));
+
+            return await connection.ExecuteScalarAsync<int>(
+                "sp_Estudiantes_CargaMasiva",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
         }
     }
 }

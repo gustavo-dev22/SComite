@@ -49,5 +49,12 @@ namespace AulaComite.Api.Controllers
 
             return Ok(new { mensaje = "Estudiante desactivado del padrón." });
         }
+
+        [HttpPost("carga-masiva")]
+        public async Task<IActionResult> CargaMasiva([FromBody] CargaMasivaEstudiantesCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
     }
 }

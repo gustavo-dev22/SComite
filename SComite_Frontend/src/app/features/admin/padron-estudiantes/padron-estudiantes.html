@@ -7,13 +7,25 @@
       <p class="text-sm text-slate-500">Listado de alumnos matriculados y sus apoderados asignados</p>
     </div>
 
-    <button 
-      (click)="abrirModalCrear()"
-      [disabled]="!aulaSeleccionada()"
-      class="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm">
-      <i class="pi pi-user-plus"></i>
-      <span>Nuevo Estudiante</span>
-    </button>
+    <div class="flex items-center gap-2">
+      <!-- 🚀 BOTÓN CARGA MASIVA EXCEL/CSV -->
+      <button 
+        (click)="abrirModalCargaMasiva()"
+        [disabled]="!aulaSeleccionada()"
+        class="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm cursor-pointer">
+        <i class="pi pi-file-excel"></i>
+        <span>Carga Masiva</span>
+      </button>
+
+      <!-- BOTÓN NUEVO ESTUDIANTE INDIVIDUAL -->
+      <button 
+        (click)="abrirModalCrear()"
+        [disabled]="!aulaSeleccionada()"
+        class="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm cursor-pointer">
+        <i class="pi pi-user-plus"></i>
+        <span>Nuevo Estudiante</span>
+      </button>
+    </div>
   </div>
 
   <!-- FILTROS DE PERIODO Y AULA -->
@@ -222,6 +234,98 @@
           </div>
 
         </form>
+
+      </div>
+    </div>
+  }
+
+  <!-- MODAL CARGA MASIVA EXCEL / CSV -->
+  @if (modalCargaMasivaAbierto()) {
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100">
+        
+        <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <i class="pi pi-file-excel text-emerald-400 text-lg"></i>
+            <h3 class="font-bold text-sm">Carga Masiva de Estudiantes (Excel / CSV)</h3>
+          </div>
+          <button (click)="cerrarModalCargaMasiva()" class="text-slate-400 hover:text-white cursor-pointer"><i class="pi pi-times"></i></button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          
+          <!-- Paso 1: Descargar Excel -->
+          <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-indigo-900 uppercase block mb-0.5">Paso 1: Descargar Plantilla Excel</span>
+              <p class="text-xs text-indigo-700">Descargue el modelo .xlsx con las columnas requeridas y DNI de Apoderado.</p>
+            </div>
+            <button 
+              (click)="descargarPlantillaExcel()" 
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+              <i class="pi pi-download"></i> Descargar Excel (.xlsx)
+            </button>
+          </div>
+
+          <!-- Drag and Drop Excel -->
+          <div class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 text-center bg-slate-50 transition cursor-pointer relative">
+            <input 
+              type="file" 
+              accept=".xlsx, .xls, .csv" 
+              (change)="onArchivoSeleccionado($event)" 
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+            
+            <i class="pi pi-cloud-upload text-3xl text-emerald-600 mb-2 block"></i>
+            <span class="text-xs font-bold text-slate-700 block mb-1">
+              {{ nombreArchivoCargado() ? nombreArchivoCargado() : 'Haga clic o arrastre aquí su archivo Excel (.xlsx / .xls)' }}
+            </span>
+            <span class="text-[11px] text-slate-400 block">Soporta archivos de Excel nativo (.xlsx, .xls) y CSV</span>
+          </div>
+
+          <!-- Vista Previa -->
+          @if (registrosPrevios().length > 0) {
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-bold text-slate-700 uppercase">Vista Previa ({{ registrosPrevios().length }} filas leídas):</span>
+              </div>
+              
+              <div class="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-100 text-slate-600 font-bold uppercase sticky top-0">
+                    <tr>
+                      <th class="p-2">Documento</th>
+                      <th class="p-2">Estudiante</th>
+                      <th class="p-2">DNI Apoderado</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                    @for (r of registrosPrevios().slice(0, 5); track $index) {
+                      <tr>
+                        <td class="p-2 font-mono">{{ r.tipoDocumento }}: {{ r.numeroDocumento }}</td>
+                        <td class="p-2 font-bold">{{ r.apellidoPaterno }} {{ r.apellidoMaterno }}, {{ r.nombres }}</td>
+                        <td class="p-2 text-slate-600 font-mono">{{ r.dniApoderado || 'Sin apoderado' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+
+        </div>
+
+        <div class="flex justify-end gap-3 p-4 bg-slate-50 border-t border-slate-100">
+          <button (click)="cerrarModalCargaMasiva()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+            Cancelar
+          </button>
+          <button 
+            (click)="procesarCargaMasiva()" 
+            [disabled]="registrosPrevios().length === 0 || procesandoArchivo()" 
+            class="px-5 py-2 text-xs bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+            <i class="pi" [ngClass]="procesandoArchivo() ? 'pi-spin pi-spinner' : 'pi-check-circle'"></i>
+            <span>{{ procesandoArchivo() ? 'Importando...' : 'Confirmar e Importar' }}</span>
+          </button>
+        </div>
 
       </div>
     </div>
