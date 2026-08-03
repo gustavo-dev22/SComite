@@ -91,6 +91,10 @@ export const routes: Routes = [
             {
                 path: 'aula/cronograma',
                 loadComponent: () => import('./features/apoderado/cronograma-eventos/cronograma-eventos').then(m => m.CronogramaEventosComponent)
+            },
+            {
+                path: 'aula/documentos',
+                loadComponent: () => import('./features/apoderado/actas-documentos/actas-documentos').then(m => m.ActasDocumentosComponent)
             }
         ]
     },

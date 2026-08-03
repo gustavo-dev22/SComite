@@ -66,5 +66,15 @@ namespace AulaComite.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure
             );
         }
+
+        public async Task<IEnumerable<ActaApoderadoDto>> ObtenerActasAprobadasAsync(int estudianteId, int anioLectivo)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.QueryAsync<ActaApoderadoDto>(
+                "sp_Apoderado_ObtenerActasYDocumentos",
+                new { EstudianteId = estudianteId, AnioLectivo = anioLectivo },
+                commandType: CommandType.StoredProcedure
+            );
+        }
     }
 }

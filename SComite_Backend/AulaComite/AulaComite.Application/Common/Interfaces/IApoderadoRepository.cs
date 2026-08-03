@@ -12,5 +12,6 @@ namespace AulaComite.Application.Common.Interfaces
         Task<IEnumerable<AnuncioApoderadoDto>> ObtenerAnunciosMuroAsync(int estudianteId, int anioLectivo);
         Task RegistrarLecturaAnuncioAsync(int anuncioId, int estudianteId, string usuarioApoderado);
         Task<IEnumerable<EventoCronogramaApoderadoDto>> ObtenerCronogramaEventosAsync(int estudianteId, int anioLectivo);
+        Task<IEnumerable<ActaApoderadoDto>> ObtenerActasAprobadasAsync(int estudianteId, int anioLectivo);
     }
 }

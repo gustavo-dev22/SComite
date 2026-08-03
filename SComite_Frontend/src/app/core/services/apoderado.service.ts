@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { AnuncioApoderado, EventoCronogramaApoderado, HijoApoderado, ResumenPagosApoderado } from '../models/apoderado.model';
+import { ActaApoderado, AnuncioApoderado, EventoCronogramaApoderado, HijoApoderado, ResumenPagosApoderado } from '../models/apoderado.model';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -29,5 +29,9 @@ export class ApoderadoService {
 
   getCronogramaEventos(estudianteId: number, anio: number): Observable<EventoCronogramaApoderado[]> {
     return this.http.get<EventoCronogramaApoderado[]>(`${this.apiUrl}/cronograma-eventos?estudianteId=${estudianteId}&anio=${anio}`);
+  }
+
+  getActasAprobadas(estudianteId: number, anio: number): Observable<ActaApoderado[]> {
+    return this.http.get<ActaApoderado[]>(`${this.apiUrl}/actas-aprobadas?estudianteId=${estudianteId}&anio=${anio}`);
   }
 }

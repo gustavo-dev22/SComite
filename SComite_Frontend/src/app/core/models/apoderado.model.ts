@@ -56,3 +56,16 @@ export interface EventoCronogramaApoderado {
   cuotaSugeridaPorAlumno: number;
   estado: string; // PLANIFICADA, EN_PROCESO, FINALIZADA, CANCELADA
 }
+
+export interface ActaApoderado {
+  id: number;
+  aulaId: number;
+  numeroActa: string;
+  titulo: string;
+  fechaReunion: string;
+  agendaAcuerdos: string;
+  estadoActa: string;
+  urlDocumentoPdf?: string;
+  usuarioRegistro: string;
+  fechaRegistro: string;
+}

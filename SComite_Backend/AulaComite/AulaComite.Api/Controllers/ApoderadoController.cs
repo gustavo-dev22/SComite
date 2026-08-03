@@ -63,5 +63,15 @@ namespace AulaComite.Api.Controllers
             var result = await _mediator.Send(new GetCronogramaEventosApoderadoQuery(estudianteId, anio));
             return Ok(result);
         }
+
+        /// <summary>
+        /// Obtiene el libro de actas de asamblea aprobadas para el estudiante
+        /// </summary>
+        [HttpGet("actas-aprobadas")]
+        public async Task<IActionResult> GetActasAprobadas([FromQuery] int estudianteId, [FromQuery] int anio)
+        {
+            var result = await _mediator.Send(new GetActasAprobadasApoderadoQuery(estudianteId, anio));
+            return Ok(result);
+        }
     }
 }
