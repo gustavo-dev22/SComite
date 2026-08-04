@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using AulaComite.Application.Common.Interfaces;
+﻿using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Cuotas.Dtos;
 using AulaComite.Application.Cuotas.Queries;
 using MediatR;
-using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Cuotas.Handlers
 {
-    public class GetCuotasPorAulaQueryHandler : IRequestHandler<GetCuotasPorAulaQuery, IEnumerable<Cuota>>
+    public class GetCuotasPorAulaQueryHandler : IRequestHandler<GetCuotasPorAulaQuery, IEnumerable<CuotaDto>>
     {
         private readonly ICuotaRepository _repository;
 
@@ -17,9 +14,29 @@ namespace AulaComite.Application.Cuotas.Handlers
             _repository = repository;
         }
 
-        public async Task<IEnumerable<Cuota>> Handle(GetCuotasPorAulaQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<CuotaDto>> Handle(GetCuotasPorAulaQuery request, CancellationToken cancellationToken)
         {
-            return await _repository.ObtenerPorAulaAsync(request.AulaId);
+            var cuotas = await _repository.ObtenerPorAulaAsync(request.AulaId);
+
+            return cuotas.Select(c => new CuotaDto
+            {
+                Id = c.Id,
+                AulaId = c.AulaId,
+                ActividadId = c.ActividadId,
+                Concepto = c.Concepto,
+                MontoIndividual = c.MontoIndividual,
+                FechaVencimiento = c.FechaVencimiento,
+                Estado = c.Estado,
+                Observacion = c.Observacion,
+                FechaCreacion = c.FechaCreacion,
+                TipoCuota = c.TipoCuota,
+                MesCorrespondiente = c.MesCorrespondiente,
+                TotalEstudiantesAsignados = c.TotalEstudiantesAsignados,
+                TotalMontoEsperado = c.TotalMontoEsperado,
+                TotalMontoRecaudado = c.TotalMontoRecaudado,
+                EstudiantesAlDia = c.EstudiantesAlDia,
+                EstudiantesPendientes = c.EstudiantesPendientes
+            });
         }
     }
 }

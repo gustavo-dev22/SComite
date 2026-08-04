@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using AulaComite.Application.Common.Interfaces;
+﻿using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Gastos.Dtos;
 using AulaComite.Application.Gastos.Queries;
-using AulaComite.Domain.Entities;
 using MediatR;
 
 namespace AulaComite.Application.Gastos.Handlers
 {
-    public class GetGastosPorAulaQueryHandler : IRequestHandler<GetGastosPorAulaQuery, IEnumerable<GastoComite>>
+    public class GetGastosPorAulaQueryHandler : IRequestHandler<GetGastosPorAulaQuery, IEnumerable<GastoComiteDto>>
     {
         private readonly IGastoRepository _repository;
 
@@ -17,9 +14,25 @@ namespace AulaComite.Application.Gastos.Handlers
             _repository = repository;
         }
 
-        public async Task<IEnumerable<GastoComite>> Handle(GetGastosPorAulaQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<GastoComiteDto>> Handle(GetGastosPorAulaQuery request, CancellationToken cancellationToken)
         {
-            return await _repository.ObtenerPorAulaAsync(request.AulaId);
+            var gastos = await _repository.ObtenerPorAulaAsync(request.AulaId);
+
+            return gastos.Select(g => new GastoComiteDto
+            {
+                Id = g.Id,
+                AulaId = g.AulaId,
+                Concepto = g.Concepto,
+                Categoria = g.Categoria,
+                Monto = g.Monto,
+                FechaGasto = g.FechaGasto,
+                TipoComprobante = g.TipoComprobante,
+                NumeroComprobante = g.NumeroComprobante,
+                Proveedor = g.Proveedor,
+                Observacion = g.Observacion,
+                UsuarioRegistro = g.UsuarioRegistro,
+                FechaRegistro = g.FechaRegistro
+            });
         }
     }
 }

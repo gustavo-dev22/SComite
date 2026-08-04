@@ -41,6 +41,8 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Eliminar(int id)
         {
             bool exito = await _mediator.Send(new DeleteGastoCommand(id));
+            if (!exito) return NotFound(new { mensaje = "No se encontró el gasto a eliminar." });
+
             return Ok(new { exito, mensaje = "Gasto eliminado de la caja." });
         }
 

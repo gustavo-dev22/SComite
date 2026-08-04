@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using AulaComite.Application.Common.Interfaces;
+﻿using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Estudiantes.Dtos;
 using AulaComite.Application.Estudiantes.Queries;
 using MediatR;
-using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Estudiantes.Handlers
 {
-    public class GetEstudiantesPorAulaQueryHandler : IRequestHandler<GetEstudiantesPorAulaQuery, IEnumerable<Estudiante>>
+    public class GetEstudiantesPorAulaQueryHandler : IRequestHandler<GetEstudiantesPorAulaQuery, IEnumerable<EstudianteDto>>
     {
         private readonly IEstudianteRepository _repository;
 
@@ -17,9 +14,26 @@ namespace AulaComite.Application.Estudiantes.Handlers
             _repository = repository;
         }
 
-        public async Task<IEnumerable<Estudiante>> Handle(GetEstudiantesPorAulaQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<EstudianteDto>> Handle(GetEstudiantesPorAulaQuery request, CancellationToken cancellationToken)
         {
-            return await _repository.ObtenerPorAulaAsync(request.AulaId);
+            var estudiantes = await _repository.ObtenerPorAulaAsync(request.AulaId);
+
+            return estudiantes.Select(e => new EstudianteDto
+            {
+                Id = e.Id,
+                AulaId = e.AulaId,
+                TipoDocumento = e.TipoDocumento,
+                NumeroDocumento = e.NumeroDocumento,
+                Nombres = e.Nombres,
+                ApellidoPaterno = e.ApellidoPaterno,
+                ApellidoMaterno = e.ApellidoMaterno,
+                NombreCompleto = e.NombreCompleto,
+                UsuarioIdApoderadoSasi = e.UsuarioIdApoderadoSasi,
+                NombreApoderado = e.NombreApoderado,
+                TelefonoApoderado = e.TelefonoApoderado,
+                Estado = e.Estado,
+                FechaRegistro = e.FechaRegistro
+            });
         }
     }
 }

@@ -5,6 +5,7 @@ using AulaComite.Infrastructure;
 using AulaComite.Infrastructure.Persistence;
 using AulaComite.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -36,11 +37,17 @@ try
     builder.Services.AddOpenApi();
 
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-    var secretKey = jwtSettings["SecretKey"] ?? "Tu_Clave_Super_Segura_Y_Secreta_De_AulaComite_2026_123456";
+    var secretKey = jwtSettings["SecretKey"]
+        ?? throw new InvalidOperationException("JwtSettings:SecretKey no está configurado.");
+    var issuer = jwtSettings["Issuer"]
+        ?? throw new InvalidOperationException("JwtSettings:Issuer no está configurado.");
+    var audience = jwtSettings["Audience"]
+        ?? throw new InvalidOperationException("JwtSettings:Audience no está configurado.");
 
     builder.Services.AddHttpClient<ISasiAuthService, SasiAuthService>(client =>
     {
-        var baseUrl = builder.Configuration["SasiSettings:BaseUrl"] ?? "https://localhost:44337/SASI/api/";
+        var baseUrl = builder.Configuration["SasiSettings:BaseUrl"]
+            ?? throw new InvalidOperationException("SasiSettings:BaseUrl no está configurado.");
         client.BaseAddress = new Uri(baseUrl);
         client.DefaultRequestHeaders.Add("Accept", "application/json");
     });
@@ -52,30 +59,41 @@ try
     })
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false;
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
             ValidateIssuer = true,
-            ValidIssuer = jwtSettings["Issuer"],
+            ValidIssuer = issuer,
             ValidateAudience = true,
-            ValidAudience = jwtSettings["Audience"],
+            ValidAudience = audience,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
+    });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.FallbackPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
     });
 
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
+    var allowedOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? Array.Empty<string>();
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("CorsAngularPolicy", policy =>
         {
-            policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200", "http://localhost:4202")
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader();
         });
@@ -91,7 +109,7 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();
+        app.MapOpenApi().AllowAnonymous();
         app.MapScalarApiReference(options =>
         {
             options
@@ -108,19 +126,23 @@ try
     app.MapControllers();
     app.UseStaticFiles();
 
-    // Aplicar Migraciones Automáticas en el arranque
-    using (var scope = app.Services.CreateScope())
+    // Aplicar Migraciones Automáticas en el arranque SOLO en Desarrollo.
+    // En Producción las migraciones se aplican vía CI/CD o herramientas dedicadas.
+    if (app.Environment.IsDevelopment())
     {
-        var services = scope.ServiceProvider;
-        try
+        using (var scope = app.Services.CreateScope())
         {
-            var context = services.GetRequiredService<ApplicationDbContext>();
-            context.Database.Migrate();
-            Log.Information("Migraciones de la base de datos verificadas/aplicadas correctamente.");
-        }
-        catch (Exception ex)
-        {
-            Log.Warning("Atención al verificar migraciones: {Message}", ex.Message);
+            var services = scope.ServiceProvider;
+            try
+            {
+                var context = services.GetRequiredService<ApplicationDbContext>();
+                context.Database.Migrate();
+                Log.Information("Migraciones de la base de datos verificadas/aplicadas correctamente.");
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Atención al verificar migraciones: {Message}", ex.Message);
+            }
         }
     }
 

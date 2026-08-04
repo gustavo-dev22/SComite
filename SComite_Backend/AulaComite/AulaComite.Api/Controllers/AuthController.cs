@@ -1,5 +1,6 @@
 ﻿using AulaComite.Application.Common.Interfaces;
 using AulaComite.Application.Common.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AulaComite.Api.Controllers
@@ -16,6 +17,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
             var result = await _sasiAuthService.AutenticarAsync(request);

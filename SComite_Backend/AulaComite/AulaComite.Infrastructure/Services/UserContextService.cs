@@ -4,7 +4,6 @@ using System.Text;
 using AulaComite.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace AulaComite.Infrastructure.Services
 {
@@ -22,50 +21,17 @@ namespace AulaComite.Infrastructure.Services
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return "Sistema";
 
-            // 🔍 DEBUG 1: Verificar si ClaimsPrincipal detectó la identidad
-            if (httpContext.User?.Identity?.IsAuthenticated == true)
-            {
-                var claimName = httpContext.User.FindFirst("nombreCompleto")?.Value
-                             ?? httpContext.User.FindFirst(ClaimTypes.Name)?.Value
-                             ?? httpContext.User.FindFirst(ClaimTypes.Email)?.Value
-                             ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // Identidad proviene del ClaimsPrincipal autenticado por JwtBearer,
+            // ya validado por .NET (firma, issuer, audience y expiración).
+            var user = httpContext.User;
+            if (user?.Identity?.IsAuthenticated != true) return "Anónimo";
 
-                if (!string.IsNullOrEmpty(claimName)) return claimName;
-            }
+            var value = user.FindFirst("nombreCompleto")?.Value
+                     ?? user.FindFirst(ClaimTypes.Name)?.Value
+                     ?? user.FindFirst(ClaimTypes.Email)?.Value
+                     ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            // 🚀 FALLBACK / DECODIFICADOR MANUAL DE TOKEN SASI:
-            // Si .NET no ha autenticado la request vía middleware, leemos manualmente el Bearer Token
-            var authHeader = httpContext.Request.Headers["Authorization"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    var token = authHeader.Substring("Bearer ".Length).Trim();
-                    var handler = new JwtSecurityTokenHandler();
-
-                    if (handler.CanReadToken(token))
-                    {
-                        var jwtToken = handler.ReadJwtToken(token);
-
-                        // Extraer claims típicas enviadas por SASI
-                        var nombreCompleto = jwtToken.Claims.FirstOrDefault(c => c.Type == "nombreCompleto")?.Value
-                                          ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value
-                                          ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value
-                                          ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-
-                        if (!string.IsNullOrEmpty(nombreCompleto))
-                        {
-                            return nombreCompleto;
-                        }
-                    }
-                }
-                catch
-                {
-                    // Si el token no es válido o expiró, continúa al valor por defecto
-                }
-            }
-
-            return "Anónimo";
+            return string.IsNullOrEmpty(value) ? "Anónimo" : value;
         }
 
         public string ObtenerIpCliente()

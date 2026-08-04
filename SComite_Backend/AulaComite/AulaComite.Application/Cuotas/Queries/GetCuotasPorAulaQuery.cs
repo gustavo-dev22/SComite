@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using AulaComite.Application.Cuotas.Dtos;
 using MediatR;
-using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Cuotas.Queries
 {
-    public record GetCuotasPorAulaQuery(int AulaId) : IRequest<IEnumerable<Cuota>>;
+    public record GetCuotasPorAulaQuery(int AulaId) : IRequest<IEnumerable<CuotaDto>>;
 }

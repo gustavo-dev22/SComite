@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using AulaComite.Application.Common.Interfaces;
+using FluentValidation;
 
 namespace AulaComite.Api.Middlewares
 {
@@ -23,6 +24,23 @@ namespace AulaComite.Api.Middlewares
             }
             catch (Exception ex)
             {
+                if (ex is ValidationException validationException)
+                {
+                    context.Response.ContentType = "application/json";
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+                    var validationResponse = new
+                    {
+                        statusCode = context.Response.StatusCode,
+                        mensaje = "La solicitud no es válida.",
+                        errores = validationException.Errors
+                            .Select(e => new { campo = e.PropertyName, mensaje = e.ErrorMessage })
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(validationResponse));
+                    return;
+                }
+
                 _logger.LogError(ex, "Excepción capturada en {Path}: {Message}", context.Request.Path, ex.Message);
 
                 // 1. Persistir el log de error en SQL Server vía Stored Procedure
@@ -70,8 +88,7 @@ namespace AulaComite.Api.Middlewares
             var response = new
             {
                 statusCode = context.Response.StatusCode,
-                mensaje = "Ha ocurrido un error interno en el servidor.",
-                detalle = exception.Message // Puedes ocultar esto en producción
+                mensaje = "Ha ocurrido un error interno en el servidor."
             };
 
             return context.Response.WriteAsync(JsonSerializer.Serialize(response));

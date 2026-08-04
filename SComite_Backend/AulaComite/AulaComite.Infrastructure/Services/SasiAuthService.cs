@@ -14,8 +14,9 @@ namespace AulaComite.Infrastructure.Services
         public SasiAuthService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            var configVal = configuration["SasiSettings:SistemaId"];
-            _sistemaIdTarget = !string.IsNullOrEmpty(configVal) ? int.Parse(configVal) : 7;
+            var configVal = configuration["SasiSettings:SistemaId"]
+                ?? throw new InvalidOperationException("SasiSettings:SistemaId no está configurado.");
+            _sistemaIdTarget = int.Parse(configVal);
         }
 
         public async Task<AuthResultDto> AutenticarAsync(LoginRequestDto request)
@@ -69,7 +70,7 @@ namespace AulaComite.Infrastructure.Services
             try
             {
                 var response = await _httpClient.GetFromJsonAsync<SasiResponseDto<List<UsuarioSasiDto>>>(
-                    "sistemas/por-sistema-y-rol?sistemaId=7&rolNombre=Apoderado");
+                    $"sistemas/por-sistema-y-rol?sistemaId={_sistemaIdTarget}&rolNombre=Apoderado");
 
                 return response?.Datos ?? new List<UsuarioSasiDto>();
             }

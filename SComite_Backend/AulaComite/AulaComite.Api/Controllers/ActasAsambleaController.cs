@@ -30,15 +30,15 @@ namespace AulaComite.Api.Controllers
             var commandFinal = command with { UsuarioRegistro = usuarioNombre };
 
             var id = await _mediator.Send(commandFinal);
-            return Ok(new { id, message = "Acta de asamblea registrada correctamente." });
+            return Ok(new { id, mensaje = "Acta de asamblea registrada correctamente." });
         }
 
         [HttpDelete("{id:int}/aula/{aulaId:int}")]
         public async Task<IActionResult> Eliminar(int id, int aulaId)
         {
             var ok = await _mediator.Send(new EliminarActaCommand(id, aulaId));
-            if (!ok) return NotFound(new { message = "No se encontró el acta especificada." });
-            return Ok(new { message = "Acta eliminada correctamente." });
+            if (!ok) return NotFound(new { mensaje = "No se encontró el acta especificada." });
+            return Ok(new { mensaje = "Acta eliminada correctamente." });
         }
 
         [HttpGet("aula/{aulaId:int}/siguiente-numero")]

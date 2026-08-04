@@ -32,13 +32,6 @@ namespace AulaComite.Api.Controllers
             return Ok(result);
         }
 
-        [HttpGet("test-error")]
-        public IActionResult ProvocarErrorSimulado()
-        {
-            // Forzamos una excepción de división por cero o un throw explícito
-            throw new InvalidOperationException("Prueba de auditoría: Error provocado intencionalmente para validar el ExceptionHandlingMiddleware.");
-        }
-
         [HttpPost]
         public async Task<IActionResult> RegistrarLog([FromBody] CreateLogCommand command)
         {

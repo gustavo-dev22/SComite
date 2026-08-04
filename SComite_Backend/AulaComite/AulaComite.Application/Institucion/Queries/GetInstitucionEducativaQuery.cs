@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using AulaComite.Domain.Entities;
+﻿using AulaComite.Application.Institucion.Dtos;
 using MediatR;
 
 namespace AulaComite.Application.Institucion.Queries
 {
-    public record GetInstitucionEducativaQuery() : IRequest<InstitucionEducativa?>;
+    public record GetInstitucionEducativaQuery() : IRequest<InstitucionEducativaDto>;
 }

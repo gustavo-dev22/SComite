@@ -1,4 +1,5 @@
 ﻿using AulaComite.Application.Aulas.Commands;
+using AulaComite.Application.Aulas.Dtos;
 using AulaComite.Application.Aulas.Queries;
 using AulaComite.Application.Common.Interfaces;
 using MediatR;
@@ -29,7 +30,18 @@ namespace AulaComite.Api.Controllers
         [HttpGet("periodos")]
         public async Task<IActionResult> GetPeriodos()
         {
-            var result = await _aulaRepository.ObtenerPeriodosAsync();
+            var periodos = await _aulaRepository.ObtenerPeriodosAsync();
+
+            var result = periodos.Select(p => new PeriodoLectivoDto
+            {
+                Id = p.Id,
+                Anio = p.Anio,
+                Nombre = p.Nombre,
+                EsActivo = p.EsActivo,
+                FechaInicio = p.FechaInicio,
+                FechaFin = p.FechaFin
+            });
+
             return Ok(result);
         }
 

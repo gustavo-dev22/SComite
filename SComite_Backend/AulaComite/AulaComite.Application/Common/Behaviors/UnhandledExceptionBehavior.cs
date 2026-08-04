@@ -1,8 +1,6 @@
-﻿using MediatR;
+﻿using AulaComite.Application.Common.Logging;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AulaComite.Application.Common.Behaviors
 {
@@ -24,7 +22,8 @@ namespace AulaComite.Application.Common.Behaviors
             catch (Exception ex)
             {
                 var requestName = typeof(TRequest).Name;
-                _logger.LogError(ex, "Request Error: Excepción no controlada para la petición {Name} {@Request}", requestName, request);
+                // 🚀 Registra el error sin exponer datos sensibles del request
+                _logger.LogError(ex, "Request Error: Excepción no controlada para la petición {Name} {Request}", requestName, RequestLogSanitizer.Sanitizar(request));
                 throw;
             }
         }

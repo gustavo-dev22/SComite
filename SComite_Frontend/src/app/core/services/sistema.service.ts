@@ -10,8 +10,8 @@ export class SistemaService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/sistema`;
 
-  resetBaseDeDatos(confirmacionTexto: string): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/reset-database`, { confirmacionTexto });
+  resetBaseDeDatos(confirmacionTexto: string): Observable<{ success: boolean; mensaje: string }> {
+    return this.http.post<{ success: boolean; mensaje: string }>(`${this.apiUrl}/reset-database`, { confirmacionTexto });
   }
 
   descargarBackupManual(): Observable<Blob> {

@@ -14,7 +14,9 @@ namespace AulaComite.Infrastructure
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            // 🚀 Registrar DbContext para Entity Framework (Migraciones)
+            // 🚀 Registrar DbContext para Entity Framework. SOLO se usa para generar/aplicar
+            // migraciones (design-time y arranque en Desarrollo). Toda la lectura/escritura
+            // de datos en tiempo de ejecución se realiza con Dapper vía IDbConnectionFactory.
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
 

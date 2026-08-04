@@ -1,8 +1,6 @@
-﻿using MediatR;
+﻿using AulaComite.Application.Common.Logging;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AulaComite.Application.Common.Behaviors
 {
@@ -19,12 +17,11 @@ namespace AulaComite.Application.Common.Behaviors
         {
             var requestName = typeof(TRequest).Name;
 
-            // 🚀 Registra automáticamente el inicio de CUALQUIER comando o consulta
-            _logger.LogInformation("Procesando Solicitud CQRS: {Name} {@Request}", requestName, request);
+            // 🚀 Registra el inicio de la petición sin incluir datos sensibles (claves, tokens, contraseñas)
+            _logger.LogInformation("Procesando Solicitud CQRS: {Name} {Request}", requestName, RequestLogSanitizer.Sanitizar(request));
 
             var response = await next();
 
-            // 🚀 Registra la finalización
             _logger.LogInformation("Solicitud CQRS Completada: {Name}", requestName);
 
             return response;

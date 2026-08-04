@@ -27,15 +27,15 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Guardar([FromBody] GuardarActividadCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, message = "Actividad guardada correctamente." });
+            return Ok(new { id, mensaje = "Actividad guardada correctamente." });
         }
 
         [HttpDelete("{id}/aula/{aulaId}")]
         public async Task<IActionResult> Eliminar(int id, int aulaId)
         {
             var ok = await _mediator.Send(new EliminarActividadCommand(id, aulaId));
-            if (!ok) return NotFound(new { message = "No se encontró la actividad a eliminar." });
-            return Ok(new { message = "Actividad eliminada correctamente." });
+            if (!ok) return NotFound(new { mensaje = "No se encontró la actividad a eliminar." });
+            return Ok(new { mensaje = "Actividad eliminada correctamente." });
         }
     }
 }

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using AulaComite.Application.Comite.Dtos;
 using MediatR;
-using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Comite.Queries
 {
-    public record GetComitePorAulaQuery(int AulaId) : IRequest<IEnumerable<ComiteIntegrante>>;
+    public record GetComitePorAulaQuery(int AulaId) : IRequest<IEnumerable<ComiteIntegranteDto>>;
 }

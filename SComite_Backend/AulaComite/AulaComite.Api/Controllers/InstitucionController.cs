@@ -32,7 +32,7 @@ namespace AulaComite.Api.Controllers
             var ok = await _mediator.Send(commandFinal);
             var configuracionActual = await _mediator.Send(new GetInstitucionEducativaQuery());
 
-            return Ok(new { success = ok, message = "Datos de la Institución Educativa guardados correctamente.", fechaActualizacion = configuracionActual?.FechaActualizacion, usuarioActualizacion = usuarioNombre });
+            return Ok(new { exito = ok, mensaje = "Datos de la Institución Educativa guardados correctamente.", fechaActualizacion = configuracionActual?.FechaActualizacion, usuarioActualizacion = usuarioNombre });
         }
     }
 }

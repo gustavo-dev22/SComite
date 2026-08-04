@@ -59,12 +59,12 @@ export class MantenimientoSistemaComponent {
       next: (res) => {
         this.procesandoReset.set(false);
         this.cerrarModal();
-        alert('✅ ' + res.message);
+        alert('✅ ' + res.mensaje);
         window.location.reload(); // Recargar la aplicación limpia
       },
       error: (err) => {
         this.procesandoReset.set(false);
-        this.mensajeResultado.set(err.error?.message || 'Error al intentar reiniciar la base de datos.');
+        this.mensajeResultado.set(err.error?.mensaje || 'Error al intentar reiniciar la base de datos.');
       }
     });
   }

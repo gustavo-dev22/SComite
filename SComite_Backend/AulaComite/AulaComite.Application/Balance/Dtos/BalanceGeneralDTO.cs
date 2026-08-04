@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Balance.Dtos
 {
     public record BalanceGeneralDTO(
-        BalanceConsolidado Consolidado,
-        IEnumerable<GastoCategoriaResumen> GastosPorCategoria,
+        BalanceConsolidadoDto Consolidado,
+        IEnumerable<GastoCategoriaResumenDto> GastosPorCategoria,
         IEnumerable<GastoComiteDTO> GastosDetalle
     );
 }

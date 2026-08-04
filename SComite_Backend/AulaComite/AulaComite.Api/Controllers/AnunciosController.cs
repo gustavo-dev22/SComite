@@ -31,15 +31,15 @@ namespace AulaComite.Api.Controllers
             var commandFinal = command with { UsuarioRegistro = usuarioNombre };
 
             var id = await _mediator.Send(commandFinal);
-            return Ok(new { id, message = "Comunicado publicado correctamente." });
+            return Ok(new { id, mensaje = "Comunicado publicado correctamente." });
         }
 
         [HttpDelete("{id:int}/aula/{aulaId:int}")]
         public async Task<IActionResult> Eliminar(int id, int aulaId)
         {
             var ok = await _mediator.Send(new EliminarAnuncioCommand(id, aulaId));
-            if (!ok) return NotFound(new { message = "No se encontró el comunicado." });
-            return Ok(new { message = "Comunicado eliminado correctamente." });
+            if (!ok) return NotFound(new { mensaje = "No se encontró el comunicado." });
+            return Ok(new { mensaje = "Comunicado eliminado correctamente." });
         }
 
         [HttpGet("auditoria-vistas/{anuncioId}")]
