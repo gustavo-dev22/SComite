@@ -12,11 +12,13 @@ namespace AulaComite.Application.Periodos.Handlers
     {
         private readonly IPeriodoRepository _repository;
         private readonly ILogRepository _logRepository;
+        private readonly IDbConnectionFactory _connectionFactory;
 
-        public CreatePeriodoCommandHandler(IPeriodoRepository repository, ILogRepository logRepository)
+        public CreatePeriodoCommandHandler(IPeriodoRepository repository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
         {
             _repository = repository;
             _logRepository = logRepository;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<int> Handle(CreatePeriodoCommand request, CancellationToken cancellationToken)
@@ -29,14 +31,20 @@ namespace AulaComite.Application.Periodos.Handlers
                 EsActivo = request.EsActivo
             };
 
-            int id = await _repository.CrearAsync(p);
+            int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
+            {
+                int periodoId = await _repository.CrearAsync(p, transaction);
 
-            await _logRepository.RegistrarAsync(
-                nivel: "INFO",
-                modulo: "PERIODOS",
-                accion: "CREAR_PERIODO",
-                mensaje: $"Se creó el Año Lectivo {request.Anio} (Vigente: {request.EsActivo}) con rango de fechas {request.FechaInicio:dd/MM/yyyy} - {request.FechaFin:dd/MM/yyyy}."
-            );
+                await _logRepository.RegistrarAsync(
+                    nivel: "INFO",
+                    modulo: "PERIODOS",
+                    accion: "CREAR_PERIODO",
+                    mensaje: $"Se creó el Año Lectivo {request.Anio} (Vigente: {request.EsActivo}) con rango de fechas {request.FechaInicio:dd/MM/yyyy} - {request.FechaFin:dd/MM/yyyy}.",
+                    transaction: transaction
+                );
+
+                return periodoId;
+            });
 
             return id;
         }

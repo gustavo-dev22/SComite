@@ -17,20 +17,28 @@ namespace AulaComite.Infrastructure.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<int> CrearAsync(PeriodoLectivo p)
+        public async Task<int> CrearAsync(PeriodoLectivo p, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            return await connection.ExecuteScalarAsync<int>(
-                "sp_Periodos_Crear",
-                new
-                {
-                    Anio = p.Anio,
-                    FechaInicio = p.FechaInicio,
-                    FechaFin = p.FechaFin,
-                    EsActivo = p.EsActivo
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                return await connection.ExecuteScalarAsync<int>(
+                    "sp_Periodos_Crear",
+                    new
+                    {
+                        Anio = p.Anio,
+                        FechaInicio = p.FechaInicio,
+                        FechaFin = p.FechaFin,
+                        EsActivo = p.EsActivo
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<bool> ActualizarAsync(PeriodoLectivo p)

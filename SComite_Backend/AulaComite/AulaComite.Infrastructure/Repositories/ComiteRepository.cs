@@ -27,21 +27,29 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
-        public async Task<int> AsignarIntegranteAsync(ComiteIntegrante integrante)
+        public async Task<int> AsignarIntegranteAsync(ComiteIntegrante integrante, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            return await connection.ExecuteScalarAsync<int>(
-                "sp_Comite_AsignarIntegrante",
-                new
-                {
-                    AulaId = integrante.AulaId,
-                    UsuarioIdSasi = integrante.UsuarioIdSasi,
-                    NombreCompleto = integrante.NombreCompleto,
-                    Email = integrante.Email,
-                    Cargo = integrante.Cargo
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                return await connection.ExecuteScalarAsync<int>(
+                    "sp_Comite_AsignarIntegrante",
+                    new
+                    {
+                        AulaId = integrante.AulaId,
+                        UsuarioIdSasi = integrante.UsuarioIdSasi,
+                        NombreCompleto = integrante.NombreCompleto,
+                        Email = integrante.Email,
+                        Cargo = integrante.Cargo
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<bool> EliminarIntegranteAsync(int id)

@@ -11,26 +11,34 @@ namespace AulaComite.Application.Estudiantes.Handlers
     {
         private readonly IEstudianteRepository _repository;
         private readonly ILogRepository _logRepository;
+        private readonly IDbConnectionFactory _connectionFactory;
 
-        public DeleteEstudianteCommandHandler(IEstudianteRepository repository, ILogRepository logRepository)
+        public DeleteEstudianteCommandHandler(IEstudianteRepository repository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
         {
             _repository = repository;
             _logRepository = logRepository;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<bool> Handle(DeleteEstudianteCommand request, CancellationToken cancellationToken)
         {
-            bool resultado = await _repository.EliminarEstudianteLogicoAsync(request.Id);
-
-            if (resultado)
+            bool resultado = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                await _logRepository.RegistrarAsync(
-                    nivel: "WARNING",
-                    modulo: "ESTUDIANTES",
-                    accion: "DESACTIVAR_ESTUDIANTE",
-                    mensaje: $"El estudiante con ID #{request.Id} fue cambiado a estado Inactivo/Retirado."
-                );
-            }
+                bool eliminado = await _repository.EliminarEstudianteLogicoAsync(request.Id, transaction);
+
+                if (eliminado)
+                {
+                    await _logRepository.RegistrarAsync(
+                        nivel: "WARNING",
+                        modulo: "ESTUDIANTES",
+                        accion: "DESACTIVAR_ESTUDIANTE",
+                        mensaje: $"El estudiante con ID #{request.Id} fue cambiado a estado Inactivo/Retirado.",
+                        transaction: transaction
+                    );
+                }
+
+                return eliminado;
+            });
 
             return resultado;
         }

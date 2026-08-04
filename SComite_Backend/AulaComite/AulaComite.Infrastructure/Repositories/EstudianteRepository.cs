@@ -28,25 +28,33 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
-        public async Task<int> CrearEstudianteAsync(Estudiante e)
+        public async Task<int> CrearEstudianteAsync(Estudiante e, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            return await connection.ExecuteScalarAsync<int>(
-                "sp_Estudiantes_Crear",
-                new
-                {
-                    AulaId = e.AulaId,
-                    TipoDocumento = e.TipoDocumento,
-                    NumeroDocumento = e.NumeroDocumento,
-                    Nombres = e.Nombres,
-                    ApellidoPaterno = e.ApellidoPaterno,
-                    ApellidoMaterno = e.ApellidoMaterno,
-                    UsuarioIdApoderadoSasi = e.UsuarioIdApoderadoSasi,
-                    NombreApoderado = e.NombreApoderado,
-                    TelefonoApoderado = e.TelefonoApoderado
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                return await connection.ExecuteScalarAsync<int>(
+                    "sp_Estudiantes_Crear",
+                    new
+                    {
+                        AulaId = e.AulaId,
+                        TipoDocumento = e.TipoDocumento,
+                        NumeroDocumento = e.NumeroDocumento,
+                        Nombres = e.Nombres,
+                        ApellidoPaterno = e.ApellidoPaterno,
+                        ApellidoMaterno = e.ApellidoMaterno,
+                        UsuarioIdApoderadoSasi = e.UsuarioIdApoderadoSasi,
+                        NombreApoderado = e.NombreApoderado,
+                        TelefonoApoderado = e.TelefonoApoderado
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<bool> ActualizarEstudianteAsync(Estudiante e)
@@ -72,15 +80,23 @@ namespace AulaComite.Infrastructure.Repositories
             return rows > 0;
         }
 
-        public async Task<bool> EliminarEstudianteLogicoAsync(int id)
+        public async Task<bool> EliminarEstudianteLogicoAsync(int id, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.ExecuteAsync(
-                "sp_Estudiantes_EliminarLogico",
-                new { Id = id },
-                commandType: CommandType.StoredProcedure
-            );
-            return rows > 0;
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                var rows = await connection.ExecuteAsync(
+                    "sp_Estudiantes_EliminarLogico",
+                    new { Id = id },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+                return rows > 0;
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<int> CargaMasivaEstudiantesAsync(int aulaId, IEnumerable<EstudianteImportacionItemDto> listaEstudiantes)

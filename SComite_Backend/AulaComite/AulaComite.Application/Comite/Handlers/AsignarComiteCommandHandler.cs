@@ -13,12 +13,14 @@ namespace AulaComite.Application.Comite.Handlers
         private readonly IComiteRepository _repository;
         private readonly IAulaRepository _aulaRepository;
         private readonly ILogRepository _logRepository;
+        private readonly IDbConnectionFactory _connectionFactory;
 
-        public AsignarComiteCommandHandler(IComiteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository)
+        public AsignarComiteCommandHandler(IComiteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
         {
             _repository = repository;
             _aulaRepository = aulaRepository;
             _logRepository = logRepository;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<int> Handle(AsignarComiteCommand request, CancellationToken cancellationToken)
@@ -31,8 +33,6 @@ namespace AulaComite.Application.Comite.Handlers
                 Email = request.Email,
                 Cargo = request.Cargo.ToUpper()
             };
-
-            int id = await _repository.AsignarIntegranteAsync(integrante);
 
             // 🚀 1. Obtener detalles descriptivos para el mensaje de auditoría
             var aula = await _aulaRepository.ObtenerPorIdAsync(request.AulaId);
@@ -48,12 +48,20 @@ namespace AulaComite.Application.Comite.Handlers
             // 🚀 2. Construir el mensaje legible
             string mensajeLegible = $"Se asignó el cargo de '{request.Cargo.ToUpper()}' al apoderado \"{nombreApoderado}\" para el Aula {aulaNombre}.";
 
-            await _logRepository.RegistrarAsync(
-                nivel: "INFO",
-                modulo: "COMITE",
-                accion: "ASIGNAR_CARGO",
-                mensaje: mensajeLegible
-            );
+            int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
+            {
+                int integranteId = await _repository.AsignarIntegranteAsync(integrante, transaction);
+
+                await _logRepository.RegistrarAsync(
+                    nivel: "INFO",
+                    modulo: "COMITE",
+                    accion: "ASIGNAR_CARGO",
+                    mensaje: mensajeLegible,
+                    transaction: transaction
+                );
+
+                return integranteId;
+            });
 
             return id;
         }

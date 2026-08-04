@@ -17,26 +17,34 @@ namespace AulaComite.Infrastructure.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<int> RegistrarAsync(GastoComite gasto)
+        public async Task<int> RegistrarAsync(GastoComite gasto, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            return await connection.ExecuteScalarAsync<int>(
-                "sp_Gastos_Registrar",
-                new
-                {
-                    gasto.AulaId,
-                    gasto.Concepto,
-                    gasto.Categoria,
-                    gasto.Monto,
-                    gasto.FechaGasto,
-                    gasto.TipoComprobante,
-                    gasto.NumeroComprobante,
-                    gasto.Proveedor,
-                    gasto.Observacion,
-                    gasto.UsuarioRegistro
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                return await connection.ExecuteScalarAsync<int>(
+                    "sp_Gastos_Registrar",
+                    new
+                    {
+                        gasto.AulaId,
+                        gasto.Concepto,
+                        gasto.Categoria,
+                        gasto.Monto,
+                        gasto.FechaGasto,
+                        gasto.TipoComprobante,
+                        gasto.NumeroComprobante,
+                        gasto.Proveedor,
+                        gasto.Observacion,
+                        gasto.UsuarioRegistro
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<IEnumerable<GastoComite>> ObtenerPorAulaAsync(int aulaId)
@@ -61,14 +69,22 @@ namespace AulaComite.Infrastructure.Repositories
             return resumen ?? new ResumenCajaAula();
         }
 
-        public async Task EliminarAsync(int gastoId)
+        public async Task EliminarAsync(int gastoId, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync(
-                "sp_Gastos_Eliminar",
-                new { GastoId = gastoId },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                await connection.ExecuteAsync(
+                    "sp_Gastos_Eliminar",
+                    new { GastoId = gastoId },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<ResumenCajaAula> ObtenerBalanceMensualCajaAsync(int aulaId, int anioLectivo, int? mes)

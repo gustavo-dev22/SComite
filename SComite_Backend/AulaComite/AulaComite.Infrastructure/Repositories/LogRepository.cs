@@ -19,27 +19,35 @@ namespace AulaComite.Infrastructure.Repositories
             _userContextService = userContextService;
         }
 
-        public async Task RegistrarAsync(string nivel, string modulo, string accion, string mensaje, string? usuario = null, string? ip = null, string? exception = null)
+        public async Task RegistrarAsync(string nivel, string modulo, string accion, string mensaje, string? usuario = null, string? ip = null, string? exception = null, IDbTransaction? transaction = null)
         {
             // 🚀 Si no se especifica usuario e IP manualmente, los extraemos automáticamente del token/HTTP
             string usuarioFinal = !string.IsNullOrEmpty(usuario) ? usuario : _userContextService.ObtenerUsuarioActual();
             string ipFinal = !string.IsNullOrEmpty(ip) ? ip : _userContextService.ObtenerIpCliente();
 
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync(
-                "sp_Logs_Registrar",
-                new
-                {
-                    Nivel = nivel,
-                    Modulo = modulo,
-                    Accion = accion,
-                    Usuario = usuarioFinal,
-                    IP = ipFinal,
-                    Mensaje = mensaje,
-                    DetalleException = exception
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                await connection.ExecuteAsync(
+                    "sp_Logs_Registrar",
+                    new
+                    {
+                        Nivel = nivel,
+                        Modulo = modulo,
+                        Accion = accion,
+                        Usuario = usuarioFinal,
+                        IP = ipFinal,
+                        Mensaje = mensaje,
+                        DetalleException = exception
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<PagedResultDto<LogSistema>> ObtenerFiltradosAsync(DateTime? fechaInicio, DateTime? fechaFin, string? nivel, string? modulo, string? busqueda, int pagina, int tamanoPagina)

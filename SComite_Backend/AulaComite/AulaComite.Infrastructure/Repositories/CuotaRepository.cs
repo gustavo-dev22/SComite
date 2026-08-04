@@ -17,22 +17,30 @@ namespace AulaComite.Infrastructure.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<int> CrearCuotaMasivaAsync(Cuota cuota)
+        public async Task<int> CrearCuotaMasivaAsync(Cuota cuota, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            return await connection.ExecuteScalarAsync<int>(
-                "sp_Cuotas_Crear",
-                new
-                {
-                    cuota.AulaId,
-                    cuota.Concepto,
-                    cuota.MontoIndividual,
-                    cuota.FechaVencimiento,
-                    cuota.Observacion,
-                    cuota.ActividadId
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                return await connection.ExecuteScalarAsync<int>(
+                    "sp_Cuotas_Crear",
+                    new
+                    {
+                        cuota.AulaId,
+                        cuota.Concepto,
+                        cuota.MontoIndividual,
+                        cuota.FechaVencimiento,
+                        cuota.Observacion,
+                        cuota.ActividadId
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<IEnumerable<Cuota>> ObtenerPorAulaAsync(int aulaId)
@@ -45,22 +53,30 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
-        public async Task GenerarProgramacionMensualAsync(int aulaId, string conceptoBase, decimal montoMensual, int mesInicio, int diaVencimiento, int anioLectivo)
+        public async Task GenerarProgramacionMensualAsync(int aulaId, string conceptoBase, decimal montoMensual, int mesInicio, int diaVencimiento, int anioLectivo, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync(
-                "sp_Cuotas_GenerarProgramacionMensual",
-                new
-                {
-                    AulaId = aulaId,
-                    ConceptoBase = conceptoBase,
-                    MontoMensual = montoMensual,
-                    MesInicio = mesInicio,
-                    DiaVencimiento = diaVencimiento,
-                    AnioLectivo = anioLectivo
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                await connection.ExecuteAsync(
+                    "sp_Cuotas_GenerarProgramacionMensual",
+                    new
+                    {
+                        AulaId = aulaId,
+                        ConceptoBase = conceptoBase,
+                        MontoMensual = montoMensual,
+                        MesInicio = mesInicio,
+                        DiaVencimiento = diaVencimiento,
+                        AnioLectivo = anioLectivo
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
         public async Task<IEnumerable<CuotaEstudianteCobro>> ObtenerDetalleCobroEstudiantesAsync(int cuotaId)
@@ -73,24 +89,40 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
-        public async Task RegistrarPagoManualAsync(int cuotaDetalleId, decimal montoAbonado, string formaPago)
+        public async Task RegistrarPagoManualAsync(int cuotaDetalleId, decimal montoAbonado, string formaPago, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync(
-                "sp_Cuotas_RegistrarPagoManual",
-                new { CuotaDetalleId = cuotaDetalleId, MontoAbonado = montoAbonado, FormaPago = formaPago },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                await connection.ExecuteAsync(
+                    "sp_Cuotas_RegistrarPagoManual",
+                    new { CuotaDetalleId = cuotaDetalleId, MontoAbonado = montoAbonado, FormaPago = formaPago },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
 
-        public async Task AnularPagoEstudianteAsync(int cuotaDetalleId)
+        public async Task AnularPagoEstudianteAsync(int cuotaDetalleId, IDbTransaction? transaction = null)
         {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.ExecuteAsync(
-                "sp_Cuotas_AnularPagoEstudiante",
-                new { CuotaDetalleId = cuotaDetalleId },
-                commandType: CommandType.StoredProcedure
-            );
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                await connection.ExecuteAsync(
+                    "sp_Cuotas_AnularPagoEstudiante",
+                    new { CuotaDetalleId = cuotaDetalleId },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
         }
     }
 }

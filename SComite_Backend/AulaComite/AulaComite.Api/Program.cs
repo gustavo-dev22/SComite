@@ -6,12 +6,14 @@ using AulaComite.Infrastructure.Persistence;
 using AulaComite.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 
 // 1. Inicializar Serilog desde appsettings
 Log.Logger = new LoggerConfiguration()
@@ -103,17 +105,44 @@ try
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
+    // Limitar intentos de inicio de sesión por IP para mitigar ataques de fuerza bruta.
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        options.AddPolicy("LoginLimiter", httpContext =>
+        {
+            var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+        });
+    });
+
     var allowedOrigins = builder.Configuration
         .GetSection("Cors:AllowedOrigins")
         .Get<string[]>() ?? Array.Empty<string>();
 
+    // Entorno de Producción: permitir el mismo-origen cuando no se configuran orígenes
+    // externos, evitando exponer el API a un CORS "comodín" no deseado.
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("CorsAngularPolicy", policy =>
         {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            if (allowedOrigins.Length > 0)
+            {
+                policy.WithOrigins(allowedOrigins)
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
+            else
+            {
+                policy.SetIsOriginAllowed(origin => false);
+            }
         });
     });
 
@@ -138,6 +167,7 @@ try
     }
 
     app.UseHttpsRedirection();
+    app.UseRateLimiter();
     app.UseCors("CorsAngularPolicy");
     app.UseAuthentication();
     app.UseAuthorization();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 using AulaComite.Application.Estudiantes.Dtos;
 using AulaComite.Domain.Entities;
@@ -9,9 +10,9 @@ namespace AulaComite.Application.Common.Interfaces
     public interface IEstudianteRepository
     {
         Task<IEnumerable<Estudiante>> ObtenerPorAulaAsync(int aulaId);
-        Task<int> CrearEstudianteAsync(Estudiante estudiante);
+        Task<int> CrearEstudianteAsync(Estudiante estudiante, IDbTransaction? transaction = null);
         Task<bool> ActualizarEstudianteAsync(Estudiante estudiante);
-        Task<bool> EliminarEstudianteLogicoAsync(int id);
+        Task<bool> EliminarEstudianteLogicoAsync(int id, IDbTransaction? transaction = null);
         Task<int> CargaMasivaEstudiantesAsync(int aulaId, IEnumerable<EstudianteImportacionItemDto> listaEstudiantes);
     }
 }

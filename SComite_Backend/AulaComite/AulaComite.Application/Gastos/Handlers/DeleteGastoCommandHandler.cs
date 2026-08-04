@@ -12,23 +12,29 @@ namespace AulaComite.Application.Gastos.Handlers
     {
         private readonly IGastoRepository _repository;
         private readonly ILogRepository _logRepository;
+        private readonly IDbConnectionFactory _connectionFactory;
 
-        public DeleteGastoCommandHandler(IGastoRepository repository, ILogRepository logRepository)
+        public DeleteGastoCommandHandler(IGastoRepository repository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
         {
             _repository = repository;
             _logRepository = logRepository;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<bool> Handle(DeleteGastoCommand request, CancellationToken cancellationToken)
         {
-            await _repository.EliminarAsync(request.GastoId);
+            await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
+            {
+                await _repository.EliminarAsync(request.GastoId, transaction);
 
-            await _logRepository.RegistrarAsync(
-                nivel: "WARN",
-                modulo: "TESORERIA",
-                accion: "ELIMINAR_GASTO",
-                mensaje: $"Se eliminó el registro de gasto #{request.GastoId} de la caja del aula."
-            );
+                await _logRepository.RegistrarAsync(
+                    nivel: "WARN",
+                    modulo: "TESORERIA",
+                    accion: "ELIMINAR_GASTO",
+                    mensaje: $"Se eliminó el registro de gasto #{request.GastoId} de la caja del aula.",
+                    transaction: transaction
+                );
+            });
 
             return true;
         }

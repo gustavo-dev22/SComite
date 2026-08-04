@@ -11,11 +11,13 @@ namespace AulaComite.Api.Controllers
     {
         private readonly IMediator _mediator;
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<SistemaController> _logger;
 
-        public SistemaController(IMediator mediator, IWebHostEnvironment env)
+        public SistemaController(IMediator mediator, IWebHostEnvironment env, ILogger<SistemaController> logger)
         {
             _mediator = mediator;
             _env = env;
+            _logger = logger;
         }
 
         [HttpPost("reset-database")]
@@ -34,7 +36,8 @@ namespace AulaComite.Api.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { mensaje = ex.Message });
+                _logger.LogError(ex, "Error al resetear la base de datos: {Message}", ex.Message);
+                return BadRequest(new { mensaje = "No se pudo completar la operación de reseteo. Verifique los logs internos." });
             }
         }
 

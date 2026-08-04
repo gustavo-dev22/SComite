@@ -13,12 +13,14 @@ namespace AulaComite.Application.Estudiantes.Handlers
         private readonly IEstudianteRepository _repository;
         private readonly IAulaRepository _aulaRepository;
         private readonly ILogRepository _logRepository;
+        private readonly IDbConnectionFactory _connectionFactory;
 
-        public CreateEstudianteCommandHandler(IEstudianteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository)
+        public CreateEstudianteCommandHandler(IEstudianteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
         {
             _repository = repository;
             _aulaRepository = aulaRepository;
             _logRepository = logRepository;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<int> Handle(CreateEstudianteCommand request, CancellationToken cancellationToken)
@@ -36,8 +38,6 @@ namespace AulaComite.Application.Estudiantes.Handlers
                 TelefonoApoderado = request.TelefonoApoderado
             };
 
-            int id = await _repository.CrearEstudianteAsync(e);
-
             // 🚀 1. Obtener los datos del Aula para construir el display unificado
             var aula = await _aulaRepository.ObtenerPorIdAsync(request.AulaId);
             string aulaDisplay = aula != null
@@ -47,12 +47,20 @@ namespace AulaComite.Application.Estudiantes.Handlers
             // 🚀 2. Armar el mensaje legible con el Apoderado y el Aula
             string mensajeLegible = $"Se registró al estudiante {request.ApellidoPaterno} {request.ApellidoMaterno}, {request.Nombres} ({request.TipoDocumento}: {request.NumeroDocumento}) con apoderado \"{request.NombreApoderado}\" en el Aula {aulaDisplay}.";
 
-            await _logRepository.RegistrarAsync(
-                nivel: "INFO",
-                modulo: "ESTUDIANTES",
-                accion: "CREAR_ESTUDIANTE",
-                mensaje: mensajeLegible
-            );
+            int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
+            {
+                int estudianteId = await _repository.CrearEstudianteAsync(e, transaction);
+
+                await _logRepository.RegistrarAsync(
+                    nivel: "INFO",
+                    modulo: "ESTUDIANTES",
+                    accion: "CREAR_ESTUDIANTE",
+                    mensaje: mensajeLegible,
+                    transaction: transaction
+                );
+
+                return estudianteId;
+            });
 
             return id;
         }

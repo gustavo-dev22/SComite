@@ -13,15 +13,18 @@ namespace AulaComite.Application.Cuotas.Handlers
         private readonly ICuotaRepository _cuotaRepository;
         private readonly IAulaRepository _aulaRepository;
         private readonly ILogRepository _logRepository;
+        private readonly IDbConnectionFactory _connectionFactory;
 
         public CreateCuotaCommandHandler(
             ICuotaRepository cuotaRepository,
             IAulaRepository aulaRepository,
-            ILogRepository logRepository)
+            ILogRepository logRepository,
+            IDbConnectionFactory connectionFactory)
         {
             _cuotaRepository = cuotaRepository;
             _aulaRepository = aulaRepository;
             _logRepository = logRepository;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<int> Handle(CreateCuotaCommand request, CancellationToken cancellationToken)
@@ -36,18 +39,24 @@ namespace AulaComite.Application.Cuotas.Handlers
                 ActividadId = request.ActividadId
             };
 
-            int id = await _cuotaRepository.CrearCuotaMasivaAsync(cuota);
-
             // Obtener datos del aula para el Log legible
             var aula = await _aulaRepository.ObtenerPorIdAsync(request.AulaId);
             string aulaDisplay = aula != null ? $"{aula.Nivel} - {aula.Grado}° \"{aula.Seccion}\"" : $"Aula #{request.AulaId}";
 
-            await _logRepository.RegistrarAsync(
-                nivel: "INFO",
-                modulo: "TESORERIA",
-                accion: "CREAR_CUOTA",
-                mensaje: $"Se aperturó la cuota '{request.Concepto.ToUpper()}' por S/. {request.MontoIndividual:F2} para el Aula {aulaDisplay} (Vence: {request.FechaVencimiento:dd/MM/yyyy})."
-            );
+            int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
+            {
+                int cuotaId = await _cuotaRepository.CrearCuotaMasivaAsync(cuota, transaction);
+
+                await _logRepository.RegistrarAsync(
+                    nivel: "INFO",
+                    modulo: "TESORERIA",
+                    accion: "CREAR_CUOTA",
+                    mensaje: $"Se aperturó la cuota '{request.Concepto.ToUpper()}' por S/. {request.MontoIndividual:F2} para el Aula {aulaDisplay} (Vence: {request.FechaVencimiento:dd/MM/yyyy}).",
+                    transaction: transaction
+                );
+
+                return cuotaId;
+            });
 
             return id;
         }

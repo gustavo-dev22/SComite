@@ -14,17 +14,20 @@ namespace AulaComite.Application.Gastos.Handlers
         private readonly IAulaRepository _aulaRepository;
         private readonly IUserContextService _userContextService;
         private readonly ILogRepository _logRepository;
+        private readonly IDbConnectionFactory _connectionFactory;
 
         public CreateGastoCommandHandler(
             IGastoRepository gastoRepository,
             IAulaRepository aulaRepository,
             IUserContextService userContextService,
-            ILogRepository logRepository)
+            ILogRepository logRepository,
+            IDbConnectionFactory connectionFactory)
         {
             _gastoRepository = gastoRepository;
             _aulaRepository = aulaRepository;
             _userContextService = userContextService;
             _logRepository = logRepository;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<int> Handle(CreateGastoCommand request, CancellationToken cancellationToken)
@@ -45,17 +48,23 @@ namespace AulaComite.Application.Gastos.Handlers
                 UsuarioRegistro = usuario
             };
 
-            int id = await _gastoRepository.RegistrarAsync(gasto);
-
             var aula = await _aulaRepository.ObtenerPorIdAsync(request.AulaId);
             string aulaDisplay = aula != null ? $"{aula.Nivel} - {aula.Grado}° \"{aula.Seccion}\"" : $"Aula #{request.AulaId}";
 
-            await _logRepository.RegistrarAsync(
-                nivel: "INFO",
-                modulo: "TESORERIA",
-                accion: "REGISTRAR_GASTO",
-                mensaje: $"Se registró el egreso '{request.Concepto.ToUpper()}' por S/. {request.Monto:F2} ({request.Categoria}) en el Aula {aulaDisplay}."
-            );
+            int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
+            {
+                int gastoId = await _gastoRepository.RegistrarAsync(gasto, transaction);
+
+                await _logRepository.RegistrarAsync(
+                    nivel: "INFO",
+                    modulo: "TESORERIA",
+                    accion: "REGISTRAR_GASTO",
+                    mensaje: $"Se registró el egreso '{request.Concepto.ToUpper()}' por S/. {request.Monto:F2} ({request.Categoria}) en el Aula {aulaDisplay}.",
+                    transaction: transaction
+                );
+
+                return gastoId;
+            });
 
             return id;
         }

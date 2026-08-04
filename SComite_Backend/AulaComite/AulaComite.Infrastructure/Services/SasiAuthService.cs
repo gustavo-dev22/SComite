@@ -2,6 +2,7 @@
 using AulaComite.Application.Common.Interfaces;
 using AulaComite.Application.Common.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 
 namespace AulaComite.Infrastructure.Services
@@ -9,11 +10,13 @@ namespace AulaComite.Infrastructure.Services
     public class SasiAuthService : ISasiAuthService
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<SasiAuthService> _logger;
         private readonly int _sistemaIdTarget;
 
-        public SasiAuthService(HttpClient httpClient, IConfiguration configuration)
+        public SasiAuthService(HttpClient httpClient, IConfiguration configuration, ILogger<SasiAuthService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             var configVal = configuration["SasiSettings:SistemaId"]
                 ?? throw new InvalidOperationException("SasiSettings:SistemaId no está configurado.");
             _sistemaIdTarget = int.Parse(configVal);
@@ -61,7 +64,8 @@ namespace AulaComite.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                return new AuthResultDto { Exito = false, Mensaje = $"Error al conectar con el servidor de autenticación SASI: {ex.Message}" };
+                _logger.LogError(ex, "Error al conectar con el servidor de autenticación SASI: {Message}", ex.Message);
+                return new AuthResultDto { Exito = false, Mensaje = "Error al conectar con el servidor de autenticación. Inténtelo de nuevo." };
             }
         }
 
