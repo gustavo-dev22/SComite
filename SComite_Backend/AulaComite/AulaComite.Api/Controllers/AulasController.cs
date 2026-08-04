@@ -3,6 +3,7 @@ using AulaComite.Application.Aulas.Dtos;
 using AulaComite.Application.Aulas.Queries;
 using AulaComite.Application.Common.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AulaComite.Api.Controllers
@@ -21,6 +22,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "GestionEscolar")]
         public async Task<IActionResult> GetAulas([FromQuery] int? periodoId)
         {
             var result = await _mediator.Send(new GetAulasQuery(periodoId));
@@ -28,6 +30,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpGet("periodos")]
+        [Authorize(Policy = "GestionEscolar")]
         public async Task<IActionResult> GetPeriodos()
         {
             var periodos = await _aulaRepository.ObtenerPeriodosAsync();
@@ -46,6 +49,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> CrearAula([FromBody] CreateAulaCommand command)
         {
             var id = await _mediator.Send(command);
@@ -53,6 +57,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> ActualizarAula(int id, [FromBody] UpdateAulaCommand command)
         {
             if (id != command.Id) return BadRequest(new { mensaje = "El ID no coincide con la petición." });
@@ -64,6 +69,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> EliminarAula(int id)
         {
             var result = await _mediator.Send(new DeleteAulaCommand(id));

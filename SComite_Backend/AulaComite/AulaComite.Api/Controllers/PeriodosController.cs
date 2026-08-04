@@ -1,12 +1,14 @@
 ﻿using AulaComite.Application.Periodos.Commands;
 using AulaComite.Application.Common.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "Administrador")]
     public class PeriodosController : ControllerBase
     {
         private readonly IMediator _mediator;

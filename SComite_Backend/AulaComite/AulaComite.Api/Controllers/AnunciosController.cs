@@ -2,12 +2,14 @@
 using AulaComite.Application.Anuncios.Queries;
 using AulaComite.Application.Comite.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "GestionEscolar")]
     public class AnunciosController : ControllerBase
     {
         private readonly IMediator _mediator;

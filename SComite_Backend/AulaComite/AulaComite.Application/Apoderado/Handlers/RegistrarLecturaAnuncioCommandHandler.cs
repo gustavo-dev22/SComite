@@ -1,5 +1,6 @@
 ﻿using AulaComite.Application.Apoderado.Commands;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,14 @@ namespace AulaComite.Application.Apoderado.Handlers
 
         public async Task<bool> Handle(RegistrarLecturaAnuncioCommand request, CancellationToken cancellationToken)
         {
+            var esApoderadoDelHijo = await ApoderadoAccessValidator.EsEstudianteDelApoderadoAsync(
+                _repository, _userContextService, request.EstudianteId, request.AnioLectivo);
+
+            if (!esApoderadoDelHijo)
+            {
+                return false;
+            }
+
             var usuario = _userContextService.ObtenerUsuarioActual();
             await _repository.RegistrarLecturaAnuncioAsync(request.AnuncioId, request.EstudianteId, usuario);
             return true;

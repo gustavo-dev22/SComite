@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
+using System.Security.Claims;
 using System.Text;
 
 // 1. Inicializar Serilog desde appsettings
@@ -70,7 +71,9 @@ try
             ValidAudience = audience,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            NameClaimType = ClaimTypes.Name,
+            RoleClaimType = ClaimTypes.Role
         };
     });
 
@@ -79,6 +82,21 @@ try
         options.FallbackPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .Build();
+
+        options.AddPolicy("Administrador", policy =>
+            policy.RequireAuthenticatedUser().RequireRole("Administrador"));
+
+        options.AddPolicy("ComiteAula", policy =>
+            policy.RequireAuthenticatedUser().RequireRole("Comité de Aula"));
+
+        options.AddPolicy("ManejoFinanciero", policy =>
+            policy.RequireAuthenticatedUser().RequireRole("Administrador", "Comité de Aula"));
+
+        options.AddPolicy("GestionEscolar", policy =>
+            policy.RequireAuthenticatedUser().RequireRole("Administrador", "Comité de Aula"));
+
+        options.AddPolicy("AccesoApoderado", policy =>
+            policy.RequireAuthenticatedUser().RequireRole("Administrador", "Apoderado"));
     });
 
     builder.Services.AddHttpContextAccessor();

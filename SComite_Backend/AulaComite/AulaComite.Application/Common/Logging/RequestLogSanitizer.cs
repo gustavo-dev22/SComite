@@ -13,7 +13,10 @@ namespace AulaComite.Application.Common.Logging
         {
             "password", "contraseña", "pass", "pwd",
             "clave", "secret", "token", "apikey", "api_key",
-            "authorization", "bearer", "credencial", "session", "cookie"
+            "authorization", "bearer", "credencial", "session", "cookie",
+            "dni", "documento", "numero_documento", "numdocumento",
+            "telefono", "celular", "movil", "correo", "email", "mail",
+            "apoderado", "nombreapoderado", "usuarioapoderado", "direccion"
         };
 
         public static object? Sanitizar(object? value)

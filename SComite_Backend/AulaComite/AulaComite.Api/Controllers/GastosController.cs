@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Gastos.Commands;
 using AulaComite.Application.Gastos.Queries;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "ManejoFinanciero")]
     public class GastosController : ControllerBase
     {
         private readonly IMediator _mediator;

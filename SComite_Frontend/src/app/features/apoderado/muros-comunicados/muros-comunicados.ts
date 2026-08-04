@@ -89,7 +89,7 @@ export class MurosComunicadosComponent implements OnInit {
     const estudianteId = this.estudianteSeleccionadoId();
     if (!estudianteId) return;
 
-    this.apoderadoService.marcarLecturaAnuncio(anuncio.id, estudianteId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.marcarLecturaAnuncio(anuncio.id, estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         anuncio.leido = true;
         anuncio.cantidadVistas = (anuncio.cantidadVistas || 0) + 1;

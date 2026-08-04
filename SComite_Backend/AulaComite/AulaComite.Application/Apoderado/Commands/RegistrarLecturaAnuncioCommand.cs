@@ -5,5 +5,5 @@ using System.Text;
 
 namespace AulaComite.Application.Apoderado.Commands
 {
-    public record RegistrarLecturaAnuncioCommand(int AnuncioId, int EstudianteId) : IRequest<bool>;
+    public record RegistrarLecturaAnuncioCommand(int AnuncioId, int EstudianteId, int AnioLectivo) : IRequest<bool>;
 }

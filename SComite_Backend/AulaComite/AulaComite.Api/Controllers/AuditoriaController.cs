@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Auditoria.Queries;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "Administrador")]
     public class AuditoriaController : ControllerBase
     {
         private readonly IMediator _mediator;

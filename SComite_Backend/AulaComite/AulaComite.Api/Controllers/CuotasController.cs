@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Cuotas.Commands;
 using AulaComite.Application.Cuotas.Queries;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "ManejoFinanciero")]
     public class CuotasController : ControllerBase
     {
         private readonly IMediator _mediator;

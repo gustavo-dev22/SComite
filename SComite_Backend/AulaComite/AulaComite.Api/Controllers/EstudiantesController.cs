@@ -1,6 +1,7 @@
 ﻿using AulaComite.Application.Estudiantes.Commands;
 using AulaComite.Application.Estudiantes.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AulaComite.Api.Controllers
@@ -17,6 +18,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpGet("aula/{aulaId}")]
+        [Authorize(Policy = "GestionEscolar")]
         public async Task<IActionResult> GetPorAula(int aulaId)
         {
             var result = await _mediator.Send(new GetEstudiantesPorAulaQuery(aulaId));
@@ -24,6 +26,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Crear([FromBody] CreateEstudianteCommand command)
         {
             var id = await _mediator.Send(command);
@@ -31,6 +34,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] UpdateEstudianteCommand command)
         {
             if (id != command.Id) return BadRequest(new { mensaje = "ID inconsistente." });
@@ -42,6 +46,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Eliminar(int id)
         {
             var result = await _mediator.Send(new DeleteEstudianteCommand(id));
@@ -51,6 +56,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpPost("carga-masiva")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> CargaMasiva([FromBody] CargaMasivaEstudiantesCommand command)
         {
             var result = await _mediator.Send(command);

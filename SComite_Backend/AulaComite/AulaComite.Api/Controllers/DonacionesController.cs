@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Donaciones.Commands;
 using AulaComite.Application.Donaciones.Queries;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "ManejoFinanciero")]
     public class DonacionesController : ControllerBase
     {
         private readonly IMediator _mediator;

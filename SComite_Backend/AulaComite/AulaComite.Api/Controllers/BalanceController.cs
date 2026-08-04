@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Balance.Queries;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "ManejoFinanciero")]
     public class BalanceController : ControllerBase
     {
         private readonly IMediator _mediator;

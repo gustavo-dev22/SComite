@@ -8,6 +8,7 @@ namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "AccesoApoderado")]
     public class ApoderadoController : ControllerBase
     {
         private readonly IMediator _mediator;

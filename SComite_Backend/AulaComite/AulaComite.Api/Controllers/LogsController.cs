@@ -2,12 +2,14 @@
 using AulaComite.Application.Logss.Queries;
 using AulaComite.Application.Logss.Commands;
 using AulaComite.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
 namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = "Administrador")]
     public class LogsController : ControllerBase
     {
         private readonly IMediator _mediator;
