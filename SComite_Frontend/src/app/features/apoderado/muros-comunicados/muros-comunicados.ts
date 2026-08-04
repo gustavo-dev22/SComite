@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { AnuncioApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-muros-comunicados',
@@ -10,6 +12,7 @@ import { AnuncioApoderado, HijoApoderado } from '../../../core/models/apoderado.
   styleUrl: './muros-comunicados.scss',
 })
 export class MurosComunicadosComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private apoderadoService = inject(ApoderadoService);
 
   cargandoHijos = signal<boolean>(false);
@@ -33,7 +36,7 @@ export class MurosComunicadosComponent implements OnInit {
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -43,7 +46,10 @@ export class MurosComunicadosComponent implements OnInit {
           this.cargarAnuncios();
         }
       },
-      error: () => this.cargandoHijos.set(false)
+      error: (err) => {
+        this.cargandoHijos.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+      }
     });
   }
 
@@ -52,7 +58,7 @@ export class MurosComunicadosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoAnuncios.set(true);
-    this.apoderadoService.getAnunciosMuro(estudianteId, this.anioLectivoActual).subscribe({
+    this.apoderadoService.getAnunciosMuro(estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.anuncios.set(data);
         this.cargandoAnuncios.set(false);
@@ -64,7 +70,10 @@ export class MurosComunicadosComponent implements OnInit {
           }
         });
       },
-      error: () => this.cargandoAnuncios.set(false)
+      error: (err) => {
+        this.cargandoAnuncios.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los comunicados.', 'error');
+      }
     });
   }
 
@@ -80,12 +89,12 @@ export class MurosComunicadosComponent implements OnInit {
     const estudianteId = this.estudianteSeleccionadoId();
     if (!estudianteId) return;
 
-    this.apoderadoService.marcarLecturaAnuncio(anuncio.id, estudianteId).subscribe({
+    this.apoderadoService.marcarLecturaAnuncio(anuncio.id, estudianteId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         anuncio.leido = true;
         anuncio.cantidadVistas = (anuncio.cantidadVistas || 0) + 1;
       },
-      error: (err) => console.error('Error al registrar lectura:', err)
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar la lectura del comunicado.', 'error')
     });
   }
 

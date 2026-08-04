@@ -7,5 +7,6 @@ namespace AulaComite.Application.Common.Interfaces
     public interface ISistemaRepository
     {
         Task<bool> ResetBaseDeDatosAsync();
+        Task<byte[]> GenerarBackupScriptSqlAsync();
     }
 }

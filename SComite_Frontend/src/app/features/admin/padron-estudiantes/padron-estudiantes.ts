@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EstudianteService } from '../../../core/services/estudiante.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { ComiteService } from '../../../core/services/comite.service';
@@ -18,6 +19,7 @@ import * as XLSX from 'xlsx';
   styleUrl: './padron-estudiantes.scss',
 })
 export class PadronEstudiantesComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private estudianteService = inject(EstudianteService);
   private aulaService = inject(AulaService);
   private comiteService = inject(ComiteService);
@@ -66,7 +68,7 @@ export class PadronEstudiantesComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe(data => {
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.periodos.set(data);
 
       if (data.length > 0) {
@@ -84,11 +86,11 @@ export class PadronEstudiantesComponent implements OnInit {
         // 3. Cargamos de inmediato las aulas de ese periodo
         this.cargarAulasPorPeriodo(periodoActual.id);
       }
-    });
+    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error'));
   }
 
   cargarAulasPorPeriodo(periodoId: number): void {
-    this.aulaService.getAulas(periodoId).subscribe(data => {
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.aulas.set(data);
       if (data.length > 0) {
         this.aulaSeleccionada.set(data[0].id);
@@ -97,22 +99,22 @@ export class PadronEstudiantesComponent implements OnInit {
         this.aulaSeleccionada.set(null);
         this.estudiantes.set([]);
       }
-    });
+    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error'));
   }
 
   cargarApoderadosSasi(): void {
-    this.comiteService.getApoderadosSasi().subscribe(data => {
+    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       const ordenados = [...data].sort((a, b) => 
         a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
       );
 
       this.apoderadosSasi.set(ordenados);
-    });
+    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los apoderados de SASI.', 'error'));
   }
 
   cargarEstudiantes(aulaId: number): void {
     this.cargando.set(true);
-    this.estudianteService.getEstudiantesPorAula(aulaId).subscribe({
+    this.estudianteService.getEstudiantesPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         const ordenados = [...data].sort((a, b) => {
           const apellidoA = `${a.apellidoPaterno} ${a.apellidoMaterno}`.trim();
@@ -124,7 +126,10 @@ export class PadronEstudiantesComponent implements OnInit {
         this.estudiantes.set(ordenados);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los estudiantes.', 'error');
+      }
     });
   }
 
@@ -204,7 +209,7 @@ export class PadronEstudiantesComponent implements OnInit {
     };
 
     if (this.esEdicion()) {
-      this.estudianteService.actualizarEstudiante(payload.id, payload).subscribe({
+      this.estudianteService.actualizarEstudiante(payload.id, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           Swal.fire({ icon: 'success', title: '¡Actualizado!', text: 'Estudiante modificado.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();
@@ -213,7 +218,7 @@ export class PadronEstudiantesComponent implements OnInit {
         error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error')
       });
     } else {
-      this.estudianteService.crearEstudiante(payload).subscribe({
+      this.estudianteService.crearEstudiante(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           Swal.fire({ icon: 'success', title: '¡Registrado!', text: 'Estudiante agregado al padrón.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();
@@ -235,7 +240,7 @@ export class PadronEstudiantesComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then((res) => {
       if (res.isConfirmed) {
-        this.estudianteService.eliminarEstudiante(e.id).subscribe({
+        this.estudianteService.eliminarEstudiante(e.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             Swal.fire('Inactivo', 'El estudiante fue desactivado.', 'success');
             this.cargarEstudiantes(this.aulaSeleccionada()!);
@@ -268,21 +273,12 @@ export class PadronEstudiantesComponent implements OnInit {
     const dataPlantilla = [
       {
         TipoDocumento: 'DNI',
-        NumeroDocumento: '74839201',
-        Nombres: 'JUAN CARLOS',
-        ApellidoPaterno: 'GARCIA',
-        ApellidoMaterno: 'PEREZ',
-        NombreApoderado: 'PEDRO GARCIA PEREZ', // 👈 Nombre tal como figura en SASI (Opcional)
-        TelefonoApoderado: '987654321'
-      },
-      {
-        TipoDocumento: 'DNI',
-        NumeroDocumento: '71234567',
-        Nombres: 'MARIA FERNANDA',
-        ApellidoPaterno: 'TORRES',
-        ApellidoMaterno: 'LOPEZ',
-        NombreApoderado: '',
-        TelefonoApoderado: ''
+        NumeroDocumento: '00000000',
+        Nombres: 'NOMBRES DEL ESTUDIANTE',
+        ApellidoPaterno: 'APELLIDO PATERNO',
+        ApellidoMaterno: 'APELLIDO MATERNO',
+        NombreApoderado: 'NOMBRE DEL APODERADO',
+        TelefonoApoderado: 'SIN TELEFONO'
       }
     ];
 
@@ -315,16 +311,40 @@ export class PadronEstudiantesComponent implements OnInit {
 
       const jsonResult: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-      const estudiantesParsed = jsonResult.map((row: any) => ({
-        tipoDocumento: String(row.TipoDocumento || row.tipoDocumento || 'DNI').trim(),
-        numeroDocumento: String(row.NumeroDocumento || row.numeroDocumento || '').trim(),
-        nombres: String(row.Nombres || row.nombres || '').trim().toUpperCase(),
-        apellidoPaterno: String(row.ApellidoPaterno || row.apellidoPaterno || '').trim().toUpperCase(),
-        apellidoMaterno: String(row.ApellidoMaterno || row.apellidoMaterno || '').trim().toUpperCase(),
-        usuarioIdApoderadoSasi: String(row.UsuarioIdApoderadoSasi || row.usuarioIdApoderadoSasi || '').trim(),
-        nombreApoderado: String(row.NombreApoderado || row.nombreApoderado || '').trim(),
-        telefonoApoderado: String(row.TelefonoApoderado || row.telefonoApoderado || '').trim()
-      }));
+      const apoderadosCatalogo = this.apoderadosSasi();
+
+      const estudiantesParsed = jsonResult.map((row: any) => {
+        const nombreApoderadoExcel = String(row.NombreApoderado || row.nombreApoderado || '').trim();
+        let existeSasi = false;
+        let nombreEncontrado = '';
+
+        if (nombreApoderadoExcel) {
+          const apMatch = apoderadosCatalogo.find(a => 
+            a.nombreCompleto.toLowerCase().includes(nombreApoderadoExcel.toLowerCase()) ||
+            nombreApoderadoExcel.toLowerCase().includes(a.nombreCompleto.toLowerCase())
+          );
+
+          if (apMatch) {
+            existeSasi = true;
+            nombreEncontrado = apMatch.nombreCompleto;
+          }
+        }
+
+        return {
+          tipoDocumento: String(row.TipoDocumento || row.tipoDocumento || 'DNI').trim(),
+          numeroDocumento: String(row.NumeroDocumento || row.numeroDocumento || '').trim(),
+          nombres: String(row.Nombres || row.nombres || '').trim().toUpperCase(),
+          apellidoPaterno: String(row.ApellidoPaterno || row.apellidoPaterno || '').trim().toUpperCase(),
+          apellidoMaterno: String(row.ApellidoMaterno || row.apellidoMaterno || '').trim().toUpperCase(),
+          nombreApoderado: nombreApoderadoExcel,
+          telefonoApoderado: String(row.TelefonoApoderado || row.telefonoApoderado || '').trim(),
+          
+          // 🚀 Banderas para la vista previa
+          tieneApoderadoExcel: !!nombreApoderadoExcel,
+          existeEnSasi: existeSasi,
+          nombreSasiNormalizado: nombreEncontrado
+        };
+      });
 
       this.registrosPrevios.set(estudiantesParsed);
     };
@@ -340,7 +360,7 @@ export class PadronEstudiantesComponent implements OnInit {
 
     this.procesandoArchivo.set(true);
 
-    this.estudianteService.cargaMasiva(this.aulaSeleccionada()!, lista).subscribe({
+    this.estudianteService.cargaMasiva(this.aulaSeleccionada()!, lista).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.procesandoArchivo.set(false);
         this.cerrarModalCargaMasiva();
@@ -364,7 +384,9 @@ export class PadronEstudiantesComponent implements OnInit {
           icon: res.registrosInsertados > 0 ? 'success' : 'warning',
           title: 'Resultado de la Carga Masiva',
           html: detallesHtml,
-          confirmButtonColor: '#2563eb'
+          confirmButtonColor: '#2563eb',
+          allowEscapeKey: false,
+          allowOutsideClick: false
         });
 
         this.cargarEstudiantes(this.aulaSeleccionada()!);

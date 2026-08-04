@@ -1,8 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LogService } from '../../../core/services/log.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LogSistema, PagedResult } from '../../../core/models/log.model';
 import { CommonModule } from '@angular/common';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-logs',
@@ -11,6 +13,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './logs.scss',
 })
 export class LogsComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private logService = inject(LogService);
   private fb = inject(FormBuilder);
 
@@ -60,14 +63,17 @@ export class LogsComponent implements OnInit {
       tamanoPagina: 15
     };
 
-    this.logService.getLogs(filtros).subscribe({
+    this.logService.getLogs(filtros).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: PagedResult<LogSistema>) => {
         this.logs.set(res.items);
         this.totalRegistros.set(res.totalRegistros);
         this.totalPaginas.set(res.totalPaginas);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los registros.', 'error');
+      }
     });
   }
 

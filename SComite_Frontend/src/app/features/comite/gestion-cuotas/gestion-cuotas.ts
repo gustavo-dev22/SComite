@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
 import { Cuota } from '../../../core/models/cuota.model';
@@ -8,6 +9,7 @@ import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ActividadService } from '../../../core/services/actividad.service';
 import { ActividadComite } from '../../../core/models/actividad.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-gestion-cuotas',
@@ -16,6 +18,7 @@ import { ActividadComite } from '../../../core/models/actividad.model';
   styleUrl: './gestion-cuotas.scss',
 })
 export class GestionCuotasComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private fb = inject(FormBuilder);
   private cuotaService = inject(CuotaService);
   private aulaService = inject(AulaService);
@@ -67,8 +70,9 @@ export class GestionCuotasComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
@@ -89,12 +93,15 @@ export class GestionCuotasComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -114,12 +121,15 @@ export class GestionCuotasComponent implements OnInit {
 
   cargarCuotas(aulaId: number): void {
     this.cargando.set(true);
-    this.cuotaService.obtenerPorAula(aulaId).subscribe({
+    this.cuotaService.obtenerPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.cuotas.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las cuotas.', 'error');
+      }
     });
   }
 
@@ -127,8 +137,9 @@ export class GestionCuotasComponent implements OnInit {
     const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
-    this.actividadService.getActividadesPorAula(aulaId, anio).subscribe({
-      next: (data) => this.actividades.set(data)
+    this.actividadService.getActividadesPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.actividades.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actividades.', 'error')
     });
   }
 
@@ -180,11 +191,12 @@ export class GestionCuotasComponent implements OnInit {
       aulaId: aulaId
     };
 
-    this.cuotaService.crear(payload).subscribe({
+    this.cuotaService.crear(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.cerrarModal();
         this.cargarCuotas(aulaId);
-      }
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo crear la cuota.', 'error')
     });
   }
 
@@ -202,11 +214,12 @@ export class GestionCuotasComponent implements OnInit {
       anioLectivo: anio
     };
 
-    this.cuotaService.programarMensual(payload).subscribe({
+    this.cuotaService.programarMensual(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.cerrarModal();
         this.cargarCuotas(aulaId);
-      }
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo programar la cuota mensual.', 'error')
     });
   }
 

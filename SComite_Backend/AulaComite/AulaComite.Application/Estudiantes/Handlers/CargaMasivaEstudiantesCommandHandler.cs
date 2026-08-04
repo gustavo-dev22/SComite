@@ -27,10 +27,10 @@ namespace AulaComite.Application.Estudiantes.Handlers
                 RegistrosProcesados = request.Estudiantes.Count
             };
 
-            // 1. Obtener catálogo de apoderados registrados en SASI
+            // 1. Catálogo completo de apoderados SASI en memoria
             var apoderadosSasi = (await _sasiAuthService.ObtenerApoderadosAsync()).ToList();
 
-            // 2. Obtener lista de DNI de estudiantes ya matriculados en esta aula
+            // 2. Estudiantes ya matriculados en esta aula
             var estudiantesExistentes = (await _estudianteRepository.ObtenerPorAulaAsync(request.AulaId))
                 .Select(x => x.NumeroDocumento.Trim())
                 .ToHashSet();
@@ -42,7 +42,7 @@ namespace AulaComite.Application.Estudiantes.Handlers
             {
                 index++;
 
-                // Validación básica de campos requeridos del alumno
+                // Validación A: Datos mínimos del alumno
                 if (string.IsNullOrWhiteSpace(item.NumeroDocumento) ||
                     string.IsNullOrWhiteSpace(item.Nombres) ||
                     string.IsNullOrWhiteSpace(item.ApellidoPaterno))
@@ -51,19 +51,19 @@ namespace AulaComite.Application.Estudiantes.Handlers
                     continue;
                 }
 
-                // Validar si el alumno ya existe en el aula
+                // Validación B: Duplicidad de DNI en la misma aula
                 if (estudiantesExistentes.Contains(item.NumeroDocumento.Trim()))
                 {
                     resultado.DetallesObservaciones.Add($"Fila {index} ({item.NumeroDocumento}): Omitido porque ya está matriculado en esta aula.");
                     continue;
                 }
 
-                // 🚀 CRUCE AUTOMÁTICO CON SASI POR NOMBRE DE APODERADO
+                // 🚀 Validación C: EXISTENCIA OBLIGATORIA EN SASI
                 if (!string.IsNullOrWhiteSpace(item.NombreApoderado))
                 {
                     var nombreBuscado = item.NombreApoderado.Trim();
 
-                    // Buscar por Nombre Completo en el catálogo SASI
+                    // Búsqueda por Nombre Completo
                     var apoderadoEncontrado = apoderadosSasi.FirstOrDefault(a =>
                         a.NombreCompleto.Equals(nombreBuscado, StringComparison.OrdinalIgnoreCase) ||
                         a.NombreCompleto.Contains(nombreBuscado, StringComparison.OrdinalIgnoreCase)
@@ -72,13 +72,20 @@ namespace AulaComite.Application.Estudiantes.Handlers
                     if (apoderadoEncontrado != null)
                     {
                         item.UsuarioIdApoderadoSasi = apoderadoEncontrado.UsuarioId;
-                        item.NombreApoderado = apoderadoEncontrado.NombreCompleto; // Nombre normalizado del SASI
+                        item.NombreApoderado = apoderadoEncontrado.NombreCompleto; // Normalizar nombre
+                    }
+                    else
+                    {
+                        // ❌ NO EXISTE EN SASI: SE RECHAZA EL REGISTRO
+                        resultado.DetallesObservaciones.Add($"Fila {index} ({item.Nombres} {item.ApellidoPaterno}): Rechazado porque el apoderado '{nombreBuscado}' NO existe registrado en el SASI.");
+                        continue; // Pasa a la siguiente fila sin agregar a validosParaInsertar
                     }
                 }
 
                 validosParaInsertar.Add(item);
             }
 
+            // 3. Inserción en la base de datos
             if (validosParaInsertar.Any())
             {
                 resultado.RegistrosInsertados = await _estudianteRepository.CargaMasivaEstudiantesAsync(request.AulaId, validosParaInsertar);

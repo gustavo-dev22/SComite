@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { AulaService } from '../../../core/services/aula.service';
@@ -13,6 +14,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './aula.scss',
 })
 export class AulaComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private aulaService = inject(AulaService);
   private fb = inject(FormBuilder);
 
@@ -45,19 +47,22 @@ export class AulaComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe(data => {
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.periodos.set(data);
-    });
+    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error'));
   }
 
   cargarAulas(): void {
     this.cargando.set(true);
-    this.aulaService.getAulas(this.periodoFiltroSelected() || undefined).subscribe({
+    this.aulaService.getAulas(this.periodoFiltroSelected() || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -104,7 +109,7 @@ export class AulaComponent implements OnInit {
     const formValues = this.aulaForm.value;
 
     if (this.esEdicion()) {
-      this.aulaService.actualizarAula(formValues.id, formValues).subscribe({
+      this.aulaService.actualizarAula(formValues.id, formValues).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           Swal.fire({ icon: 'success', title: '¡Actualizado!', text: 'Aula modificada correctamente.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();
@@ -113,7 +118,7 @@ export class AulaComponent implements OnInit {
         error: (err) => Swal.fire('Error', err.error?.mensaje || 'Error al actualizar.', 'error')
       });
     } else {
-      this.aulaService.crearAula(formValues).subscribe({
+      this.aulaService.crearAula(formValues).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           Swal.fire({ icon: 'success', title: '¡Registrado!', text: 'Aula creada exitosamente.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();
@@ -138,7 +143,7 @@ export class AulaComponent implements OnInit {
       allowEscapeKey: false
     }).then((result) => {
       if (result.isConfirmed) {
-        this.aulaService.eliminarAula(aula.id).subscribe({
+        this.aulaService.eliminarAula(aula.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             Swal.fire('¡Desactivada!', 'El aula ha sido desactivada.', 'success');
             this.cargarAulas();

@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AulaService } from '../../../core/services/aula.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
@@ -13,6 +14,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './periodo.scss',
 })
 export class PeriodoComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private aulaService = inject(AulaService);
   private periodoService = inject(PeriodoService);
   private fb = inject(FormBuilder);
@@ -36,12 +38,15 @@ export class PeriodoComponent implements OnInit {
 
   cargarPeriodos(): void {
     this.cargando.set(true);
-    this.aulaService.getPeriodos().subscribe({
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.periodos.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error');
+      }
     });
   }
 
@@ -96,7 +101,7 @@ export class PeriodoComponent implements OnInit {
     };
 
     if (this.esEdicion()) {
-      this.periodoService.actualizarPeriodo(payload.id, payload).subscribe({
+      this.periodoService.actualizarPeriodo(payload.id, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           Swal.fire({ icon: 'success', title: '¡Actualizado!', text: 'Periodo lectivo modificado.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();
@@ -105,7 +110,7 @@ export class PeriodoComponent implements OnInit {
         error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error')
       });
     } else {
-      this.periodoService.crearPeriodo(payload).subscribe({
+      this.periodoService.crearPeriodo(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           Swal.fire({ icon: 'success', title: '¡Creado!', text: 'Periodo lectivo registrado.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();

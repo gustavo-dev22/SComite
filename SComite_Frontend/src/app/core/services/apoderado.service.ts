@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { ActaApoderado, AnuncioApoderado, EventoCronogramaApoderado, HijoApoderado, ResumenPagosApoderado } from '../models/apoderado.model';
+import { ApiResponse } from '../models/api-response.model';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -23,8 +24,8 @@ export class ApoderadoService {
     return this.http.get<AnuncioApoderado[]>(`${this.apiUrl}/anuncios-muro?estudianteId=${estudianteId}&anio=${anio}`);
   }
 
-  marcarLecturaAnuncio(anuncioId: number, estudianteId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/marcar-lectura-anuncio`, { anuncioId, estudianteId });
+  marcarLecturaAnuncio(anuncioId: number, estudianteId: number): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/marcar-lectura-anuncio`, { anuncioId, estudianteId });
   }
 
   getCronogramaEventos(estudianteId: number, anio: number): Observable<EventoCronogramaApoderado[]> {

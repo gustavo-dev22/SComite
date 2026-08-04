@@ -96,6 +96,11 @@ export class AuthService {
   }
 
   logout(): void {
+    this.limpiarSesion();
+    this.router.navigate(['/login']);
+  }
+
+  limpiarSesion(): void {
     sessionStorage.removeItem('token_aula');
     sessionStorage.removeItem('usuario_nombre');
     sessionStorage.removeItem('roles_aula');
@@ -104,11 +109,47 @@ export class AuthService {
     this.usuarioActual.set(null);
     this.rolesDisponibles.set([]);
     this.rolActivoId.set(null);
-    this.router.navigate(['/login']);
+  }
+
+  obtenerToken(): string | null {
+    return sessionStorage.getItem('token_aula');
+  }
+
+  tieneSesionValida(): boolean {
+    const token = this.obtenerToken();
+    if (!token) return false;
+
+    const payload = AuthService.decodificarJwt(token);
+    if (payload?.exp) {
+      const expiraEnMs = payload.exp * 1000;
+      if (Date.now() >= expiraEnMs) {
+        this.limpiarSesion();
+        return false;
+      }
+    }
+    return true;
   }
 
   isAuthenticated(): boolean {
-    return !!sessionStorage.getItem('token_aula');
+    return this.tieneSesionValida();
+  }
+
+  private static decodificarJwt(token: string): { exp?: number } | null {
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const json = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
   }
 
   private obtenerRolesStorage(): RolComite[] {
@@ -141,5 +182,65 @@ export class AuthService {
       return url.startsWith('/') ? url.substring(1) : url;
     }
     return 'admin/periodos';
+  }
+
+  obtenerRutaInicial(): string {
+    const roles = this.rolesDisponibles();
+    const rolInicial = roles.find(r => r.esPrincipal) || roles[0];
+    if (!rolInicial) return 'login';
+
+    const urlsEnOrdenLectura = this.obtenerUrlsEnOrdenLectura(rolInicial.objetos);
+
+    // Listado de rutas declaradas en el Router
+    const rutasExistentes = this.router.config
+      .flatMap(r => r.children || [])
+      .map(c => c.path);
+
+    // Ningún usuario debe aterrizar en mantenimiento, logs o auditorías al iniciar sesión.
+    const esRutaUtilitariaSistema = (url: string): boolean => {
+      const urlLower = url.toLowerCase();
+      return urlLower.includes('mantenimiento') ||
+        urlLower.includes('logs') ||
+        urlLower.includes('auditoria') ||
+        urlLower.includes('seguridad/');
+    };
+
+    // 1. Primera ruta operativa válida que coincida en Angular y SASI (excluyendo utilitarios)
+    const primeraRutaOperativa = urlsEnOrdenLectura.find(url =>
+      rutasExistentes.includes(url) && !esRutaUtilitariaSistema(url)
+    );
+    if (primeraRutaOperativa) return primeraRutaOperativa;
+
+    // 2. Si solo tuviera permisos a herramientas de sistema, tomar la primera disponible
+    return urlsEnOrdenLectura.find(url => rutasExistentes.includes(url)) || 'login';
+  }
+
+  private obtenerUrlsEnOrdenLectura(objetos: MenuObjeto[]): string[] {
+    const urls: string[] = [];
+
+    const obtenerNumeroOrden = (obj: MenuObjeto): number => {
+      if (obj.orden !== undefined && obj.orden !== null) return Number(obj.orden);
+      if (obj.posicion !== undefined && obj.posicion !== null) return Number(obj.posicion);
+      if (obj.idObjeto !== undefined && obj.idObjeto !== null) return Number(obj.idObjeto);
+      return 0;
+    };
+
+    const recorrer = (nodos: MenuObjeto[]): void => {
+      const ordenados = [...nodos].sort((a, b) => obtenerNumeroOrden(a) - obtenerNumeroOrden(b));
+
+      for (const nodo of ordenados) {
+        if (!nodo || nodo.activo === false) continue;
+
+        if (nodo.url && nodo.url !== '#' && nodo.url !== '/' && nodo.url !== 'javascript:void(0);') {
+          urls.push(nodo.url.startsWith('/') ? nodo.url.substring(1) : nodo.url);
+        }
+
+        const hijos = nodo.subObjetos || nodo.hijos || [];
+        if (hijos.length > 0) recorrer(hijos);
+      }
+    };
+
+    recorrer(objetos);
+    return urls;
   }
 }

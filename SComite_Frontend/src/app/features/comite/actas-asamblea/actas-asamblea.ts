@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActaService } from '../../../core/services/acta.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -11,9 +12,8 @@ import { ComiteService } from '../../../core/services/comite.service';
 import { ComiteIntegrante } from '../../../core/models/comiteIntegrante.model';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
-
-declare var html2canvas: any;
-declare var jspdf: any;
+import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-actas-asamblea',
@@ -22,11 +22,13 @@ declare var jspdf: any;
   styleUrl: './actas-asamblea.scss',
 })
 export class ActasAsambleaComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private actaService = inject(ActaService);
   private aulaService = inject(AulaService);
   private authService = inject(AuthService);
   private comiteService = inject(ComiteService);
   private institucionService = inject(InstitucionService);
+  private pdfExporter = inject(PdfExporterService);
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
@@ -94,17 +96,18 @@ export class ActasAsambleaComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
   cargarDatosInstitucion(): void {
-    this.institucionService.getConfiguracion().subscribe({
+    this.institucionService.getConfiguracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         if (data) this.institucion.set(data);
       },
-      error: () => console.warn('No se pudieron cargar los datos de la institución educativa.')
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
     });
   }
 
@@ -120,12 +123,15 @@ export class ActasAsambleaComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -143,9 +149,12 @@ export class ActasAsambleaComponent implements OnInit {
   }
 
   cargarIntegrantesComite(aulaId: number): void {
-    this.comiteService.getComitePorAula(aulaId).subscribe({
+    this.comiteService.getComitePorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.integrantesComiteRaw.set(data),
-      error: () => this.integrantesComiteRaw.set([])
+      error: (err) => {
+        this.integrantesComiteRaw.set([]);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los integrantes del comité.', 'error');
+      }
     });
   }
 
@@ -154,12 +163,15 @@ export class ActasAsambleaComponent implements OnInit {
     const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
-    this.actaService.getActasPorAula(aulaId, anio).subscribe({
+    this.actaService.getActasPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.actas.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actas.', 'error');
+      }
     });
   }
 
@@ -170,7 +182,7 @@ export class ActasAsambleaComponent implements OnInit {
     const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
-    this.actaService.getSiguienteNumeroActa(aulaId, anio).subscribe({
+    this.actaService.getSiguienteNumeroActa(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         const usuarioActual = this.authService.usuarioActual();
         const nombreUsuario = usuarioActual ? usuarioActual : 'Comité de Aula';
@@ -226,21 +238,25 @@ export class ActasAsambleaComponent implements OnInit {
     dto.aulaId = this.aulaSeleccionadaId()!;
     this.guardando.set(true);
 
-    this.actaService.guardarActa(dto).subscribe({
+    this.actaService.guardarActa(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarModal();
         this.cargarActas(this.aulaSeleccionadaId()!);
       },
-      error: () => this.guardando.set(false)
+      error: (err) => {
+        this.guardando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar el acta.', 'error');
+      }
     });
   }
 
   eliminarActa(id: number): void {
     if (!confirm('¿Está seguro de eliminar esta acta de asamblea?')) return;
 
-    this.actaService.eliminarActa(id, this.aulaSeleccionadaId()!).subscribe({
-      next: () => this.cargarActas(this.aulaSeleccionadaId()!)
+    this.actaService.eliminarActa(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.cargarActas(this.aulaSeleccionadaId()!),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el acta.', 'error')
     });
   }
 
@@ -252,75 +268,26 @@ export class ActasAsambleaComponent implements OnInit {
     }
   }
 
-  descargarPdfActa(acta: ActaAsambleaComite): void {
+  async descargarPdfActa(acta: ActaAsambleaComite): Promise<void> {
     this.actaParaPdf.set(acta);
-    this.descargandoPdf.set(true);
 
     const element = document.getElementById('acta-imprimible-pdf');
     if (!element) {
+      Swal.fire('Error', 'No se encontró el contenedor del acta.', 'error');
       this.descargandoPdf.set(false);
       return;
     }
 
-    // 1. Mostrar elemento para captura
-    element.style.display = 'block';
+    const numActaClean = acta.numeroActa.replace(/[^A-Z0-9]/gi, '_');
+    const nombreArchivo = `${numActaClean}.pdf`;
 
-    setTimeout(() => {
-      const numActaClean = acta.numeroActa.replace(/[^A-Z0-9]/gi, '_');
-      const nombreArchivo = `${numActaClean}.pdf`;
-
-      html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        // 🚀 SOLUCIÓN AL ERROR OKLCH: Sanitizado de estilos en el clon del DOM
-        onclone: (clonedDoc: Document) => {
-          const pdfEl = clonedDoc.getElementById('acta-imprimible-pdf');
-          if (pdfEl) {
-            pdfEl.style.display = 'block';
-            pdfEl.style.backgroundColor = '#ffffff';
-            pdfEl.style.color = '#0f172a';
-
-            const elements = pdfEl.querySelectorAll('*');
-            elements.forEach((el: any) => {
-              el.style.boxShadow = 'none';
-              el.style.textShadow = 'none';
-              const style = window.getComputedStyle(el);
-
-              // Sobrescribir cualquier propiedad calculada que use oklch
-              if (style.color && style.color.includes('oklch')) {
-                el.style.color = '#0f172a';
-              }
-              if (style.backgroundColor && style.backgroundColor.includes('oklch')) {
-                el.style.backgroundColor = '#ffffff';
-              }
-              if (style.borderColor && style.borderColor.includes('oklch')) {
-                el.style.borderColor = '#cbd5e1';
-              }
-            });
-          }
-        }
-      }).then((canvas: HTMLCanvasElement) => {
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const { jsPDF } = jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-
-        const imgWidth = 210 - 20; // Margen A4
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
-        pdf.save(nombreArchivo);
-
-        // Ocultar de nuevo
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      }).catch((err: any) => {
-        console.error('Error al generar PDF:', err);
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      });
-
-    }, 200);
+    this.descargandoPdf.set(true);
+    try {
+      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+    } catch {
+      Swal.fire('Error', 'No se pudo generar el PDF del acta. Inténtalo de nuevo.', 'error');
+    } finally {
+      this.descargandoPdf.set(false);
+    }
   }
 }

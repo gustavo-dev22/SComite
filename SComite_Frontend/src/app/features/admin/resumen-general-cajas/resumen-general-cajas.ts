@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AuditoriaService } from '../../../core/services/auditoria.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -7,9 +8,8 @@ import { InstitucionService } from '../../../core/services/institucion.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { ResumenGeneralCajasConsolidadas } from '../../../core/models/auditoria.model';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
-
-declare var html2canvas: any;
-declare var jspdf: any;
+import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-resumen-general-cajas',
@@ -18,9 +18,11 @@ declare var jspdf: any;
   styleUrl: './resumen-general-cajas.scss',
 })
 export class ResumenGeneralCajasComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private auditoriaService = inject(AuditoriaService);
   private aulaService = inject(AulaService);
   private institucionService = inject(InstitucionService);
+  private pdfExporter = inject(PdfExporterService);
 
   cargando = signal<boolean>(false);
   periodos = signal<PeriodoLectivo[]>([]);
@@ -45,7 +47,7 @@ export class ResumenGeneralCajasComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.periodos.set(data);
         const activo = data.find(p => p.esActivo);
@@ -53,15 +55,17 @@ export class ResumenGeneralCajasComponent implements OnInit {
           this.periodoSeleccionadoId.set(activo.id);
           this.cargarResumen();
         }
-      }
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
   cargarDatosInstitucion(): void {
-    this.institucionService.getConfiguracion().subscribe({
+    this.institucionService.getConfiguracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         if (data) this.institucion.set(data);
-      }
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
     });
   }
 
@@ -70,12 +74,15 @@ export class ResumenGeneralCajasComponent implements OnInit {
     const nivel = this.nivelFiltro();
 
     this.cargando.set(true);
-    this.auditoriaService.getResumenGeneralCajas(anio, nivel).subscribe({
+    this.auditoriaService.getResumenGeneralCajas(anio, nivel).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.dataConsolidada.set(res);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo cargar el resumen general de cajas.', 'error');
+      }
     });
   }
 
@@ -101,39 +108,22 @@ export class ResumenGeneralCajasComponent implements OnInit {
   }
 
   // Exportar Consolidado Global a PDF
-  exportarPdf(): void {
+  async exportarPdf(): Promise<void> {
     const element = document.getElementById('reporte-resumen-general-pdf');
-    if (!element) return;
+    if (!element) {
+      Swal.fire('Error', 'No se encontró el contenedor del reporte.', 'error');
+      return;
+    }
+
+    const nombreArchivo = `Resumen_General_Cajas_${this.anioActual()}.pdf`;
 
     this.descargandoPdf.set(true);
-    element.style.display = 'block';
-
-    setTimeout(() => {
-      const nombreArchivo = `Resumen_General_Cajas_${this.anioActual()}.pdf`;
-
-      html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      }).then((canvas: HTMLCanvasElement) => {
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const { jsPDF } = jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-
-        const imgWidth = 190;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
-        pdf.save(nombreArchivo);
-
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      }).catch((err: any) => {
-        console.error('Error generando PDF:', err);
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      });
-    }, 200);
+    try {
+      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+    } catch {
+      Swal.fire('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.', 'error');
+    } finally {
+      this.descargandoPdf.set(false);
+    }
   }
 }

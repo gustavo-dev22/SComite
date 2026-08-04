@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ComiteService } from '../../../core/services/comite.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,6 +16,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './asignacion-comite.scss',
 })
 export class AsignacionComiteComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private comiteService = inject(ComiteService);
   private aulaService = inject(AulaService);
   private fb = inject(FormBuilder);
@@ -43,7 +45,7 @@ export class AsignacionComiteComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe(data => {
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.periodos.set(data);
 
       if (data.length > 0) {
@@ -61,11 +63,11 @@ export class AsignacionComiteComponent implements OnInit {
         // 3. Cargamos de inmediato las aulas de ese periodo
         this.cargarAulasPorPeriodo(periodoActual.id);
       }
-    });
+    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error'));
   }
 
   cargarAulasPorPeriodo(periodoId: number): void {
-    this.aulaService.getAulas(periodoId).subscribe(data => {
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.aulas.set(data);
       if (data.length > 0) {
         this.aulaSeleccionada.set(data[0].id);
@@ -74,27 +76,30 @@ export class AsignacionComiteComponent implements OnInit {
         this.aulaSeleccionada.set(null);
         this.integrantes.set([]);
       }
-    });
+    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error'));
   }
 
   cargarApoderadosSasi(): void {
-    this.comiteService.getApoderadosSasi().subscribe(data => {
+    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       const ordenados = [...data].sort((a, b) => 
         a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
       );
 
       this.apoderadosSasi.set(ordenados);
-    });
+    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los apoderados de SASI.', 'error'));
   }
 
   cargarComiteAula(aulaId: number): void {
     this.cargando.set(true);
-    this.comiteService.getComitePorAula(aulaId).subscribe({
+    this.comiteService.getComitePorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.integrantes.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los integrantes del comité.', 'error');
+      }
     });
   }
 
@@ -140,7 +145,7 @@ export class AsignacionComiteComponent implements OnInit {
       cargo: this.comiteForm.value.cargo
     };
 
-    this.comiteService.asignarIntegrante(payload).subscribe({
+    this.comiteService.asignarIntegrante(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         Swal.fire({
           icon: 'success',
@@ -168,7 +173,7 @@ export class AsignacionComiteComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed) {
-        this.comiteService.eliminarIntegrante(integrante.id).subscribe({
+        this.comiteService.eliminarIntegrante(integrante.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             Swal.fire('Removido', 'El integrante ha sido removido.', 'success');
             this.cargarComiteAula(this.aulaSeleccionada()!);

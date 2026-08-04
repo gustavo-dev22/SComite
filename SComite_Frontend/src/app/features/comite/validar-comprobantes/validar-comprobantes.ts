@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -15,6 +16,7 @@ import Swal from 'sweetalert2';
   styleUrl: './validar-comprobantes.scss',
 })
 export class ValidarComprobantesComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private fb = inject(FormBuilder);
   private cuotaService = inject(CuotaService);
   private aulaService = inject(AulaService);
@@ -61,8 +63,9 @@ export class ValidarComprobantesComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
@@ -80,12 +83,15 @@ export class ValidarComprobantesComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -103,12 +109,15 @@ export class ValidarComprobantesComponent implements OnInit {
 
   cargarCuotasPorAula(aulaId: number): void {
     this.cargandoCuotas.set(true);
-    this.cuotaService.obtenerPorAula(aulaId).subscribe({
+    this.cuotaService.obtenerPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.cuotas.set(data);
         this.cargandoCuotas.set(false);
       },
-      error: () => this.cargandoCuotas.set(false)
+      error: (err) => {
+        this.cargandoCuotas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las cuotas.', 'error');
+      }
     });
   }
 
@@ -125,12 +134,15 @@ export class ValidarComprobantesComponent implements OnInit {
 
   cargarCobros(cuotaId: number): void {
     this.cargando.set(true);
-    this.cuotaService.obtenerCobrosPorCuota(cuotaId).subscribe({
+    this.cuotaService.obtenerCobrosPorCuota(cuotaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.cobrosEstudiantes.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los cobros de la cuota.', 'error');
+      }
     });
   }
 
@@ -141,7 +153,7 @@ export class ValidarComprobantesComponent implements OnInit {
       cuotaDetalleId: item.cuotaDetalleId,
       montoAbonado: montoFaltante,
       formaPago: 'YAPE'
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         Swal.fire({
           icon: 'success',
@@ -150,10 +162,11 @@ export class ValidarComprobantesComponent implements OnInit {
           timer: 1500,
           showConfirmButton: false
         });
-        this.cargarCobros(this.cuotaSeleccionadaId()!);
+this.cargarCobros(this.cuotaSeleccionadaId()!);
+          },
+          error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo revertir el pago.', 'error')
+        });
       }
-    });
-  }
 
   abrirModalPagoParcial(item: CuotaEstudianteCobro): void {
     this.estudianteCobroModal.set(item);
@@ -186,7 +199,7 @@ export class ValidarComprobantesComponent implements OnInit {
       cuotaDetalleId: comp.cuotaDetalleId,
       montoAbonado: this.pagoForm.value.montoAbonado,
       formaPago: this.pagoForm.value.formaPago
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.cerrarModal();
         Swal.fire({
@@ -197,7 +210,8 @@ export class ValidarComprobantesComponent implements OnInit {
           showConfirmButton: false
         });
         this.cargarCobros(this.cuotaSeleccionadaId()!);
-      }
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar el abono.', 'error')
     });
   }
 
@@ -215,7 +229,7 @@ export class ValidarComprobantesComponent implements OnInit {
       allowEscapeKey: false
     }).then((result) => {
       if (result.isConfirmed) {
-        this.cuotaService.anularPago(item.cuotaDetalleId).subscribe({
+        this.cuotaService.anularPago(item.cuotaDetalleId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             Swal.fire({
               icon: 'success',
@@ -223,11 +237,12 @@ export class ValidarComprobantesComponent implements OnInit {
               text: 'El estado volvió a pendiente.',
               timer: 1500,
               showConfirmButton: false
-            });
-            this.cargarCobros(this.cuotaSeleccionadaId()!);
-          }
-        });
-      }
+});
+        this.cargarCobros(this.cuotaSeleccionadaId()!);
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar el pago.', 'error')
+    });
+  }
     });
   }
 

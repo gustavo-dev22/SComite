@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-ie',
@@ -12,6 +14,7 @@ import { InstitucionEducativa } from '../../../core/models/institucion.model';
   styleUrl: './ie.scss',
 })
 export class IeComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private institucionService = inject(InstitucionService);
   private authService = inject(AuthService);
 
@@ -32,14 +35,17 @@ export class IeComponent implements OnInit {
 
   cargarDatos(): void {
     this.cargando.set(true);
-    this.institucionService.getConfiguracion().subscribe({
+    this.institucionService.getConfiguracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         if (data) {
           this.formDatos.set(data);
         }
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución.', 'error');
+      }
     });
   }
 
@@ -73,7 +79,7 @@ export class IeComponent implements OnInit {
     this.guardando.set(true);
     this.mensajeExito.set(null);
 
-    this.institucionService.guardarConfiguracion(datos).subscribe({
+    this.institucionService.guardarConfiguracion(datos).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: any) => {
         this.guardando.set(true);
         
@@ -88,7 +94,10 @@ export class IeComponent implements OnInit {
         this.mensajeExito.set('Los datos de la Institución Educativa se actualizaron correctamente.');
         setTimeout(() => this.mensajeExito.set(null), 4000);
       },
-      error: () => this.guardando.set(false)
+      error: (err) => {
+        this.guardando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar la configuración.', 'error');
+      }
     });
   }
 }

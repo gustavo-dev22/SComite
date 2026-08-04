@@ -2,36 +2,63 @@
   
   <!-- Header del Módulo Administrador -->
   <div class="flex items-center gap-3 mb-6">
-    <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-sm">
+    <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
       </svg>
     </div>
     <div>
       <h1 class="text-2xl font-bold text-slate-800">Mantenimiento y Purga del Sistema</h1>
-      <p class="text-slate-500 text-sm">Herramientas críticas para la administración global de la base de datos.</p>
+      <p class="text-slate-500 text-sm">Herramientas críticas de respaldo y administración global de la base de datos.</p>
     </div>
   </div>
 
-  <!-- Card Zona Peligrosa -->
-  <div class="max-w-3xl bg-white rounded-2xl border border-rose-200 shadow-sm p-6">
-    <div class="flex items-start gap-4">
-      <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">⚠️</div>
-      <div class="flex-1">
-        <h3 class="text-lg font-bold text-rose-900">Reiniciar Base de Datos (Limpieza Total)</h3>
-        <p class="text-sm text-slate-600 mt-1 leading-relaxed">
-          Esta acción eliminará de forma <strong>permanente e irreversible</strong> todas las actividades, aulas, estudiantes, cuotas, cobros, gastos y registros cargados en el sistema. Los contadores autoincrementables volverán a 1.
-        </p>
-        
-        <div class="mt-6">
-          <button 
-            (click)="abrirModalReset()" 
-            class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl shadow transition cursor-pointer inline-flex items-center gap-2">
-            <span>🗑️ Purgar Toda la Base de Datos</span>
-          </button>
+  <div class="max-w-3xl space-y-6">
+    
+    <!-- CARD 1: BACKUP MANUAL BAJO DEMANDA -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div class="flex items-start gap-4">
+        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">💾</div>
+        <div class="flex-1">
+          <h3 class="text-lg font-bold text-slate-800">Respaldo Manual de Base de Datos</h3>
+          <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+            Descargue en cualquier momento una copia de seguridad en formato SQL de toda la información del sistema (aulas, cuotas, cobros y actas).
+          </p>
+          
+          <div class="mt-4">
+            <button 
+              (click)="generarBackupManual()" 
+              [disabled]="descargandoBackup()"
+              class="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold px-5 py-2.5 rounded-xl shadow transition cursor-pointer inline-flex items-center gap-2 text-sm">
+              <span>{{ descargandoBackup() ? 'Generando Backup...' : '💾 Descargar Backup Manual (.SQL)' }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- CARD 2: ZONA PELIGROSA (PURGA CON BACKUP AUTOMÁTICO PREVIO) -->
+    <div class="bg-white rounded-2xl border border-rose-200 shadow-sm p-6">
+      <div class="flex items-start gap-4">
+        <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">⚠️</div>
+        <div class="flex-1">
+          <h3 class="text-lg font-bold text-rose-900">Reiniciar Base de Datos (Limpieza Total)</h3>
+          <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+            Esta acción eliminará de forma permanente las actividades, aulas, estudiantes, cuotas y registros del sistema. 
+            <span class="text-rose-700 font-bold block mt-1">🛡️ Por seguridad, el sistema creará automáticamente un backup físico (.bak) en el servidor antes de proceder con el vaciado.</span>
+          </p>
+          
+          <div class="mt-6">
+            <button 
+              (click)="abrirModalReset()" 
+              class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl shadow transition cursor-pointer inline-flex items-center gap-2">
+              <span>🗑️ Purgar Toda la Base de Datos</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Modal de Doble Confirmación -->
@@ -41,8 +68,11 @@
         
         <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">⚠️</div>
         <h3 class="text-xl font-bold text-center text-slate-800 mb-2">¿Confirmar Limpieza Total?</h3>
-        <p class="text-xs text-slate-500 text-center mb-6">
-          Esta operación borra todo el historial de transacciones. Para continuar, escribe en mayúsculas la palabra <strong>ELIMINAR TODO</strong>:
+        <p class="text-xs text-slate-500 text-center mb-4">
+          Esta operación limpiará las transacciones del sistema previa generación de un respaldo físico automático.
+        </p>
+        <p class="text-xs font-bold text-slate-700 text-center mb-6">
+          Para continuar, escribe en mayúsculas la palabra <strong>ELIMINAR TODO</strong>:
         </p>
 
         @if (mensajeResultado()) {

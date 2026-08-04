@@ -21,12 +21,20 @@ namespace AulaComite.Api.Controllers
             try
             {
                 var ok = await _mediator.Send(command);
-                return Ok(new { success = ok, message = "La base de datos se ha purgado por completo de forma exitosa." });
+                return Ok(new { success = ok, message = "Se ha generado el backup pre-purga y la base de datos se ha limpiado por completo." });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        [HttpGet("descargar-backup")]
+        public async Task<IActionResult> DescargarBackup()
+        {
+            var fileBytes = await _mediator.Send(new GenerarBackupManualCommand());
+            var fileName = $"Backup_AulaComite_{DateTime.Now:yyyyMMdd_HHmmss}.sql";
+            return File(fileBytes, "application/sql", fileName);
         }
     }
 }

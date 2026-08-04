@@ -8,6 +8,9 @@ export interface MenuObjeto {
   activo: boolean;
   orden: number;
   idPadre: number | null;
+  posicion?: number;
+  subObjetos?: MenuObjeto[];
+  hijos?: MenuObjeto[];
 }
 
 export interface RolComite {

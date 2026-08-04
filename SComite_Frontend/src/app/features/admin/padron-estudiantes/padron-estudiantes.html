@@ -242,8 +242,9 @@
   <!-- MODAL CARGA MASIVA EXCEL / CSV -->
   @if (modalCargaMasivaAbierto()) {
     <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-100">
         
+        <!-- Cabecera Modal -->
         <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
           <div class="flex items-center gap-2">
             <i class="pi pi-file-excel text-emerald-400 text-lg"></i>
@@ -258,7 +259,7 @@
           <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-center justify-between">
             <div>
               <span class="text-xs font-bold text-indigo-900 uppercase block mb-0.5">Paso 1: Descargar Plantilla Excel</span>
-              <p class="text-xs text-indigo-700">Descargue el modelo .xlsx con las columnas requeridas y DNI de Apoderado.</p>
+              <p class="text-xs text-indigo-700">Descargue el modelo .xlsx con los nombres de los apoderados tal como figuran en SASI.</p>
             </div>
             <button 
               (click)="descargarPlantillaExcel()" 
@@ -282,28 +283,41 @@
             <span class="text-[11px] text-slate-400 block">Soporta archivos de Excel nativo (.xlsx, .xls) y CSV</span>
           </div>
 
-          <!-- Vista Previa -->
+          <!-- Vista Previa con Validación SASI en Tiempo Real -->
           @if (registrosPrevios().length > 0) {
             <div>
               <div class="flex justify-between items-center mb-2">
-                <span class="text-xs font-bold text-slate-700 uppercase">Vista Previa ({{ registrosPrevios().length }} filas leídas):</span>
+                <span class="text-xs font-bold text-slate-700 uppercase">Vista Previa de Verificación SASI ({{ registrosPrevios().length }} filas):</span>
               </div>
               
-              <div class="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
+              <div class="max-h-52 overflow-y-auto border border-slate-200 rounded-xl">
                 <table class="w-full text-left text-xs">
-                  <thead class="bg-slate-100 text-slate-600 font-bold uppercase sticky top-0">
+                  <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0 shadow-xs">
                     <tr>
-                      <th class="p-2">Documento</th>
-                      <th class="p-2">Estudiante</th>
-                      <th class="p-2">DNI Apoderado</th>
+                      <th class="p-3">Documento</th>
+                      <th class="p-3">Estudiante</th>
+                      <th class="p-3">Apoderado (SASI)</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
-                    @for (r of registrosPrevios().slice(0, 5); track $index) {
-                      <tr>
-                        <td class="p-2 font-mono">{{ r.tipoDocumento }}: {{ r.numeroDocumento }}</td>
-                        <td class="p-2 font-bold">{{ r.apellidoPaterno }} {{ r.apellidoMaterno }}, {{ r.nombres }}</td>
-                        <td class="p-2 text-slate-600 font-mono">{{ r.dniApoderado || 'Sin apoderado' }}</td>
+                    @for (r of registrosPrevios(); track $index) {
+                      <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-mono font-bold text-slate-600">{{ r.tipoDocumento }}: {{ r.numeroDocumento }}</td>
+                        <td class="p-3 font-bold text-slate-900">{{ r.apellidoPaterno }} {{ r.apellidoMaterno }}, {{ r.nombres }}</td>
+                        <td class="p-3">
+                          @if (!r.tieneApoderadoExcel) {
+                            <span class="text-slate-400 italic">-- Sin Apoderado --</span>
+                          } @else if (r.existeEnSasi) {
+                            <span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold px-2 py-0.5 rounded-full text-[11px]">
+                              ✓ {{ r.nombreSasiNormalizado }}
+                            </span>
+                          } @else {
+                            <!-- ⚠️ ALERTA: EL APODERADO NO EXISTE EN SASI -->
+                            <span class="inline-flex items-center gap-1 text-rose-700 bg-rose-50 border border-rose-200 font-bold px-2 py-0.5 rounded-full text-[11px]" title="El apoderado escrito en Excel no existe en SASI. Este alumno será omitido.">
+                              ⚠️ {{ r.nombreApoderado }} (No existe en SASI)
+                            </span>
+                          }
+                        </td>
                       </tr>
                     }
                   </tbody>
@@ -314,6 +328,7 @@
 
         </div>
 
+        <!-- Footer Modal -->
         <div class="flex justify-end gap-3 p-4 bg-slate-50 border-t border-slate-100">
           <button (click)="cerrarModalCargaMasiva()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition cursor-pointer">
             Cancelar

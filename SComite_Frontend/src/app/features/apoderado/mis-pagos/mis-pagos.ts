@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { CuotaApoderado, HijoApoderado, ResumenPagosApoderado } from '../../../core/models/apoderado.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-mis-pagos',
@@ -11,6 +13,7 @@ import { CuotaApoderado, HijoApoderado, ResumenPagosApoderado } from '../../../c
   styleUrl: './mis-pagos.scss',
 })
 export class MisPagosComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private apoderadoService = inject(ApoderadoService);
 
   cargandoHijos = signal<boolean>(false);
@@ -35,7 +38,7 @@ export class MisPagosComponent implements OnInit {
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -46,7 +49,10 @@ export class MisPagosComponent implements OnInit {
           this.cargarCuotasEstudiante();
         }
       },
-      error: () => this.cargandoHijos.set(false)
+      error: (err) => {
+        this.cargandoHijos.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+      }
     });
   }
 
@@ -55,12 +61,15 @@ export class MisPagosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoCuotas.set(true);
-    this.apoderadoService.getCuotasPendientes(estudianteId, this.anioLectivoActual).subscribe({
+    this.apoderadoService.getCuotasPendientes(estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.resumen.set(data);
         this.cargandoCuotas.set(false);
       },
-      error: () => this.cargandoCuotas.set(false)
+      error: (err) => {
+        this.cargandoCuotas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las cuotas pendientes.', 'error');
+      }
     });
   }
 

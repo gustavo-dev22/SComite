@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActividadService } from '../../../core/services/actividad.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ActividadComite } from '../../../core/models/actividad.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-cronograma-actividades',
@@ -14,6 +16,7 @@ import { ActividadComite } from '../../../core/models/actividad.model';
   styleUrl: './cronograma-actividades.scss',
 })
 export class CronogramaActividadesComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private actividadService = inject(ActividadService);
   private aulaService = inject(AulaService);
 
@@ -61,8 +64,9 @@ export class CronogramaActividadesComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
@@ -78,12 +82,15 @@ export class CronogramaActividadesComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -104,12 +111,15 @@ export class CronogramaActividadesComponent implements OnInit {
     const p = this.periodos().find(x => x.id === periodoId);
     const anio = p ? p.anio : new Date().getFullYear();
 
-    this.actividadService.getActividadesPorAula(aulaId, anio).subscribe({
+    this.actividadService.getActividadesPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.actividades.set(data);
         this.cargandoActividades.set(false);
       },
-      error: () => this.cargandoActividades.set(false)
+      error: (err) => {
+        this.cargandoActividades.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actividades.', 'error');
+      }
     });
   }
 
@@ -152,21 +162,25 @@ export class CronogramaActividadesComponent implements OnInit {
     dto.aulaId = this.aulaSeleccionadaId()!;
     this.guardando.set(true);
 
-    this.actividadService.guardarActividad(dto).subscribe({
+    this.actividadService.guardarActividad(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarModal();
         this.cargarActividades(this.aulaSeleccionadaId()!);
       },
-      error: () => this.guardando.set(false)
+      error: (err) => {
+        this.guardando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar la actividad.', 'error');
+      }
     });
   }
 
   eliminarActividad(id: number): void {
     if (!confirm('¿Está seguro de eliminar esta actividad del cronograma?')) return;
 
-    this.actividadService.eliminarActividad(id, this.aulaSeleccionadaId()!).subscribe({
-      next: () => this.cargarActividades(this.aulaSeleccionadaId()!)
+    this.actividadService.eliminarActividad(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.cargarActividades(this.aulaSeleccionadaId()!),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la actividad.', 'error')
     });
   }
 

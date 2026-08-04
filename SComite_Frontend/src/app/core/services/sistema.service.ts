@@ -13,4 +13,8 @@ export class SistemaService {
   resetBaseDeDatos(confirmacionTexto: string): Observable<{ success: boolean; message: string }> {
     return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/reset-database`, { confirmacionTexto });
   }
+
+  descargarBackupManual(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/descargar-backup`, { responseType: 'blob' });
+  }
 }

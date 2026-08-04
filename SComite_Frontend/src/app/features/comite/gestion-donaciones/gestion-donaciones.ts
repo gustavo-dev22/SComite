@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AulaService } from '../../../core/services/aula.service';
 import { DonacionService } from '../../../core/services/donacion.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { DonacionComite } from '../../../core/models/donacion.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-gestion-donaciones',
@@ -14,6 +16,7 @@ import { DonacionComite } from '../../../core/models/donacion.model';
   styleUrl: './gestion-donaciones.scss',
 })
 export class GestionDonacionesComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private donacionService = inject(DonacionService);
   private aulaService = inject(AulaService);
 
@@ -52,8 +55,9 @@ export class GestionDonacionesComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
@@ -69,12 +73,15 @@ export class GestionDonacionesComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -105,12 +112,15 @@ export class GestionDonacionesComponent implements OnInit {
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
     const mes = this.mesSeleccionado();
 
-    this.donacionService.getDonacionesPorAula(aulaId, anio, mes).subscribe({
+    this.donacionService.getDonacionesPorAula(aulaId, anio, mes).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.donaciones.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las donaciones.', 'error');
+      }
     });
   }
 
@@ -156,21 +166,25 @@ export class GestionDonacionesComponent implements OnInit {
     dto.aulaId = this.aulaSeleccionadaId()!;
     this.guardando.set(true);
 
-    this.donacionService.guardarDonacion(dto).subscribe({
+    this.donacionService.guardarDonacion(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarModal();
         this.cargarDonaciones(this.aulaSeleccionadaId()!);
       },
-      error: () => this.guardando.set(false)
+      error: (err) => {
+        this.guardando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar la donación.', 'error');
+      }
     });
   }
 
   eliminarDonacion(id: number): void {
     if (!confirm('¿Está seguro de eliminar este registro de donación?')) return;
 
-    this.donacionService.eliminarDonacion(id, this.aulaSeleccionadaId()!).subscribe({
-      next: () => this.cargarDonaciones(this.aulaSeleccionadaId()!)
+    this.donacionService.eliminarDonacion(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.cargarDonaciones(this.aulaSeleccionadaId()!),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la donación.', 'error')
     });
   }
 }

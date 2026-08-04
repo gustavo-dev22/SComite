@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GastoService } from '../../../core/services/gasto.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -15,6 +16,7 @@ import Swal from 'sweetalert2';
   styleUrl: './registro-gastos.scss',
 })
 export class RegistroGastosComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private fb = inject(FormBuilder);
   private gastoService = inject(GastoService);
   private aulaService = inject(AulaService);
@@ -72,8 +74,9 @@ export class RegistroGastosComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
@@ -90,12 +93,15 @@ export class RegistroGastosComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -130,17 +136,21 @@ export class RegistroGastosComponent implements OnInit {
     const mes = this.mesSeleccionado();
 
     // 1. Cargar Balance Mensual con Arrastre
-    this.gastoService.obtenerBalanceMensual(aulaId, anio, mes).subscribe({
-      next: (res) => this.resumenCaja.set(res)
+    this.gastoService.obtenerBalanceMensual(aulaId, anio, mes).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => this.resumenCaja.set(res),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo cargar el balance mensual.', 'error')
     });
 
     // 2. Cargar Lista de Gastos
-    this.gastoService.obtenerPorAula(aulaId).subscribe({
+    this.gastoService.obtenerPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.gastos.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los gastos.', 'error');
+      }
     });
   }
 
@@ -150,7 +160,7 @@ export class RegistroGastosComponent implements OnInit {
 
     const payload = { ...this.gastoForm.value, aulaId };
 
-    this.gastoService.crear(payload).subscribe({
+    this.gastoService.crear(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.cerrarModal();
         Swal.fire({
@@ -161,7 +171,8 @@ export class RegistroGastosComponent implements OnInit {
           showConfirmButton: false
         });
         this.cargarGastosYBalance(aulaId);
-      }
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar el gasto.', 'error')
     });
   }
 
@@ -179,7 +190,7 @@ export class RegistroGastosComponent implements OnInit {
       allowOutsideClick: false
     }).then((result) => {
       if (result.isConfirmed) {
-        this.gastoService.eliminar(gasto.id).subscribe({
+        this.gastoService.eliminar(gasto.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
             Swal.fire({
               icon: 'success',
@@ -188,7 +199,8 @@ export class RegistroGastosComponent implements OnInit {
               showConfirmButton: false
             });
             this.cargarGastosYBalance(this.aulaSeleccionadaId()!);
-          }
+          },
+          error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el gasto.', 'error')
         });
       }
     });

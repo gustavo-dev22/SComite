@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BalanceService } from '../../../core/services/balance.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
@@ -9,9 +10,8 @@ import { ComiteService } from '../../../core/services/comite.service';
 import { ComiteIntegrante } from '../../../core/models/comiteIntegrante.model';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
-
-declare var html2canvas: any;
-declare var jspdf: any;
+import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-balance-caja',
@@ -20,10 +20,12 @@ declare var jspdf: any;
   styleUrl: './balance-caja.scss',
 })
 export class BalanceCajaComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private balanceService = inject(BalanceService);
   private aulaService = inject(AulaService);
   private comiteService = inject(ComiteService);
   private institucionService = inject(InstitucionService);
+  private pdfExporter = inject(PdfExporterService);
 
   // Listas
   periodos = signal<PeriodoLectivo[]>([]);
@@ -141,17 +143,18 @@ export class BalanceCajaComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
   cargarDatosInstitucion(): void {
-    this.institucionService.getConfiguracion().subscribe({
+    this.institucionService.getConfiguracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         if (data) this.institucion.set(data);
       },
-      error: () => console.warn('No se pudieron cargar los datos de la institución educativa.')
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
     });
   }
 
@@ -167,12 +170,15 @@ export class BalanceCajaComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -189,9 +195,12 @@ export class BalanceCajaComponent implements OnInit {
   }
 
   cargarIntegrantesComite(aulaId: number): void {
-    this.comiteService.getComitePorAula(aulaId).subscribe({
+    this.comiteService.getComitePorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.integrantesComiteRaw.set(data),
-      error: () => this.integrantesComiteRaw.set([])
+      error: (err) => {
+        this.integrantesComiteRaw.set([]);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los integrantes del comité.', 'error');
+      }
     });
   }
 
@@ -212,14 +221,17 @@ export class BalanceCajaComponent implements OnInit {
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
     const mes = this.mesSeleccionado();
 
-    this.balanceService.obtenerConsolidado(aulaId, anio, mes).subscribe({
+    this.balanceService.obtenerConsolidado(aulaId, anio, mes).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.consolidado.set(res.consolidado);
         this.gastosCategorias.set(res.gastosPorCategoria);
         this.gastosDetalles.set(res.gastosDetalle || []);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo cargar el balance de caja.', 'error');
+      }
     });
   }
 
@@ -240,90 +252,47 @@ export class BalanceCajaComponent implements OnInit {
     this.integrantesComiteRaw.set([]);
   }
 
-  descargarPdfDirecto(): void {
+  async descargarPdfDirecto(): Promise<void> {
     const element = document.getElementById('reporte-imprimible-pdf');
     if (!element) {
-      console.error('No se encontró el contenedor #reporte-imprimible-pdf');
+      Swal.fire('Error', 'No se encontró el contenedor del reporte.', 'error');
       return;
     }
 
-    // 1. Mostrar modal de carga
+    const id = this.aulaSeleccionadaId();
+    const aula = this.aulas().find(a => a.id === id);
+    const mesVal = this.mesSeleccionado();
+
+    let nivelStr = 'NIVEL';
+    let gradoStr = 'GRADO';
+    let seccionStr = 'SECCION';
+
+    if (aula) {
+      nivelStr = aula.nivel.toUpperCase().trim().replace(/\s+/g, '_');
+      gradoStr = String(aula.grado)
+        .toUpperCase()
+        .trim()
+        .replace(/[^A-Z0-9Ññ]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      seccionStr = aula.seccion.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+    }
+
+    let nombreArchivo = '';
+    if (mesVal === 0) {
+      nombreArchivo = `Rendicion_Todo_el_Año_(Acumulado)_${nivelStr}_${gradoStr}_${seccionStr}.pdf`;
+    } else {
+      const mesNombre = this.nombreMesActual().trim().replace(/\s+/g, '_');
+      nombreArchivo = `Rendicion_Mes_${mesNombre}_${nivelStr}_${gradoStr}_${seccionStr}.pdf`;
+    }
+
     this.descargandoPdf.set(true);
-
-    // 2. Visibilizar temporalmente el elemento para que html2canvas lo capture
-    element.style.display = 'block';
-
-    setTimeout(() => {
-      const id = this.aulaSeleccionadaId();
-      const aula = this.aulas().find(a => a.id === id);
-      const mesVal = this.mesSeleccionado();
-
-      let nivelStr = 'NIVEL';
-      let gradoStr = 'GRADO';
-      let seccionStr = 'SECCION';
-
-      if (aula) {
-        nivelStr = aula.nivel.toUpperCase().trim().replace(/\s+/g, '_');
-        gradoStr = String(aula.grado)
-          .toUpperCase()
-          .trim()
-          .replace(/[^A-Z0-9Ññ]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '');
-        seccionStr = aula.seccion.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
-      }
-
-      let nombreArchivo = '';
-      if (mesVal === 0) {
-        nombreArchivo = `Rendicion_Todo_el_Año_(Acumulado)_${nivelStr}_${gradoStr}_${seccionStr}.pdf`;
-      } else {
-        const mesNombre = this.nombreMesActual().trim().replace(/\s+/g, '_');
-        nombreArchivo = `Rendicion_Mes_${mesNombre}_${nivelStr}_${gradoStr}_${seccionStr}.pdf`;
-      }
-
-      html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc: Document) => {
-          const pdfEl = clonedDoc.getElementById('reporte-imprimible-pdf');
-          if (pdfEl) {
-            pdfEl.style.display = 'block';
-            pdfEl.style.backgroundColor = '#ffffff';
-            pdfEl.style.color = '#0f172a';
-
-            const elements = pdfEl.querySelectorAll('*');
-            elements.forEach((el: any) => {
-              el.style.boxShadow = 'none';
-              el.style.textShadow = 'none';
-              const style = window.getComputedStyle(el);
-              if (style.color && style.color.includes('oklch')) el.style.color = '#0f172a';
-              if (style.backgroundColor && style.backgroundColor.includes('oklch')) el.style.backgroundColor = '#ffffff';
-              if (style.borderColor && style.borderColor.includes('oklch')) el.style.borderColor = '#cbd5e1';
-            });
-          }
-        }
-      }).then((canvas: HTMLCanvasElement) => {
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const { jsPDF } = jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        
-        const imgWidth = 210 - 20; 
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
-        pdf.save(nombreArchivo);
-
-        // Ocultar de nuevo
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      }).catch((err: any) => {
-        console.error('Error al generar PDF:', err);
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      });
-
-    }, 150);
+    try {
+      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+    } catch {
+      Swal.fire('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.', 'error');
+    } finally {
+      this.descargandoPdf.set(false);
+    }
   }
 }

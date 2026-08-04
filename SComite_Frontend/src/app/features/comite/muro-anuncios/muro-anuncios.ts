@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AnuncioService } from '../../../core/services/anuncio.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -7,6 +8,7 @@ import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { AnuncioComite, ResumenAuditoriaAnuncio } from '../../../core/models/anuncio.model';
 import { Aula } from '../../../core/models/aula.model';
 import { AuthService } from '../../../core/services/auth.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-muro-anuncios',
@@ -15,6 +17,7 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './muro-anuncios.scss',
 })
 export class MuroAnunciosComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private anuncioService = inject(AnuncioService);
   private aulaService = inject(AulaService);
   private authService = inject(AuthService);
@@ -65,8 +68,9 @@ export class MuroAnunciosComponent implements OnInit {
   }
 
   cargarPeriodos(): void {
-    this.aulaService.getPeriodos().subscribe({
-      next: (data) => this.periodos.set(data)
+    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.periodos.set(data),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
     });
   }
 
@@ -82,12 +86,15 @@ export class MuroAnunciosComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
-      error: () => this.cargandoAulas.set(false)
+      error: (err) => {
+        this.cargandoAulas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+      }
     });
   }
 
@@ -107,12 +114,15 @@ export class MuroAnunciosComponent implements OnInit {
     const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
-    this.anuncioService.getAnunciosPorAula(aulaId, anio).subscribe({
+    this.anuncioService.getAnunciosPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.anuncios.set(data);
         this.cargando.set(false);
       },
-      error: () => this.cargando.set(false)
+      error: (err) => {
+        this.cargando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los comunicados.', 'error');
+      }
     });
   }
 
@@ -161,21 +171,25 @@ export class MuroAnunciosComponent implements OnInit {
     dto.aulaId = this.aulaSeleccionadaId()!;
     this.guardando.set(true);
 
-    this.anuncioService.guardarAnuncio(dto).subscribe({
+    this.anuncioService.guardarAnuncio(dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarModal();
         this.cargarAnuncios(this.aulaSeleccionadaId()!);
       },
-      error: () => this.guardando.set(false)
+      error: (err) => {
+        this.guardando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar el comunicado.', 'error');
+      }
     });
   }
 
   eliminarAnuncio(id: number): void {
     if (!confirm('¿Está seguro de eliminar este comunicado oficial?')) return;
 
-    this.anuncioService.eliminarAnuncio(id, this.aulaSeleccionadaId()!).subscribe({
-      next: () => this.cargarAnuncios(this.aulaSeleccionadaId()!)
+    this.anuncioService.eliminarAnuncio(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.cargarAnuncios(this.aulaSeleccionadaId()!),
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el comunicado.', 'error')
     });
   }
 
@@ -195,12 +209,15 @@ export class MuroAnunciosComponent implements OnInit {
     this.cargandoAuditoria.set(true);
     this.filtroAuditoria.set('TODOS');
 
-    this.anuncioService.getAuditoriaVistas(anuncio.id).subscribe({
+    this.anuncioService.getAuditoriaVistas(anuncio.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.resumenAuditoria.set(data);
         this.cargandoAuditoria.set(false);
       },
-      error: () => this.cargandoAuditoria.set(false)
+      error: (err) => {
+        this.cargandoAuditoria.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las vistas del comunicado.', 'error');
+      }
     });
   }
 

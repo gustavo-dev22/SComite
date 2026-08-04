@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { ComiteIntegrante, UsuarioSasi } from '../models/comiteIntegrante.model';
+import { ApiResponse } from '../models/api-response.model';
 
 @Injectable({
   providedIn: 'root',
@@ -19,11 +20,11 @@ export class ComiteService {
     return this.http.get<UsuarioSasi[]>(`${this.apiUrl}/apoderados-sasi`);
   }
 
-  asignarIntegrante(data: { aulaId: number; usuarioIdSasi: string; nombreCompleto: string; email: string; cargo: string }): Observable<any> {
-    return this.http.post(this.apiUrl, data);
+  asignarIntegrante(data: { aulaId: number; usuarioIdSasi: string; nombreCompleto: string; email: string; cargo: string }): Observable<ApiResponse<ComiteIntegrante>> {
+    return this.http.post<ApiResponse<ComiteIntegrante>>(this.apiUrl, data);
   }
 
-  eliminarIntegrante(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+  eliminarIntegrante(id: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
   }
 }

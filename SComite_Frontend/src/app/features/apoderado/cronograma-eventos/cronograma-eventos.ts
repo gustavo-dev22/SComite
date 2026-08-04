@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { EventoCronogramaApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-cronograma-eventos',
@@ -10,6 +12,7 @@ import { EventoCronogramaApoderado, HijoApoderado } from '../../../core/models/a
   styleUrl: './cronograma-eventos.scss',
 })
 export class CronogramaEventosComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private apoderadoService = inject(ApoderadoService);
 
   cargandoHijos = signal<boolean>(false);
@@ -41,7 +44,7 @@ export class CronogramaEventosComponent implements OnInit {
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -51,7 +54,10 @@ export class CronogramaEventosComponent implements OnInit {
           this.cargarEventos();
         }
       },
-      error: () => this.cargandoHijos.set(false)
+      error: (err) => {
+        this.cargandoHijos.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+      }
     });
   }
 
@@ -60,12 +66,15 @@ export class CronogramaEventosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoEventos.set(true);
-    this.apoderadoService.getCronogramaEventos(estudianteId, this.anioLectivoActual).subscribe({
+    this.apoderadoService.getCronogramaEventos(estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.eventos.set(data);
         this.cargandoEventos.set(false);
       },
-      error: () => this.cargandoEventos.set(false)
+      error: (err) => {
+        this.cargandoEventos.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los eventos.', 'error');
+      }
     });
   }
 

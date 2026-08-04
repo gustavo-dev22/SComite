@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { ActaApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
-
-declare var html2canvas: any;
-declare var jspdf: any;
+import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-actas-documentos',
@@ -15,8 +15,10 @@ declare var jspdf: any;
   styleUrl: './actas-documentos.scss',
 })
 export class ActasDocumentosComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   private apoderadoService = inject(ApoderadoService);
   private institucionService = inject(InstitucionService);
+  private pdfExporter = inject(PdfExporterService);
 
   cargandoHijos = signal<boolean>(false);
   cargandoActas = signal<boolean>(false);
@@ -45,7 +47,7 @@ export class ActasDocumentosComponent implements OnInit {
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -55,15 +57,19 @@ export class ActasDocumentosComponent implements OnInit {
           this.cargarActas();
         }
       },
-      error: () => this.cargandoHijos.set(false)
+      error: (err) => {
+        this.cargandoHijos.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+      }
     });
   }
 
   cargarDatosInstitucion(): void {
-    this.institucionService.getConfiguracion().subscribe({
+    this.institucionService.getConfiguracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         if (data) this.institucion.set(data);
-      }
+      },
+      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
     });
   }
 
@@ -72,12 +78,15 @@ export class ActasDocumentosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoActas.set(true);
-    this.apoderadoService.getActasAprobadas(estudianteId, this.anioLectivoActual).subscribe({
+    this.apoderadoService.getActasAprobadas(estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.actas.set(data);
         this.cargandoActas.set(false);
       },
-      error: () => this.cargandoActas.set(false)
+      error: (err) => {
+        this.cargandoActas.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actas.', 'error');
+      }
     });
   }
 
@@ -86,64 +95,26 @@ export class ActasDocumentosComponent implements OnInit {
     this.cargarActas();
   }
 
-  descargarPdfActa(acta: ActaApoderado): void {
+  async descargarPdfActa(acta: ActaApoderado): Promise<void> {
     this.actaParaPdf.set(acta);
-    this.descargandoPdf.set(true);
 
     const element = document.getElementById('acta-imprimible-pdf');
     if (!element) {
+      Swal.fire('Error', 'No se encontró el contenedor del acta.', 'error');
       this.descargandoPdf.set(false);
       return;
     }
 
-    element.style.display = 'block';
+    const numActaClean = acta.numeroActa.replace(/[^A-Z0-9]/gi, '_');
+    const nombreArchivo = `${numActaClean}.pdf`;
 
-    setTimeout(() => {
-      const numActaClean = acta.numeroActa.replace(/[^A-Z0-9]/gi, '_');
-      const nombreArchivo = `${numActaClean}.pdf`;
-
-      html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc: Document) => {
-          const pdfEl = clonedDoc.getElementById('acta-imprimible-pdf');
-          if (pdfEl) {
-            pdfEl.style.display = 'block';
-            pdfEl.style.backgroundColor = '#ffffff';
-            pdfEl.style.color = '#0f172a';
-
-            const elements = pdfEl.querySelectorAll('*');
-            elements.forEach((el: any) => {
-              el.style.boxShadow = 'none';
-              el.style.textShadow = 'none';
-              const style = window.getComputedStyle(el);
-
-              if (style.color && style.color.includes('oklch')) el.style.color = '#0f172a';
-              if (style.backgroundColor && style.backgroundColor.includes('oklch')) el.style.backgroundColor = '#ffffff';
-              if (style.borderColor && style.borderColor.includes('oklch')) el.style.borderColor = '#cbd5e1';
-            });
-          }
-        }
-      }).then((canvas: HTMLCanvasElement) => {
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const { jsPDF } = jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-
-        const imgWidth = 210 - 20;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
-        pdf.save(nombreArchivo);
-
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      }).catch((err: any) => {
-        console.error('Error al generar PDF:', err);
-        element.style.display = 'none';
-        this.descargandoPdf.set(false);
-      });
-    }, 200);
+    this.descargandoPdf.set(true);
+    try {
+      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+    } catch {
+      Swal.fire('Error', 'No se pudo generar el PDF del acta. Inténtalo de nuevo.', 'error');
+    } finally {
+      this.descargandoPdf.set(false);
+    }
   }
 }
