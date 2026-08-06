@@ -33,3 +33,8 @@ export interface CreateGastoCommand {
   proveedor?: string;
   observacion?: string;
 }
+
+export interface UpdateGastoCommand extends CreateGastoCommand {
+  id: number;
+  urlComprobante?: string;
+}

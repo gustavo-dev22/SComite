@@ -169,7 +169,7 @@ export class RegistroGastosComponent implements OnInit {
 
     if (this.esEdicion()) {
       const id = this.gastoEditarId()!;
-      this.gastoService.actualizar(id, { ...payload, id }).subscribe({
+      this.gastoService.actualizar(id, { ...payload, id }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.cerrarModal();
           Swal.fire({ icon: 'success', title: 'Gasto Actualizado', timer: 1500, showConfirmButton: false });
@@ -178,7 +178,7 @@ export class RegistroGastosComponent implements OnInit {
         error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error')
       });
     } else {
-      this.gastoService.crear(payload).subscribe({
+      this.gastoService.crear(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
           this.cerrarModal();
           Swal.fire({ icon: 'success', title: 'Gasto Registrado', timer: 1500, showConfirmButton: false });
@@ -279,7 +279,7 @@ export class RegistroGastosComponent implements OnInit {
     this.archivoSeleccionadoNombre.set(file.name);
     this.subiendoArchivo.set(true);
 
-    this.gastoService.subirArchivoComprobante(file).subscribe({
+    this.gastoService.subirArchivoComprobante(file).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.gastoForm.patchValue({ urlComprobante: res.urlComprobante });
         this.subiendoArchivo.set(false);

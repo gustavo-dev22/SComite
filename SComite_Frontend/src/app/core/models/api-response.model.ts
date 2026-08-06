@@ -1,7 +1,9 @@
-export interface ApiResponse<T = unknown> {
-  data?: T;
+export interface ApiResponse {
+  id?: number;
   exito?: boolean;
   mensaje?: string;
+  fechaActualizacion?: string;
+  usuarioActualizacion?: string;
 }
 
 export interface ResultadoCargaMasivaEstudiantes {

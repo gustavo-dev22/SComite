@@ -12,6 +12,36 @@ import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
 
+interface FilaEstudianteExcel {
+  TipoDocumento?: string;
+  NumeroDocumento?: string;
+  Nombres?: string;
+  ApellidoPaterno?: string;
+  ApellidoMaterno?: string;
+  NombreApoderado?: string;
+  TelefonoApoderado?: string;
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  nombres?: string;
+  apellidoPaterno?: string;
+  apellidoMaterno?: string;
+  nombreApoderado?: string;
+  telefonoApoderado?: string;
+}
+
+interface RegistroPrevioEstudiante {
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  nombreApoderado: string;
+  telefonoApoderado: string;
+  tieneApoderadoExcel: boolean;
+  existeEnSasi: boolean;
+  nombreSasiNormalizado: string;
+}
+
 @Component({
   selector: 'app-padron-estudiantes',
   imports: [CommonModule, ReactiveFormsModule],
@@ -52,7 +82,7 @@ export class PadronEstudiantesComponent implements OnInit {
 
   modalCargaMasivaAbierto = signal<boolean>(false);
   procesandoArchivo = signal<boolean>(false);
-  registrosPrevios = signal<any[]>([]);
+  registrosPrevios = signal<RegistroPrevioEstudiante[]>([]);
   nombreArchivoCargado = signal<string>('');
 
   ngOnInit(): void {
@@ -302,18 +332,20 @@ export class PadronEstudiantesComponent implements OnInit {
     this.nombreArchivoCargado.set(file.name);
 
     const reader = new FileReader();
-    reader.onload = (e: any) => {
-      const data = new Uint8Array(e.target.result);
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const result = e.target?.result;
+      if (typeof result === 'string' || !result) return;
+      const data = new Uint8Array(result);
       const workbook = XLSX.read(data, { type: 'array' });
 
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
 
-      const jsonResult: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+      const jsonResult = XLSX.utils.sheet_to_json<FilaEstudianteExcel>(worksheet, { defval: '' });
 
       const apoderadosCatalogo = this.apoderadosSasi();
 
-      const estudiantesParsed = jsonResult.map((row: any) => {
+      const estudiantesParsed: RegistroPrevioEstudiante[] = jsonResult.map((row: FilaEstudianteExcel) => {
         const nombreApoderadoExcel = String(row.NombreApoderado || row.nombreApoderado || '').trim();
         let existeSasi = false;
         let nombreEncontrado = '';

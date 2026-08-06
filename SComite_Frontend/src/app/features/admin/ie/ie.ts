@@ -56,8 +56,11 @@ export class IeComponent implements OnInit {
       const file = input.files[0];
       const reader = new FileReader();
 
-      reader.onload = (e: any) => {
-        this.formDatos.update(f => ({ ...f, urlLogo: e.target.result }));
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const result = e.target?.result;
+        if (typeof result === 'string') {
+          this.formDatos.update(f => ({ ...f, urlLogo: result }));
+        }
       };
 
       reader.readAsDataURL(file);

@@ -215,6 +215,11 @@ export class AuthService {
     return urlsEnOrdenLectura.find(url => rutasExistentes.includes(url)) || 'login';
   }
 
+  urlPermitidaEnMenu(url: string): boolean {
+    const objetivo = url.startsWith('/') ? url.substring(1) : url;
+    return this.obtenerUrlsEnOrdenLectura(this.menuSesion()).includes(objetivo);
+  }
+
   private obtenerUrlsEnOrdenLectura(objetos: MenuObjeto[]): string[] {
     const urls: string[] = [];
 

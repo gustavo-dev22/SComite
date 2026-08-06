@@ -15,15 +15,15 @@ export class ApiService {
     return this.http.get<T>(`${this.baseUrl}/${endpoint}`);
   }
 
-  post<T>(endpoint: string, body: unknown): Observable<ApiResponse<T>> {
-    return this.http.post<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, body);
+  post<T>(endpoint: string, body: unknown): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.baseUrl}/${endpoint}`, body);
   }
 
-  put<T>(endpoint: string, body: unknown): Observable<ApiResponse<T>> {
-    return this.http.put<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, body);
+  put<T>(endpoint: string, body: unknown): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.baseUrl}/${endpoint}`, body);
   }
 
-  delete<T>(endpoint: string): Observable<ApiResponse<T>> {
-    return this.http.delete<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`);
+  delete<T>(endpoint: string): Observable<ApiResponse> {
+    return this.http.delete<ApiResponse>(`${this.baseUrl}/${endpoint}`);
   }
 }

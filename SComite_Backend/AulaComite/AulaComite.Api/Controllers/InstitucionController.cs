@@ -8,7 +8,6 @@ namespace AulaComite.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "Administrador")]
     public class InstitucionController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -16,6 +15,7 @@ namespace AulaComite.Api.Controllers
         public InstitucionController(IMediator mediator) => _mediator = mediator;
 
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetConfiguracion()
         {
             var result = await _mediator.Send(new GetInstitucionEducativaQuery());
@@ -23,6 +23,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Guardar([FromBody] GuardarInstitucionEducativaCommand command)
         {
             var usuarioNombre = !string.IsNullOrWhiteSpace(command.UsuarioActualizacion)

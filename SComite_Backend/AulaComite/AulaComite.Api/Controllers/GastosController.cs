@@ -51,7 +51,7 @@ namespace AulaComite.Api.Controllers
                 if (!exito)
                     return NotFound(new { mensaje = "El gasto especificado no existe o no se pudo actualizar." });
 
-                return Ok(new { success = true, mensaje = "Gasto modificado correctamente." });
+                return Ok(new { exito = true, mensaje = "Gasto modificado correctamente." });
             }
             catch (Exception ex)
             {

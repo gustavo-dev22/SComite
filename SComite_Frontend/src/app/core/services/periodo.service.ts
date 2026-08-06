@@ -12,11 +12,11 @@ export class PeriodoService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/Periodos`;
 
-  crearPeriodo(periodo: Partial<PeriodoLectivo>): Observable<ApiResponse<PeriodoLectivo>> {
-    return this.http.post<ApiResponse<PeriodoLectivo>>(`${environment.apiUrl}/Periodos`, periodo);
+  crearPeriodo(periodo: Partial<PeriodoLectivo>): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${environment.apiUrl}/Periodos`, periodo);
   }
 
-  actualizarPeriodo(id: number, periodo: Partial<PeriodoLectivo>): Observable<ApiResponse<void>> {
-    return this.http.put<ApiResponse<void>>(`${environment.apiUrl}/Periodos/${id}`, periodo);
+  actualizarPeriodo(id: number, periodo: Partial<PeriodoLectivo>): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${environment.apiUrl}/Periodos/${id}`, periodo);
   }
 }

@@ -20,11 +20,11 @@ export class ComiteService {
     return this.http.get<UsuarioSasi[]>(`${this.apiUrl}/apoderados-sasi`);
   }
 
-  asignarIntegrante(data: { aulaId: number; usuarioIdSasi: string; nombreCompleto: string; email: string; cargo: string }): Observable<ApiResponse<ComiteIntegrante>> {
-    return this.http.post<ApiResponse<ComiteIntegrante>>(this.apiUrl, data);
+  asignarIntegrante(data: { aulaId: number; usuarioIdSasi: string; nombreCompleto: string; email: string; cargo: string }): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(this.apiUrl, data);
   }
 
-  eliminarIntegrante(id: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
+  eliminarIntegrante(id: number): Observable<ApiResponse> {
+    return this.http.delete<ApiResponse>(`${this.apiUrl}/${id}`);
   }
 }

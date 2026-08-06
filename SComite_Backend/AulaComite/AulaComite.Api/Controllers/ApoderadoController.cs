@@ -52,7 +52,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> RegistrarLecturaAnuncio([FromBody] RegistrarLecturaAnuncioCommand command)
         {
             await _mediator.Send(command);
-            return Ok(new { success = true });
+            return Ok(new { exito = true, mensaje = "Lectura del anuncio registrada correctamente." });
         }
 
         /// <summary>

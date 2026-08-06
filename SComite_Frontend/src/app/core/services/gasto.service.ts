@@ -2,7 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { CreateGastoCommand, GastoComite, ResumenCajaAula } from '../models/gasto.model';
+import { ApiResponse } from '../models/api-response.model';
+import { CreateGastoCommand, GastoComite, ResumenCajaAula, UpdateGastoCommand } from '../models/gasto.model';
 
 @Injectable({
   providedIn: 'root',
@@ -23,8 +24,8 @@ export class GastoService {
     return this.http.post<{ id: number; mensaje: string }>(this.apiUrl, command);
   }
 
-  actualizar(id: number, payload: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, payload);
+  actualizar(id: number, payload: UpdateGastoCommand): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.apiUrl}/${id}`, payload);
   }
 
   eliminar(id: number): Observable<{ exito: boolean; mensaje: string }> {

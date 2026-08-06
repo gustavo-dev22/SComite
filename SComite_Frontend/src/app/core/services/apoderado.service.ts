@@ -24,8 +24,8 @@ export class ApoderadoService {
     return this.http.get<AnuncioApoderado[]>(`${this.apiUrl}/anuncios-muro?estudianteId=${estudianteId}&anio=${anio}`);
   }
 
-  marcarLecturaAnuncio(anuncioId: number, estudianteId: number, anioLectivo: number): Observable<ApiResponse<void>> {
-    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/marcar-lectura-anuncio`, { anuncioId, estudianteId, anioLectivo });
+  marcarLecturaAnuncio(anuncioId: number, estudianteId: number, anioLectivo: number): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.apiUrl}/marcar-lectura-anuncio`, { anuncioId, estudianteId, anioLectivo });
   }
 
   getCronogramaEventos(estudianteId: number, anio: number): Observable<EventoCronogramaApoderado[]> {
