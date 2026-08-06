@@ -27,6 +27,7 @@ export interface GenerarCuotasMensualesCommand {
   aulaId: number;
   conceptoBase: string;
   montoMensual: number;
+  mesInicio: number;
   diaVencimiento: number;
   anioLectivo: number;
 }

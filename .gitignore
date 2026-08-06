@@ -19,6 +19,9 @@
 **/appsettings.Local.json
 **/appsettings.Development.json
 
+# Archivos subidos en tiempo de ejecución (no versionar)
+**/wwwroot/uploads/
+
 # ==========================================
 # Angular / Node.js
 # ==========================================

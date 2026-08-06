@@ -8,7 +8,6 @@ export interface HijoApoderado {
   seccion: string;
   tesoreroNombre: string;
   tesoreroTelefono: string;
-  numeroYapePlin: string;
 }
 
 export interface CuotaApoderado {
