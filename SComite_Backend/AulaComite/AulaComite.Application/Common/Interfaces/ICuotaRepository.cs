@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using AulaComite.Application.Cuotas.Dtos;
 using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Common.Interfaces
@@ -14,5 +15,6 @@ namespace AulaComite.Application.Common.Interfaces
         Task<IEnumerable<CuotaEstudianteCobro>> ObtenerDetalleCobroEstudiantesAsync(int cuotaId);
         Task RegistrarPagoManualAsync(int cuotaDetalleId, decimal montoAbonado, string formaPago, IDbTransaction? transaction = null);
         Task AnularPagoEstudianteAsync(int cuotaDetalleId, IDbTransaction? transaction = null);
+        Task<IEnumerable<EstudiantePendienteCuotaDto>> ObtenerEstudiantesPendientesAsync(int cuotaId);
     }
 }

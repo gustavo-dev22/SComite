@@ -45,6 +45,7 @@ namespace AulaComite.Application.Gastos.Handlers
                 NumeroComprobante = request.NumeroComprobante,
                 Proveedor = request.Proveedor,
                 Observacion = request.Observacion,
+                UrlComprobante = request.UrlComprobante,
                 UsuarioRegistro = usuario
             };
 

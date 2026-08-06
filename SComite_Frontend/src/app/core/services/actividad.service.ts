@@ -15,11 +15,11 @@ export class ActividadService {
     return this.http.get<ActividadComite[]>(`${this.apiUrl}/aula/${aulaId}?anio=${anio}`);
   }
 
-  guardarActividad(actividad: Partial<ActividadComite>): Observable<{ id: number; message: string }> {
-    return this.http.post<{ id: number; message: string }>(this.apiUrl, actividad);
+  guardarActividad(actividad: Partial<ActividadComite>): Observable<{ id: number; mensaje: string }> {
+    return this.http.post<{ id: number; mensaje: string }>(this.apiUrl, actividad);
   }
 
-  eliminarActividad(id: number, aulaId: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
+  eliminarActividad(id: number, aulaId: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
   }
 }

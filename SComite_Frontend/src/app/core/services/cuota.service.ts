@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CreateCuotaCommand, Cuota, CuotaEstudianteCobro, GenerarCuotasMensualesCommand, RegistrarPagoManualCommand } from '../models/cuota.model';
+import { CreateCuotaCommand, Cuota, CuotaEstudianteCobro, EstudiantePendienteCuota, GenerarCuotasMensualesCommand, RegistrarPagoManualCommand } from '../models/cuota.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -33,5 +33,9 @@ export class CuotaService {
 
   anularPago(cuotaDetalleId: number): Observable<{ exito: boolean; mensaje: string }> {
     return this.http.post<{ exito: boolean; mensaje: string }>(`${this.apiUrl}/anular-pago`, { cuotaDetalleId });
+  }
+
+  obtenerPendientesPorCuota(cuotaId: number): Observable<EstudiantePendienteCuota[]> {
+    return this.http.get<EstudiantePendienteCuota[]>(`${this.apiUrl}/${cuotaId}/pendientes`);
   }
 }

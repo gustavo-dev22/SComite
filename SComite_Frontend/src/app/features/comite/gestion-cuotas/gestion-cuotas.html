@@ -142,10 +142,17 @@
               <span class="block font-bold text-emerald-600 text-sm">{{ cuota.estudiantesAlDia }}</span>
               <span class="text-slate-500">Al día</span>
             </div>
-            <div class="bg-slate-50 p-2 rounded-lg">
-              <span class="block font-bold text-amber-600 text-sm">{{ cuota.estudiantesPendientes }}</span>
-              <span class="text-slate-500">Pendientes</span>
-            </div>
+
+            <!-- 🚀 BOTÓN ACCIONABLE DE DETALLE DE MOROSIDAD DIRECTA -->
+            <button 
+              (click)="abrirModalMorosos(cuota)"
+              class="bg-amber-50 hover:bg-amber-100 p-2 rounded-lg border border-amber-200/60 transition cursor-pointer text-left group">
+              <div class="flex items-center justify-between">
+                <span class="block font-bold text-amber-600 text-sm group-hover:underline">{{ cuota.estudiantesPendientes }}</span>
+                <span class="text-[10px] text-amber-700 font-bold uppercase tracking-wider">👁️ Ver</span>
+              </div>
+              <span class="text-slate-500 block text-[11px]">Pendientes</span>
+            </button>
           </div>
         </div>
       } @empty {
@@ -295,6 +302,95 @@
           </div>
         </form>
       }
+
+    </div>
+  </div>
+}
+
+<!-- 🚀 MODAL DIRECTO DE DETALLE DE ESTUDIANTES PENDIENTES / MOROSOS -->
+@if (modalMorososAbierto()) {
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-100">
+      
+      <!-- Cabecera del Modal -->
+      <div class="bg-amber-600 text-white p-4 flex justify-between items-center">
+        <div>
+          <span class="text-xs font-bold text-amber-200 uppercase block tracking-wider">Lista de Morosidad Directa</span>
+          <h3 class="font-bold text-base leading-snug">{{ cuotaSeleccionadaMorosos()?.concepto }}</h3>
+        </div>
+        <button (click)="cerrarModalMorosos()" class="text-amber-200 hover:text-white cursor-pointer"><i class="pi pi-times text-lg"></i></button>
+      </div>
+
+      <div class="p-6">
+        @if (cargandoMorosos()) {
+          <div class="text-center py-12">
+            <p class="text-slate-500 animate-pulse font-semibold">Cargando apoderados pendientes...</p>
+          </div>
+        } @else if (estudiantesMorosos().length === 0) {
+          <div class="text-center py-12 bg-emerald-50 rounded-xl border border-emerald-200">
+            <div class="text-3xl mb-2">🎉</div>
+            <h4 class="font-bold text-emerald-800">¡Aula al Día!</h4>
+            <p class="text-xs text-emerald-600 mt-1">Todos los estudiantes han cancelado la cuota seleccionada.</p>
+          </div>
+        } @else {
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-bold text-slate-500 uppercase">
+              Total Pendientes: {{ estudiantesMorosos().length }} apoderados
+            </span>
+            <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+              Monto Cuota: S/. {{ cuotaSeleccionadaMorosos()?.montoIndividual | number:'1.2-2' }}
+            </span>
+          </div>
+
+          <!-- Tabla de Morosos -->
+          <div class="max-h-72 overflow-y-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 font-bold uppercase sticky top-0 border-b border-slate-200">
+                <tr>
+                  <th class="p-3">Estudiante</th>
+                  <th class="p-3">Apoderado Responsable</th>
+                  <th class="p-3">Teléfono</th>
+                  <th class="p-3 text-right">Pendiente</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                @for (item of estudiantesMorosos(); track item.estudianteId) {
+                  <tr class="hover:bg-amber-50/50 transition">
+                    <td class="p-3">
+                      <span class="block font-bold text-slate-900">{{ item.nombreEstudiante }}</span>
+                      <span class="text-[11px] font-mono text-slate-400">{{ item.tipoDocumento }}: {{ item.numeroDocumento }}</span>
+                    </td>
+                    <td class="p-3 text-slate-800 font-semibold">
+                      👤 {{ item.nombreApoderado }}
+                    </td>
+                    <td class="p-3 whitespace-nowrap">
+                      @if (item.telefonoApoderado !== '-') {
+                        <a [href]="'https://wa.me/51' + item.telefonoApoderado" target="_blank" class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold px-2 py-1 rounded-lg border border-emerald-200 transition">
+                          📱 {{ item.telefonoApoderado }}
+                        </a>
+                      } @else {
+                        <span class="text-slate-400 font-mono">-</span>
+                      }
+                    </td>
+                    <td class="p-3 text-right whitespace-nowrap font-bold text-rose-600">
+                      S/. {{ item.montoPendiente | number:'1.2-2' }}
+                      @if (item.estadoPago === 'PARCIAL') {
+                        <span class="block text-[10px] text-amber-700 font-semibold">(Abonado S/. {{ item.montoPagado | number:'1.2-2' }})</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <div class="flex justify-end p-4 bg-slate-50 border-t border-slate-100">
+        <button (click)="cerrarModalMorosos()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition cursor-pointer">
+          Cerrar
+        </button>
+      </div>
 
     </div>
   </div>

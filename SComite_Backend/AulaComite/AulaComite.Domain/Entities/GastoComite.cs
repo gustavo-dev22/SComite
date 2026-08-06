@@ -16,6 +16,7 @@ namespace AulaComite.Domain.Entities
         public string? NumeroComprobante { get; set; }
         public string? Proveedor { get; set; }
         public string? Observacion { get; set; }
+        public string? UrlComprobante { get; set; }
         public string UsuarioRegistro { get; set; } = string.Empty;
         public DateTime FechaRegistro { get; set; }
     }

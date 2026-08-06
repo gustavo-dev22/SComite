@@ -15,7 +15,7 @@ export class InstitucionService {
     return this.http.get<InstitucionEducativa>(this.apiUrl);
   }
 
-  guardarConfiguracion(datos: Partial<InstitucionEducativa>): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(this.apiUrl, datos);
+  guardarConfiguracion(datos: Partial<InstitucionEducativa>): Observable<{ exito: boolean; mensaje: string; fechaActualizacion?: string; usuarioActualizacion?: string }> {
+    return this.http.post<{ exito: boolean; mensaje: string; fechaActualizacion?: string; usuarioActualizacion?: string }>(this.apiUrl, datos);
   }
 }

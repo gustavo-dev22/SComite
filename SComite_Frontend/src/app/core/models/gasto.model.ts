@@ -9,6 +9,7 @@ export interface GastoComite {
   numeroComprobante?: string;
   proveedor?: string;
   observacion?: string;
+  urlComprobante?: string;
   usuarioRegistro: string;
   fechaRegistro: string;
 }

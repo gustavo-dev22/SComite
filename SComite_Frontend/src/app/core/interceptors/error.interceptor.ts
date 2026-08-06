@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { AuthService } from '../services/auth.service';
 
 let sesionExpiradaEnCurso = false;
+let permisosAlertaEnCurso = false;
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
@@ -22,6 +23,8 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (!esSolicitudLogin && httpError.status === 401) {
         manejarSesionExpirada(authService, router);
+      } else if (!esSolicitudLogin && httpError.status === 403) {
+        manejarPermisosInsuficientes();
       }
 
       return throwError(() => error);
@@ -46,5 +49,20 @@ function manejarSesionExpirada(authService: AuthService, router: Router): void {
   }).then(() => {
     sesionExpiradaEnCurso = false;
     router.navigate(['/login']);
+  });
+}
+
+function manejarPermisosInsuficientes(): void {
+  if (permisosAlertaEnCurso) return;
+  permisosAlertaEnCurso = true;
+
+  void Swal.fire({
+    icon: 'error',
+    title: 'Acceso denegado',
+    text: 'No tienes permisos suficientes para realizar esta acción.',
+    confirmButtonColor: '#2563eb',
+    confirmButtonText: 'Entendido'
+  }).then(() => {
+    permisosAlertaEnCurso = false;
   });
 }

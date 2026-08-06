@@ -8,6 +8,7 @@ import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { GastoComite, ResumenCajaAula } from '../../../core/models/gasto.model';
 import Swal from 'sweetalert2';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-registro-gastos',
@@ -58,6 +59,11 @@ export class RegistroGastosComponent implements OnInit {
     });
   });
 
+  esEdicion = signal<boolean>(false);
+  gastoEditarId = signal<number | null>(null);
+  subiendoArchivo = signal<boolean>(false);
+  archivoSeleccionadoNombre = signal<string>('');
+
   gastoForm: FormGroup = this.fb.group({
     concepto: ['', [Validators.required, Validators.maxLength(150)]],
     categoria: ['MATERIALES', Validators.required],
@@ -66,7 +72,8 @@ export class RegistroGastosComponent implements OnInit {
     tipoComprobante: ['BOLETA', Validators.required],
     numeroComprobante: [''],
     proveedor: [''],
-    observacion: ['']
+    observacion: [''],
+    urlComprobante: ['']
   });
 
   ngOnInit(): void {
@@ -160,20 +167,26 @@ export class RegistroGastosComponent implements OnInit {
 
     const payload = { ...this.gastoForm.value, aulaId };
 
-    this.gastoService.crear(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.cerrarModal();
-        Swal.fire({
-          icon: 'success',
-          title: 'Gasto Registrado',
-          text: 'Se ha descontado de la caja del aula.',
-          timer: 1500,
-          showConfirmButton: false
-        });
-        this.cargarGastosYBalance(aulaId);
-      },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar el gasto.', 'error')
-    });
+    if (this.esEdicion()) {
+      const id = this.gastoEditarId()!;
+      this.gastoService.actualizar(id, { ...payload, id }).subscribe({
+        next: () => {
+          this.cerrarModal();
+          Swal.fire({ icon: 'success', title: 'Gasto Actualizado', timer: 1500, showConfirmButton: false });
+          this.cargarGastosYBalance(aulaId);
+        },
+        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error')
+      });
+    } else {
+      this.gastoService.crear(payload).subscribe({
+        next: () => {
+          this.cerrarModal();
+          Swal.fire({ icon: 'success', title: 'Gasto Registrado', timer: 1500, showConfirmButton: false });
+          this.cargarGastosYBalance(aulaId);
+        },
+        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar.', 'error')
+      });
+    }
   }
 
   eliminarGasto(gasto: GastoComite): void {
@@ -216,18 +229,85 @@ export class RegistroGastosComponent implements OnInit {
     });
   }
 
-  abrirModal(): void {
+  abrirModalCrear(): void {
     if (!this.puedeRegistrarGasto()) return;
+    this.esEdicion.set(false);
+    this.gastoEditarId.set(null);
+    this.archivoSeleccionadoNombre.set('');
+    
     this.gastoForm.reset({
       categoria: 'MATERIALES',
       monto: 0,
       fechaGasto: new Date().toISOString().substring(0, 10),
-      tipoComprobante: 'BOLETA'
+      tipoComprobante: 'BOLETA',
+      urlComprobante: ''
     });
+    this.mostrarModal.set(true);
+  }
+
+  abrirModalEditar(g: GastoComite): void {
+    this.esEdicion.set(true);
+    this.gastoEditarId.set(g.id);
+    this.archivoSeleccionadoNombre.set(g.urlComprobante ? 'Comprobante adjuntado' : '');
+
+    const fechaFormat = new Date(g.fechaGasto).toISOString().substring(0, 10);
+
+    this.gastoForm.patchValue({
+      concepto: g.concepto,
+      categoria: g.categoria,
+      monto: g.monto,
+      fechaGasto: fechaFormat,
+      tipoComprobante: g.tipoComprobante,
+      numeroComprobante: g.numeroComprobante || '',
+      proveedor: g.proveedor || '',
+      observacion: g.observacion || '',
+      urlComprobante: g.urlComprobante || ''
+    });
+
     this.mostrarModal.set(true);
   }
 
   cerrarModal(): void {
     this.mostrarModal.set(false);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.archivoSeleccionadoNombre.set(file.name);
+    this.subiendoArchivo.set(true);
+
+    this.gastoService.subirArchivoComprobante(file).subscribe({
+      next: (res) => {
+        this.gastoForm.patchValue({ urlComprobante: res.urlComprobante });
+        this.subiendoArchivo.set(false);
+        Swal.fire({ icon: 'success', title: 'Archivo Subido', text: 'Comprobante cargado exitosamente.', timer: 1200, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.subiendoArchivo.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo subir el archivo.', 'error');
+      }
+    });
+  }
+
+  abrirComprobante(url: string | undefined): void {
+    if (!url) return;
+
+    let fullUrl = url;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      const backendBaseUrl = environment.apiUrl.replace(/\/api\/?$/, '');
+      const urlLimpia = url.startsWith('/') ? url : `/${url}`;
+      fullUrl = `${backendBaseUrl}${urlLimpia}`;
+    }
+
+    // 🚀 CACHE-BUSTING: Agrega un timestamp único a la URL
+    const timestamp = new Date().getTime();
+    const separator = fullUrl.includes('?') ? '&' : '?';
+    const urlConCacheBuster = `${fullUrl}${separator}_t=${timestamp}`;
+
+    window.open(urlConCacheBuster, '_blank');
   }
 }

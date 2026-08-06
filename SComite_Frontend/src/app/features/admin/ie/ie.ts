@@ -80,7 +80,7 @@ export class IeComponent implements OnInit {
     this.mensajeExito.set(null);
 
     this.institucionService.guardarConfiguracion(datos).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.guardando.set(true);
         
         // 🚀 Actualizar la fecha y usuario de la UI inmediatamente

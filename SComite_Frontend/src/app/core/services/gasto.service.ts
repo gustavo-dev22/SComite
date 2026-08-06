@@ -23,8 +23,18 @@ export class GastoService {
     return this.http.post<{ id: number; mensaje: string }>(this.apiUrl, command);
   }
 
+  actualizar(id: number, payload: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, payload);
+  }
+
   eliminar(id: number): Observable<{ exito: boolean; mensaje: string }> {
     return this.http.delete<{ exito: boolean; mensaje: string }>(`${this.apiUrl}/${id}`);
+  }
+
+  subirArchivoComprobante(file: File): Observable<{ urlComprobante: string }> {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    return this.http.post<{ urlComprobante: string }>(`${this.apiUrl}/subir-comprobante`, formData);
   }
 
   obtenerBalanceMensual(aulaId: number, anioLectivo: number, mes?: number | null): Observable<ResumenCajaAula> {

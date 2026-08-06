@@ -59,5 +59,12 @@ namespace AulaComite.Api.Controllers
             bool exito = await _mediator.Send(command);
             return Ok(new { exito, mensaje = "El pago ha sido anulado y marcado como PENDIENTE." });
         }
+
+        [HttpGet("{cuotaId}/pendientes")]
+        public async Task<IActionResult> GetEstudiantesPendientes(int cuotaId)
+        {
+            var result = await _mediator.Send(new GetEstudiantesPendientesCuotaQuery(cuotaId));
+            return Ok(result);
+        }
     }
 }

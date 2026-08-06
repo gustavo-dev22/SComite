@@ -8,7 +8,7 @@
     </div>
     
     <button 
-      (click)="abrirModal()" 
+      (click)="abrirModalCrear()" 
       [disabled]="!puedeRegistrarGasto()"
       class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition">
       <span>+ Registrar Gasto</span>
@@ -167,8 +167,9 @@
             <th class="p-3">Categoría</th>
             <th class="p-3 text-right">Monto</th>
             <th class="p-3">Comprobante / Proveedor</th>
+            <th class="p-3 text-center">Evidencia</th>
             <th class="p-3">Registrado Por</th>
-            <th class="p-3 text-center">Acción</th>
+            <th class="p-3 text-center">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
@@ -191,19 +192,43 @@
                 <span class="font-medium text-xs text-slate-800">{{ g.tipoComprobante }}</span>
                 <span class="block text-xs text-slate-500">{{ g.numeroComprobante || 'Sin N°' }} {{ g.proveedor ? ' - ' + g.proveedor : '' }}</span>
               </td>
-              <td class="p-3 text-xs text-slate-500 font-medium">{{ g.usuarioRegistro }}</td>
+
               <td class="p-3 text-center">
-                <button 
-                  (click)="eliminarGasto(g)"
-                  title="Eliminar registro"
-                  class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition">
-                  🗑️
-                </button>
+                @if (g.urlComprobante) {
+                  <button 
+                    (click)="abrirComprobante(g.urlComprobante)" 
+                    title="Ver comprobante"
+                    class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-indigo-200 transition cursor-pointer">
+                    <span>📄 Ver</span>
+                  </button>
+                } @else {
+                  <span class="text-slate-300 text-xs italic">Sin adjunto</span>
+                }
+              </td>
+
+              <td class="p-3 text-xs text-slate-500 font-medium">{{ g.usuarioRegistro }}</td>
+              
+              <!-- 🚀 COLUMNA DE ACCIONES: EDITAR Y ELIMINAR -->
+              <td class="p-3 text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <button 
+                    (click)="abrirModalEditar(g)"
+                    title="Editar registro"
+                    class="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition cursor-pointer">
+                    ✏️
+                  </button>
+                  <button 
+                    (click)="eliminarGasto(g)"
+                    title="Eliminar registro"
+                    class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition cursor-pointer">
+                    🗑️
+                  </button>
+                </div>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="text-center py-8 text-slate-400">No hay egresos registrados para este mes.</td>
+              <td colspan="8" class="text-center py-8 text-slate-400">No hay egresos registrados para este mes.</td>
             </tr>
           }
         </tbody>
@@ -216,9 +241,9 @@
 <!-- Modal Formulario de Gasto -->
 @if (mostrarModal()) {
   <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-      <h2 class="text-lg font-bold text-slate-800 mb-1">Registrar Nuevo Gasto</h2>
-      <p class="text-xs text-slate-500 mb-4">Ingrese los datos del egreso efectuado para la rendición de cuentas.</p>
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 overflow-hidden">
+      <h2 class="text-lg font-bold text-slate-800 mb-1">{{ esEdicion() ? 'Editar Gasto' : 'Registrar Nuevo Gasto' }}</h2>
+      <p class="text-xs text-slate-500 mb-4">Complete la información y adjunte la foto/boleta del gasto.</p>
 
       <form [formGroup]="gastoForm" (ngSubmit)="guardarGasto()" class="space-y-4">
         <div>
@@ -233,7 +258,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Categoría</label>
-            <select formControlName="categoria" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+            <select formControlName="categoria" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer">
               <option value="MATERIALES">Materiales</option>
               <option value="MANTENIMIENTO">Mantenimiento</option>
               <option value="ACTIVIDADES_EVENTOS">Actividades / Eventos</option>
@@ -263,7 +288,7 @@
 
           <div>
             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Comprobante</label>
-            <select formControlName="tipoComprobante" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500">
+            <select formControlName="tipoComprobante" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer">
               <option value="BOLETA">Boleta de Venta</option>
               <option value="FACTURA">Factura</option>
               <option value="RECIBO_SIMPLE">Recibo Simple</option>
@@ -272,23 +297,21 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">N° Comprobante</label>
+        <!-- 🚀 ZONA DE ADJUNTO: Carga directa de Foto/Boleta (input file) -->
+        <div>
+          <label class="block text-xs font-semibold text-indigo-700 uppercase mb-1">Adjuntar Foto / Boleta (Imagen o PDF)</label>
+          
+          <div class="border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 rounded-xl p-3 text-center relative cursor-pointer transition">
             <input 
-              type="text" 
-              formControlName="numeroComprobante" 
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" 
-              placeholder="Ej. B001-4589">
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Proveedor / Tienda</label>
-            <input 
-              type="text" 
-              formControlName="proveedor" 
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" 
-              placeholder="Ej. Librería Tai Loy">
+              type="file" 
+              accept="image/*, application/pdf" 
+              (change)="onFileSelected($event)" 
+              class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+            
+            <div class="flex items-center justify-center gap-2 text-xs text-indigo-900 font-bold">
+              <span>{{ subiendoArchivo() ? 'Subiendo...' : (archivoSeleccionadoNombre() || '📷 Seleccionar foto o comprobante') }}</span>
+            </div>
+            <span class="text-[10px] text-indigo-500 block mt-0.5">Acepta JPG, PNG y PDF</span>
           </div>
         </div>
 
@@ -302,8 +325,10 @@
         </div>
 
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-          <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-xs font-medium">Cancelar</button>
-          <button type="submit" [disabled]="gastoForm.invalid" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm disabled:opacity-50">Guardar Gasto</button>
+          <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-xs font-medium cursor-pointer">Cancelar</button>
+          <button type="submit" [disabled]="gastoForm.invalid || subiendoArchivo()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm disabled:opacity-50 cursor-pointer">
+            {{ esEdicion() ? 'Actualizar Gasto' : 'Guardar Gasto' }}
+          </button>
         </div>
       </form>
     </div>

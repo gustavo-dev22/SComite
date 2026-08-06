@@ -95,6 +95,10 @@ export const routes: Routes = [
             {
                 path: 'aula/documentos',
                 loadComponent: () => import('./features/apoderado/actas-documentos/actas-documentos').then(m => m.ActasDocumentosComponent)
+            },
+            {
+                path: 'aula/transparencia-balance',
+                loadComponent: () => import('./features/apoderado/transparencia-balance/transparencia-balance').then(m => m.TransparenciaBalanceComponent)
             }
         ]
     },

@@ -14,6 +14,7 @@ namespace AulaComite.Application.Gastos.Commands
         string TipoComprobante,
         string? NumeroComprobante,
         string? Proveedor,
-        string? Observacion
+        string? Observacion,
+        string? UrlComprobante
     ) : IRequest<int>;
 }

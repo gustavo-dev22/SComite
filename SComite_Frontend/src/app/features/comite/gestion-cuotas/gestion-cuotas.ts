@@ -3,7 +3,7 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
-import { Cuota } from '../../../core/models/cuota.model';
+import { Cuota, EstudiantePendienteCuota } from '../../../core/models/cuota.model';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
@@ -64,6 +64,11 @@ export class GestionCuotasComponent implements OnInit {
     mesInicio: [3, [Validators.required, Validators.min(3), Validators.max(12)]],
     diaVencimiento: [10, [Validators.required, Validators.min(1), Validators.max(28)]]
   });
+
+  modalMorososAbierto = signal<boolean>(false);
+  cargandoMorosos = signal<boolean>(false);
+  cuotaSeleccionadaMorosos = signal<Cuota | null>(null);
+  estudiantesMorosos = signal<EstudiantePendienteCuota[]>([]);
 
   ngOnInit(): void {
     this.cargarPeriodos();
@@ -245,5 +250,31 @@ export class GestionCuotasComponent implements OnInit {
 
   cerrarModal(): void {
     this.mostrarModal.set(false);
+  }
+
+  abrirModalMorosos(cuota: Cuota): void {
+    this.cuotaSeleccionadaMorosos.set(cuota);
+    this.estudiantesMorosos.set([]);
+    this.cargandoMorosos.set(true);
+    this.modalMorososAbierto.set(true);
+
+    this.cuotaService.obtenerPendientesPorCuota(cuota.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.estudiantesMorosos.set(data);
+          this.cargandoMorosos.set(false);
+        },
+        error: (err) => {
+          this.cargandoMorosos.set(false);
+          Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los estudiantes pendientes.', 'error');
+        }
+      });
+  }
+
+  cerrarModalMorosos(): void {
+    this.modalMorososAbierto.set(false);
+    this.cuotaSeleccionadaMorosos.set(null);
+    this.estudiantesMorosos.set([]);
   }
 }

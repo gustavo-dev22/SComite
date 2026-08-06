@@ -50,3 +50,16 @@ export interface RegistrarPagoManualCommand {
   montoAbonado: number;
   formaPago: string;
 }
+
+export interface EstudiantePendienteCuota {
+  estudianteId: number;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombreEstudiante: string;
+  nombreApoderado: string;
+  telefonoApoderado: string;
+  montoAsignado: number;
+  montoPagado: number;
+  montoPendiente: number;
+  estadoPago: string; // PENDIENTE o PARCIAL
+}

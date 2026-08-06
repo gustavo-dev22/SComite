@@ -1,0 +1,59 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Gastos.Commands;
+using AulaComite.Domain.Entities;
+using MediatR;
+
+namespace AulaComite.Application.Gastos.Handlers
+{
+    public class UpdateGastoCommandHandler : IRequestHandler<UpdateGastoCommand, bool>
+    {
+        private readonly IGastoRepository _gastoRepository;
+        private readonly IFileStorageService _fileStorageService;
+        private readonly IUserContextService _currentUserService;
+
+        public UpdateGastoCommandHandler(IGastoRepository gastoRepository, IFileStorageService fileStorageService, IUserContextService currentUserService)
+        {
+            _gastoRepository = gastoRepository;
+            _fileStorageService = fileStorageService;
+            _currentUserService = currentUserService;
+        }
+
+        public async Task<bool> Handle(UpdateGastoCommand request, CancellationToken cancellationToken)
+        {
+            var usuarioActual = _currentUserService.ObtenerUsuarioActual() ?? "SISTEMA";
+
+            // 1. Obtener la información actual del gasto en BD
+            var gastoExistente = await _gastoRepository.ObtenerPorIdAsync(request.Id);
+            if (gastoExistente == null) return false;
+
+            // 2. Si se adjuntó un nuevo comprobante distinto al previo, eliminar el archivo antiguo
+            if (!string.IsNullOrEmpty(gastoExistente.UrlComprobante) &&
+                !string.IsNullOrEmpty(request.UrlComprobante) &&
+                gastoExistente.UrlComprobante != request.UrlComprobante)
+            {
+                _fileStorageService.EliminarComprobante(gastoExistente.UrlComprobante);
+            }
+
+            var gasto = new GastoComite
+            {
+                Id = request.Id,
+                AulaId = request.AulaId,
+                Concepto = request.Concepto,
+                Categoria = request.Categoria,
+                Monto = request.Monto,
+                FechaGasto = request.FechaGasto,
+                TipoComprobante = request.TipoComprobante,
+                NumeroComprobante = request.NumeroComprobante,
+                Proveedor = request.Proveedor,
+                Observacion = request.Observacion,
+                UrlComprobante = request.UrlComprobante,
+                UsuarioRegistro = usuarioActual
+            };
+
+            return await _gastoRepository.ActualizarAsync(gasto);
+        }
+    }
+}

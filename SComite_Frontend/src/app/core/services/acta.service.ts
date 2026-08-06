@@ -15,12 +15,12 @@ export class ActaService {
     return this.http.get<ActaAsambleaComite[]>(`${this.apiUrl}/aula/${aulaId}?anio=${anio}`);   
   }    
   
-  guardarActa(acta: Partial<ActaAsambleaComite>): Observable<{ id: number; message: string }> {     
-    return this.http.post<{ id: number; message: string }>(this.apiUrl, acta);   
+  guardarActa(acta: Partial<ActaAsambleaComite>): Observable<{ id: number; mensaje: string }> {     
+    return this.http.post<{ id: number; mensaje: string }>(this.apiUrl, acta);   
   }
   
-  eliminarActa(id: number, aulaId: number): Observable<{ message: string }> {     
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
+  eliminarActa(id: number, aulaId: number): Observable<{ mensaje: string }> {     
+    return this.http.delete<{ mensaje: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
   }
 
   getSiguienteNumeroActa(aulaId: number, anio: number): Observable<{ siguienteNumeroActa: string }> {

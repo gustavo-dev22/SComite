@@ -11,18 +11,27 @@ namespace AulaComite.Application.Gastos.Handlers
     public class DeleteGastoCommandHandler : IRequestHandler<DeleteGastoCommand, bool>
     {
         private readonly IGastoRepository _repository;
+        private readonly IFileStorageService _fileStorageService;
         private readonly ILogRepository _logRepository;
         private readonly IDbConnectionFactory _connectionFactory;
 
-        public DeleteGastoCommandHandler(IGastoRepository repository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
+        public DeleteGastoCommandHandler(IGastoRepository repository, IFileStorageService fileStorageService, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
         {
             _repository = repository;
+            _fileStorageService = fileStorageService;
             _logRepository = logRepository;
             _connectionFactory = connectionFactory;
         }
 
         public async Task<bool> Handle(DeleteGastoCommand request, CancellationToken cancellationToken)
         {
+            // 1. Obtener los datos del gasto antes de eliminarlo
+            var gasto = await _repository.ObtenerPorIdAsync(request.GastoId);
+            if (gasto == null) return false;
+
+            var urlComprobante = gasto.UrlComprobante;
+
+            // 2. Eliminar el registro en base de datos e insertar log dentro de la transacción
             await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 await _repository.EliminarAsync(request.GastoId, transaction);
@@ -31,10 +40,16 @@ namespace AulaComite.Application.Gastos.Handlers
                     nivel: "WARN",
                     modulo: "TESORERIA",
                     accion: "ELIMINAR_GASTO",
-                    mensaje: $"Se eliminó el registro de gasto #{request.GastoId} de la caja del aula.",
+                    mensaje: $"Se eliminó el registro de gasto #{request.GastoId} por un monto de S/. {gasto.Monto:N2} de la caja del aula.",
                     transaction: transaction
                 );
             });
+
+            // 3. Una vez confirmada la eliminación en BD, borrar el comprobante del disco si existía
+            if (!string.IsNullOrEmpty(urlComprobante))
+            {
+                _fileStorageService.EliminarComprobante(urlComprobante);
+            }
 
             return true;
         }

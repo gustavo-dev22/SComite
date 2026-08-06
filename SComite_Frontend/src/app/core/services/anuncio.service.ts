@@ -15,12 +15,12 @@ export class AnuncioService {
     return this.http.get<AnuncioComite[]>(`${this.apiUrl}/aula/${aulaId}?anio=${anio}`);
   }
 
-  guardarAnuncio(anuncio: Partial<AnuncioComite>): Observable<{ id: number; message: string }> {
-    return this.http.post<{ id: number; message: string }>(this.apiUrl, anuncio);
+  guardarAnuncio(anuncio: Partial<AnuncioComite>): Observable<{ id: number; mensaje: string }> {
+    return this.http.post<{ id: number; mensaje: string }>(this.apiUrl, anuncio);
   }
 
-  eliminarAnuncio(id: number, aulaId: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
+  eliminarAnuncio(id: number, aulaId: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
   }
 
   getAuditoriaVistas(anuncioId: number): Observable<ResumenAuditoriaAnuncio> {

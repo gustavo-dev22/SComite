@@ -35,6 +35,7 @@ namespace AulaComite.Infrastructure.Repositories
                         gasto.NumeroComprobante,
                         gasto.Proveedor,
                         gasto.Observacion,
+                        gasto.UrlComprobante,
                         gasto.UsuarioRegistro
                     },
                     transaction: transaction,
@@ -69,6 +70,40 @@ namespace AulaComite.Infrastructure.Repositories
             return resumen ?? new ResumenCajaAula();
         }
 
+        public async Task<bool> ActualizarAsync(GastoComite gasto, IDbTransaction? transaction = null)
+        {
+            var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
+            try
+            {
+                var filasAfectadas = await connection.ExecuteScalarAsync<int>(
+                    "sp_Gastos_Actualizar",
+                    new
+                    {
+                        gasto.Id,
+                        gasto.AulaId,
+                        gasto.Concepto,
+                        gasto.Categoria,
+                        gasto.Monto,
+                        gasto.FechaGasto,
+                        gasto.TipoComprobante,
+                        gasto.NumeroComprobante,
+                        gasto.Proveedor,
+                        gasto.Observacion,
+                        gasto.UrlComprobante,
+                        gasto.UsuarioRegistro
+                    },
+                    transaction: transaction,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return filasAfectadas > 0;
+            }
+            finally
+            {
+                if (transaction == null) connection.Dispose();
+            }
+        }
+
         public async Task EliminarAsync(int gastoId, IDbTransaction? transaction = null)
         {
             var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
@@ -97,6 +132,13 @@ namespace AulaComite.Infrastructure.Repositories
             );
 
             return resumen ?? new ResumenCajaAula();
+        }
+
+        public async Task<GastoComite?> ObtenerPorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var sql = "SELECT * FROM GastosComite WHERE Id = @Id";
+            return await connection.QueryFirstOrDefaultAsync<GastoComite>(sql, new { Id = id });
         }
     }
 }

@@ -28,6 +28,7 @@ namespace AulaComite.Application.Gastos.Handlers
                 FechaGasto = g.FechaGasto,
                 TipoComprobante = g.TipoComprobante,
                 NumeroComprobante = g.NumeroComprobante,
+                UrlComprobante = g.UrlComprobante,
                 Proveedor = g.Proveedor,
                 Observacion = g.Observacion,
                 UsuarioRegistro = g.UsuarioRegistro,

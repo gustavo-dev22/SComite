@@ -15,11 +15,11 @@ export class DonacionService {
     return this.http.get<DonacionComite[]>(`${this.apiUrl}/aula/${aulaId}?anio=${anio}&mes=${mes}`);
   }
 
-  guardarDonacion(donacion: Partial<DonacionComite>): Observable<{ id: number; message: string }> {
-    return this.http.post<{ id: number; message: string }>(this.apiUrl, donacion);
+  guardarDonacion(donacion: Partial<DonacionComite>): Observable<{ id: number; mensaje: string }> {
+    return this.http.post<{ id: number; mensaje: string }>(this.apiUrl, donacion);
   }
 
-  eliminarDonacion(id: number, aulaId: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
+  eliminarDonacion(id: number, aulaId: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.apiUrl}/${id}/aula/${aulaId}`);
   }
 }

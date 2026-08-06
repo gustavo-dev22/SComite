@@ -1,4 +1,8 @@
+using System.Security.Claims;
+using System.Text;
+using System.Threading.RateLimiting;
 using AulaComite.Api.Middlewares;
+using AulaComite.Api.Services;
 using AulaComite.Application;
 using AulaComite.Application.Common.Interfaces;
 using AulaComite.Infrastructure;
@@ -11,9 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.RateLimiting;
 
 // 1. Inicializar Serilog desde appsettings
 Log.Logger = new LoggerConfiguration()
@@ -146,7 +147,27 @@ try
         });
     });
 
+    // 🚀 REGISTRO DE SERVICIOS (Usa 'builder.Environment', ANTES de builder.Build())
+    if (builder.Environment.IsDevelopment())
+    {
+        // Mientras pruebes Cloudinary en tu laptop:
+        //builder.Services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
+
+        // (Cuando quieras volver a guardar en disco local en desarrollo, solo cambias la línea de arriba por esta):
+        builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+    }
+    else
+    {
+        builder.Services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
+    }
+
     var app = builder.Build();
+
+    var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+    if (!Directory.Exists(webRootPath))
+    {
+        Directory.CreateDirectory(webRootPath);
+    }
 
     // Middleware Global para captura de errores
     app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -167,12 +188,13 @@ try
     }
 
     app.UseHttpsRedirection();
-    app.UseRateLimiter();
     app.UseCors("CorsAngularPolicy");
+    app.UseStaticFiles();
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
-    app.UseStaticFiles();
+    
 
     // Aplicar Migraciones Automáticas en el arranque SOLO en Desarrollo.
     // En Producción las migraciones se aplican vía CI/CD o herramientas dedicadas.

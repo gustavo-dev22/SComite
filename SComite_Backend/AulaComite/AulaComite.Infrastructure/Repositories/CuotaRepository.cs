@@ -5,6 +5,7 @@ using AulaComite.Application.Common.Interfaces;
 using AulaComite.Domain.Entities;
 using Dapper;
 using System.Data;
+using AulaComite.Application.Cuotas.Dtos;
 
 namespace AulaComite.Infrastructure.Repositories
 {
@@ -123,6 +124,16 @@ namespace AulaComite.Infrastructure.Repositories
             {
                 if (transaction == null) connection.Dispose();
             }
+        }
+
+        public async Task<IEnumerable<EstudiantePendienteCuotaDto>> ObtenerEstudiantesPendientesAsync(int cuotaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.QueryAsync<EstudiantePendienteCuotaDto>(
+                "sp_Cuotas_ObtenerEstudiantesPendientes",
+                new { CuotaId = cuotaId },
+                commandType: CommandType.StoredProcedure
+            );
         }
     }
 }

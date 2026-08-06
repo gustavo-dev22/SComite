@@ -23,7 +23,14 @@ namespace AulaComite.Application.Common.Logging
         {
             if (value == null) return null;
             if (value is string s) return s;
-            if (value is IEnumerable enumerable and not string)
+
+            // 🚀 COLOCAR AQUÍ: Debe evaluarse ANTES de IEnumerable para evitar iterar los bytes
+            if (value is Stream || value is byte[])
+            {
+                return "[Archivo / Binary Data]";
+            }
+
+            if (value is IEnumerable enumerable)
             {
                 var lista = new List<object?>();
                 foreach (var item in enumerable)
@@ -34,6 +41,7 @@ namespace AulaComite.Application.Common.Logging
             }
 
             var type = value.GetType();
+
             if (type.IsPrimitive || type.IsEnum || type == typeof(decimal) || type == typeof(DateTime))
             {
                 return value;
