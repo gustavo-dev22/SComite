@@ -43,7 +43,7 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine($"-- BACKUP MANUAL COMPLETO - SISTEMA DE COMITÉ DE AULA");
             sql.AppendLine($"-- FECHA DE EMISIÓN: {fechaHora}");
             sql.AppendLine("-- ===========================================================");
-            sql.AppendLine("USE [db_AulaComite];");
+            sql.AppendLine("USE [db_ComiteAula];");
             sql.AppendLine("GO\n");
             sql.AppendLine("SET NOCOUNT ON;");
             sql.AppendLine("EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';");
