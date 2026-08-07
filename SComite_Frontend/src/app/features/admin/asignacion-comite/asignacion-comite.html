@@ -1,44 +1,53 @@
-<div class="p-6 bg-slate-50 min-h-full">
+<div class="p-4 sm:p-6 bg-slate-50">
 
   <!-- CABECERA -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-800">Asignación de Comités de Aula</h1>
-      <p class="text-sm text-slate-500">Conformación de la junta directiva por grado y sección</p>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Asignación de Comités de Aula</h1>
+        <p class="text-xs sm:text-sm text-slate-500">Conformación de la junta directiva por grado y sección</p>
+      </div>
     </div>
 
     <button 
       (click)="abrirModal()"
       [disabled]="!aulaSeleccionada()"
-      class="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm">
-      <i class="pi pi-user-plus"></i>
+      class="bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition shadow-xs cursor-pointer disabled:cursor-not-allowed">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+      </svg>
       <span>Asignar Cargo</span>
     </button>
   </div>
 
   <!-- FILTROS (PERIODO Y AULA) -->
-  <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200 mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
     
     <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">1. Seleccionar Periodo Lectivo</label>
-        <select 
-            (change)="onPeriodoChange($event)"
-            [value]="periodoSeleccionado()"
-            class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-            @for (p of periodos(); track p.id) {
-            <option [value]="p.id" [selected]="p.id === periodoSeleccionado()">
-                {{ p.nombre }}
-            </option>
-            }
-        </select>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Seleccionar Periodo Lectivo</label>
+      <select 
+        (change)="onPeriodoChange($event)"
+        [value]="periodoSeleccionado()"
+        class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
+        @for (p of periodos(); track p.id) {
+          <option [value]="p.id" [selected]="p.id === periodoSeleccionado()">
+            {{ p.nombre }}
+          </option>
+        }
+      </select>
     </div>
 
     <div>
-      <label class="block text-xs font-semibold text-slate-600 mb-1">2. Seleccionar Aula / Sección</label>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Seleccionar Aula / Sección</label>
       <select 
         (change)="onAulaChange($event)"
         [value]="aulaSeleccionada()"
-        class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+        class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
         @if (aulas().length === 0) {
           <option value="">No hay aulas en este periodo</option>
         } @else {
@@ -51,28 +60,32 @@
 
   </div>
 
-  <!-- TARJETAS DE INTEGRANTES DEL COMITÉ (GRID PROFESIONAL) -->
-  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-      <i class="pi pi-users text-blue-600"></i>
+  <!-- TARJETAS DE INTEGRANTES DEL COMITÉ (ALTURA DINÁMICA) -->
+  <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200 inline-block w-full">
+    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
       <span>Junta Directiva del Comité</span>
     </h2>
 
     @if (cargando()) {
       <div class="py-12 text-center text-slate-400">
-        <i class="pi pi-spin pi-spinner text-2xl mb-2"></i>
-        <p>Cargando integrantes del comité...</p>
+        <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-900 mb-2"></div>
+        <p class="text-xs font-medium">Cargando integrantes del comité...</p>
       </div>
     } @else if (integrantes().length === 0) {
-      <div class="py-12 text-center border-2 border-dashed border-slate-200 rounded-xl">
-        <i class="pi pi-id-card text-4xl text-slate-300 mb-2"></i>
-        <p class="text-slate-500 font-medium">No se han asignado cargos para este comité de aula.</p>
+      <div class="py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 p-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-slate-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6" />
+        </svg>
+        <p class="text-slate-600 font-semibold text-xs sm:text-sm">No se han asignado cargos para este comité de aula.</p>
         <p class="text-xs text-slate-400 mt-1">Haz clic en "Asignar Cargo" para incorporar al Presidente, Tesorero, etc.</p>
       </div>
     } @else {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         @for (i of integrantes(); track i.id) {
-          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all relative group">
+          <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 hover:bg-white hover:shadow-xs transition-all relative group">
             
             <div class="flex items-center justify-between mb-3">
               <span [class]="getCargoBadgeClass(i.cargo)" class="px-2.5 py-1 rounded-full text-xs font-bold border">
@@ -81,15 +94,19 @@
               <button 
                 (click)="eliminarIntegrante(i)"
                 title="Remover Cargo"
-                class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                <i class="pi pi-trash"></i>
+                class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
               </button>
             </div>
 
             <div class="space-y-1">
-              <h3 class="font-bold text-slate-900 text-sm leading-tight">{{ i.nombreCompleto }}</h3>
+              <h3 class="font-bold text-slate-900 text-xs sm:text-sm leading-tight">{{ i.nombreCompleto }}</h3>
               <p class="text-xs text-slate-500 flex items-center gap-1">
-                <i class="pi pi-envelope text-[10px]"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
                 <span class="truncate">{{ i.email }}</span>
               </p>
             </div>
@@ -106,19 +123,28 @@
 
   <!-- MODAL DE ASIGNACIÓN -->
   @if (modalAbierto()) {
-    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in border border-slate-100">
         
-        <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-          <h3 class="font-bold">Asignar Cargo Directivo</h3>
-          <button (click)="cerrarModal()" class="text-slate-400 hover:text-white"><i class="pi pi-times"></i></button>
+        <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center">
+          <h3 class="font-bold text-sm sm:text-base flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            Asignar Cargo Directivo
+          </h3>
+          <button (click)="cerrarModal()" class="text-slate-400 hover:text-white cursor-pointer transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <form [formGroup]="comiteForm" (ngSubmit)="guardarAsignacion()" class="p-6 space-y-4">
+        <form [formGroup]="comiteForm" (ngSubmit)="guardarAsignacion()" class="p-5 space-y-4">
           
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Cargo a Asignar</label>
-            <select formControlName="cargo" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cargo a Asignar *</label>
+            <select formControlName="cargo" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
               <option [value]="''" disabled selected>-- Seleccione Cargo --</option>
               @for (c of cargosDisponibles; track c) {
                 <option [value]="c">{{ c }}</option>
@@ -127,8 +153,8 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Apoderado Elegible</label>
-            <select formControlName="usuarioIdSasi" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Apoderado Elegible *</label>
+            <select formControlName="usuarioIdSasi" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
               <option [value]="''" disabled selected>-- Seleccione Apoderado --</option>
               @for (a of apoderadosSasi(); track a.usuarioId) {
                 <option [value]="a.usuarioId">{{ a.nombreCompleto }} ({{ a.email }})</option>
@@ -136,9 +162,9 @@
             </select>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4 border-t">
-            <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
-            <button type="submit" class="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm">
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
+            <button type="submit" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black text-white rounded-xl shadow-xs transition cursor-pointer">
               Asignar Cargo
             </button>
           </div>

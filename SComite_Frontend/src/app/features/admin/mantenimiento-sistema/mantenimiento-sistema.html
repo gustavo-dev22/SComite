@@ -1,27 +1,32 @@
-<div class="p-6 bg-slate-50 min-h-screen">
+<div class="p-4 sm:p-6 bg-slate-50">
   
-  <!-- Header del Módulo Administrador -->
-  <div class="flex items-center gap-3 mb-6">
-    <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
-      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+  <!-- CABECERA -->
+  <div class="flex items-center gap-3 mb-5">
+    <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     </div>
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">Mantenimiento y Purga del Sistema</h1>
-      <p class="text-slate-500 text-sm">Herramientas críticas de respaldo y administración global de la base de datos.</p>
+      <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Mantenimiento y Purga del Sistema</h1>
+      <p class="text-xs sm:text-sm text-slate-500">Herramientas críticas de respaldo y administración global de la base de datos</p>
     </div>
   </div>
 
-  <div class="max-w-3xl space-y-6">
+  <div class="max-w-3xl space-y-5">
     
     <!-- CARD 1: BACKUP MANUAL BAJO DEMANDA -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6">
       <div class="flex items-start gap-4">
-        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">💾</div>
+        <div class="p-3 bg-slate-100 text-slate-800 rounded-xl shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+        </div>
         <div class="flex-1">
-          <h3 class="text-lg font-bold text-slate-800">Respaldo Manual de Base de Datos</h3>
-          <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+          <h3 class="text-base sm:text-lg font-bold text-slate-800">Respaldo Manual de Base de Datos</h3>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
             Descargue en cualquier momento una copia de seguridad en formato SQL de toda la información del sistema (aulas, cuotas, cobros y actas).
           </p>
           
@@ -29,8 +34,16 @@
             <button 
               (click)="generarBackupManual()" 
               [disabled]="descargandoBackup()"
-              class="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold px-5 py-2.5 rounded-xl shadow transition cursor-pointer inline-flex items-center gap-2 text-sm">
-              <span>{{ descargandoBackup() ? 'Generando Backup...' : '💾 Descargar Backup Manual (.SQL)' }}</span>
+              class="bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer inline-flex items-center gap-2 text-xs sm:text-sm disabled:cursor-not-allowed">
+              @if (descargandoBackup()) {
+                <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span>Generando Backup...</span>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Descargar Backup Manual (.SQL)</span>
+              }
             </button>
           </div>
         </div>
@@ -38,21 +51,28 @@
     </div>
 
     <!-- CARD 2: ZONA PELIGROSA (PURGA CON BACKUP AUTOMÁTICO PREVIO) -->
-    <div class="bg-white rounded-2xl border border-rose-200 shadow-sm p-6">
+    <div class="bg-white rounded-2xl border border-rose-200 shadow-xs p-5 sm:p-6">
       <div class="flex items-start gap-4">
-        <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">⚠️</div>
+        <div class="p-3 bg-rose-50 text-rose-600 rounded-xl shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
         <div class="flex-1">
-          <h3 class="text-lg font-bold text-rose-900">Reiniciar Base de Datos (Limpieza Total)</h3>
-          <p class="text-sm text-slate-600 mt-1 leading-relaxed">
+          <h3 class="text-base sm:text-lg font-bold text-rose-900">Reiniciar Base de Datos (Limpieza Total)</h3>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
             Esta acción eliminará de forma permanente las actividades, aulas, estudiantes, cuotas y registros del sistema. 
             <span class="text-rose-700 font-bold block mt-1">🛡️ Por seguridad, el sistema creará automáticamente un backup físico (.bak) en el servidor antes de proceder con el vaciado.</span>
           </p>
           
-          <div class="mt-6">
+          <div class="mt-5">
             <button 
               (click)="abrirModalReset()" 
-              class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl shadow transition cursor-pointer inline-flex items-center gap-2">
-              <span>🗑️ Purgar Toda la Base de Datos</span>
+              class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer inline-flex items-center gap-2 text-xs sm:text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <span>Purgar Toda la Base de Datos</span>
             </button>
           </div>
         </div>
@@ -63,20 +83,25 @@
 
   <!-- Modal de Doble Confirmación -->
   @if (mostrarModalConfirmacion()) {
-    <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 relative border border-slate-100 animate-fade-in">
         
-        <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">⚠️</div>
-        <h3 class="text-xl font-bold text-center text-slate-800 mb-2">¿Confirmar Limpieza Total?</h3>
-        <p class="text-xs text-slate-500 text-center mb-4">
+        <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-rose-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        
+        <h3 class="text-base sm:text-lg font-bold text-center text-slate-800 mb-1">¿Confirmar Limpieza Total?</h3>
+        <p class="text-xs text-slate-500 text-center mb-3 leading-relaxed">
           Esta operación limpiará las transacciones del sistema previa generación de un respaldo físico automático.
         </p>
-        <p class="text-xs font-bold text-slate-700 text-center mb-6">
-          Para continuar, escribe en mayúsculas la palabra <strong>ELIMINAR TODO</strong>:
+        <p class="text-xs font-bold text-slate-700 text-center mb-4 uppercase tracking-wide">
+          Para continuar, escribe la frase: <strong class="text-rose-600 font-mono">ELIMINAR TODO</strong>
         </p>
 
         @if (mensajeResultado()) {
-          <div class="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-3 rounded-lg mb-4 text-center">
+          <div class="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-3 rounded-xl mb-4 text-center font-medium">
             {{ mensajeResultado() }}
           </div>
         }
@@ -86,20 +111,25 @@
           [ngModel]="textoConfirmacion()" 
           (ngModelChange)="textoConfirmacion.set($event)"
           placeholder="Escribe: ELIMINAR TODO" 
-          class="w-full border-2 border-slate-300 focus:border-rose-500 rounded-xl px-4 py-2.5 text-center font-bold text-slate-800 outline-none uppercase mb-6 tracking-widest text-sm">
+          class="w-full border-2 border-slate-300 focus:border-rose-600 rounded-xl px-4 py-2.5 text-center font-bold text-slate-800 outline-none uppercase mb-5 tracking-widest text-xs sm:text-sm transition">
 
-        <div class="flex justify-end gap-3">
+        <div class="flex justify-end gap-2">
           <button 
             (click)="cerrarModal()" 
             [disabled]="procesandoReset()"
-            class="flex-1 py-2.5 border border-slate-300 rounded-xl text-slate-600 font-semibold text-sm hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">
+            class="flex-1 py-2.5 border border-slate-300 rounded-xl text-slate-600 font-semibold text-xs sm:text-sm hover:bg-slate-100 transition cursor-pointer disabled:opacity-50">
             Cancelar
           </button>
           <button 
             (click)="ejecutarPurgaBaseDeDatos()" 
             [disabled]="textoConfirmacion().trim() !== 'ELIMINAR TODO' || procesandoReset()"
-            class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow transition cursor-pointer">
-            {{ procesandoReset() ? 'Purgando...' : 'Sí, Purgar Base de Datos' }}
+            class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+            @if (procesandoReset()) {
+              <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>Purgando...</span>
+            } @else {
+              <span>Sí, Purgar Base</span>
+            }
           </button>
         </div>
       </div>

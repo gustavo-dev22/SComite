@@ -1,61 +1,92 @@
-<div class="p-6 bg-slate-50 min-h-screen">
+<div class="p-4 sm:p-6 bg-slate-50">
   
-  <!-- Header -->
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-slate-800">Configuración Institucional</h1>
-    <p class="text-slate-500 text-sm">Parámetros generales de la Institución Educativa e identidad visual para documentos oficiales.</p>
+  <!-- Header con Ícono -->
+  <div class="mb-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0h4" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Configuración Institucional</h1>
+        <p class="text-slate-500 text-xs sm:text-sm">Parámetros generales de la Institución Educativa e identidad visual.</p>
+      </div>
+    </div>
   </div>
 
   @if (cargando()) {
-    <div class="text-center py-16">
-      <p class="text-slate-500 animate-pulse">Cargando parámetros institucionales...</p>
+    <div class="text-center py-12 bg-white rounded-2xl border border-slate-200">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-slate-900 mb-2"></div>
+      <p class="text-slate-500 text-sm font-medium">Cargando parámetros institucionales...</p>
     </div>
   } @else {
 
-    <div class="max-w-4xl mx-auto space-y-6">
+    <div class="max-w-4xl mx-auto space-y-4">
 
       @if (mensajeExito()) {
-        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-sm font-semibold flex items-center gap-2">
-          <span>✅</span> {{ mensajeExito() }}
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 shadow-sm animate-fade-in">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{{ mensajeExito() }}</span>
         </div>
       }
 
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-5">
         
         <!-- Bloque 1: Identidad e Insignia -->
         <div>
-          <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100 mb-4">
+          <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
             1. Identidad e Insignia Oficial
           </h2>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
             
             <!-- Vista previa del Logo -->
-            <div class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center">
+            <div class="flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center hover:bg-slate-50 transition">
               @if (formDatos().urlLogo) {
-                <img [src]="formDatos().urlLogo" alt="Logo Colegio" class="w-32 h-32 object-contain mb-3 rounded-lg">
-                <button (click)="removerLogo()" type="button" class="text-xs font-bold text-rose-600 hover:text-rose-800 cursor-pointer">
-                  🗑️ Quitar Logo
+                <div class="relative group">
+                  <img [src]="formDatos().urlLogo" alt="Logo Colegio" class="w-24 h-24 object-contain mb-2 rounded-lg bg-white p-1 border border-slate-100 shadow-xs">
+                </div>
+                <button (click)="removerLogo()" type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Quitar Logo
                 </button>
               } @else {
-                <div class="w-20 h-20 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center text-3xl font-bold mb-2">🏫</div>
-                <span class="text-xs font-bold text-slate-500 block mb-2">Sin Insignia</span>
+                <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-2 border border-slate-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0h4" />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-slate-400 block mb-1">Sin Insignia</span>
               }
 
-              <label class="mt-2 inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition">
-                <span>📁 Cargar Logo</span>
+              <label class="mt-2 inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg cursor-pointer transition shadow-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Cargar Insignia</span>
                 <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden">
               </label>
             </div>
 
-            <div class="md:col-span-2 space-y-4">
+            <!-- Inputs de Identidad -->
+            <div class="md:col-span-2 space-y-3">
               <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre de la Institución Educativa *</label>
-                <input 
-                  type="text" 
-                  [(ngModel)]="formDatos().nombreInstitucion" 
-                  placeholder="Ej: I.E. 2084 MARIA PARADO DE BELLIDO" 
-                  class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 font-bold uppercase text-slate-800">
+                <div class="relative">
+                  <input 
+                    type="text" 
+                    [(ngModel)]="formDatos().nombreInstitucion" 
+                    placeholder="Ej: I.E. 2084 MARIA PARADO DE BELLIDO" 
+                    class="w-full border border-slate-300 rounded-lg pl-3 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 font-bold uppercase text-slate-800 transition">
+                </div>
               </div>
             </div>
 
@@ -64,33 +95,43 @@
 
         <!-- Bloque 2: Contacto y Ubicación -->
         <div>
-          <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100 mb-4">
-            2. Dirección y Datos de Contacto
+          <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100 mb-3 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            2. Dirección y Ubicación
           </h2>
 
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Dirección del Colegio</label>
-              <input 
-                type="text" 
-                [(ngModel)]="formDatos().direccion" 
-                placeholder="Ej: Av. Universitaria N° 4580, Los Olivos - Lima" 
-                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900">
-            </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Dirección del Colegio</label>
+            <input 
+              type="text" 
+              [(ngModel)]="formDatos().direccion" 
+              placeholder="Ej: Av. Universitaria N° 4580, Los Olivos - Lima" 
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
           </div>
         </div>
 
         <!-- Pie Botón Guardar -->
-        <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-3 border-t border-slate-100">
           <span class="text-xs text-slate-400">
-            Última actualización: <strong>{{ formDatos().fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</strong> por <strong>{{ formDatos().usuarioActualizacion || 'SISTEMA' }}</strong>
+            Última actualización: <strong class="text-slate-600">{{ formDatos().fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</strong> por <strong class="text-slate-600">{{ formDatos().usuarioActualizacion || 'SISTEMA' }}</strong>
           </span>
 
           <button 
             (click)="guardar()" 
             [disabled]="guardando() || !formDatos().nombreInstitucion?.trim()"
-            class="px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-sm font-bold shadow-md transition disabled:bg-slate-300 cursor-pointer">
-            {{ guardando() ? 'Guardando...' : '💾 Guardar Configuración' }}
+            class="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-sm font-semibold shadow-xs transition disabled:bg-slate-300 cursor-pointer flex items-center justify-center gap-2">
+            @if (guardando()) {
+              <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>Guardando...</span>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              <span>Guardar Configuración</span>
+            }
           </button>
         </div>
 

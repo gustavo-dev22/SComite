@@ -175,18 +175,6 @@ try
     // Auditoría automática de peticiones HTTP en consola y logs
     app.UseSerilogRequestLogging();
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.MapOpenApi().AllowAnonymous();
-        app.MapScalarApiReference(options =>
-        {
-            options
-                .WithTitle("Sistema de Comité de Aula API")
-                .WithTheme(ScalarTheme.DeepSpace)
-                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-        });
-    }
-
     app.UseHttpsRedirection();
     app.UseCors("CorsAngularPolicy");
     app.UseStaticFiles();
@@ -194,13 +182,22 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
-    
+
+    app.MapOpenApi().AllowAnonymous();
+    app.MapScalarApiReference(options =>
+    {
+        options
+            .WithTitle("Sistema de Comité de Aula API")
+            .WithTheme(ScalarTheme.DeepSpace)
+            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    }).AllowAnonymous();
+
 
     // Aplicar Migraciones Automáticas en el arranque SOLO en Desarrollo.
     // En Producción las migraciones se aplican vía CI/CD o herramientas dedicadas.
     //if (app.Environment.IsDevelopment())
     //{
-        using (var scope = app.Services.CreateScope())
+    using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
             try
