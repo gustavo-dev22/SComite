@@ -1,34 +1,38 @@
-<div class="p-6 bg-slate-50 min-h-screen">
+<div class="p-4 sm:p-6 bg-slate-50">
   
-  <!-- Header -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+  <!-- CABECERA -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
     <div class="flex items-center gap-3">
-      <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-sm">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+      <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+        </svg>
       </div>
       <div>
-        <h1 class="text-2xl font-bold text-slate-800">Muro de Comunicados Oficiales</h1>
-        <p class="text-slate-500 text-sm">Cartelera digital de avisos, citaciones y notas informativas del Comité.</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Muro de Comunicados Oficiales</h1>
+        <p class="text-xs sm:text-sm text-slate-500">Cartelera digital de avisos, citaciones y notas informativas del Comité</p>
       </div>
     </div>
 
     <button 
       (click)="abrirModalNuevo()" 
       [disabled]="!tieneAulaSeleccionada()"
-      class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition cursor-pointer">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      class="inline-flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-black disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
       <span>Nuevo Comunicado</span>
     </button>
   </div>
 
-  <!-- Filtro Superior Contextual 1 -> 2 -->
-  <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <!-- FILTRO SUPERIOR CONTEXTUAL 1 -> 2 -->
+  <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo</label>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
       <select 
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm cursor-pointer">
+        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm cursor-pointer transition">
         <option value="">-- Seleccione Año --</option>
         @for (p of periodos(); track p.id) {
           <option [value]="p.id">Periodo {{ p.anio }} {{ p.esActivo ? '(Vigente)' : '' }}</option>
@@ -37,12 +41,12 @@
     </div>
 
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer">
+        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer transition">
         @if (!tienePeriodoSeleccionado()) {
           <option value="">-- Seleccione Año Lectivo primero --</option>
         } @else if (cargandoAulas()) {
@@ -59,16 +63,21 @@
     </div>
   </div>
 
-  <!-- Contenido -->
+  <!-- CONTENIDO PRINCIPAL (ALTURA DINÁMICA) -->
   @if (!tieneAulaSeleccionada()) {
-    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
-      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">📢</div>
-      <h3 class="text-slate-700 font-semibold mb-1">Seleccione el Año y Aula</h3>
-      <p class="text-slate-400 text-sm">Elija los filtros para revisar o publicar comunicados.</p>
+    <div class="text-center py-12 sm:py-16 bg-white rounded-2xl border border-dashed border-slate-300 p-6">
+      <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+        </svg>
+      </div>
+      <h3 class="text-slate-800 font-bold text-xs sm:text-sm mb-1">Seleccione el Año y Aula</h3>
+      <p class="text-slate-400 text-xs">Elija los filtros para revisar o publicar comunicados.</p>
     </div>
   } @else if (cargando()) {
-    <div class="text-center py-16">
-      <p class="text-slate-500 animate-pulse">Cargando cartelera de comunicados...</p>
+    <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-slate-900 mb-2"></div>
+      <p class="text-slate-500 text-xs sm:text-sm font-medium">Cargando cartelera de comunicados...</p>
     </div>
   } @else {
 
@@ -76,54 +85,78 @@
     <div class="max-w-4xl mx-auto space-y-4">
       @for (a of anuncios(); track a.id) {
         <div 
-          [class.border-indigo-400]="a.esFijado" 
+          [class.border-slate-800]="a.esFijado" 
           [class.ring-2]="a.esFijado" 
-          [class.ring-indigo-100]="a.esFijado" 
-          class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative transition hover:shadow-md">
+          [class.ring-slate-200]="a.esFijado" 
+          class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 relative transition hover:shadow-xs">
           
           <!-- Badge Superior -->
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
-              <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider" [ngClass]="getCategoriaBadgeClass(a.categoria)">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider" [ngClass]="getCategoriaBadgeClass(a.categoria)">
                 {{ a.categoria }}
               </span>
               @if (a.esFijado) {
-                <span class="bg-indigo-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                  📌 Fijado en el Muro
+                <span class="bg-slate-900 text-white text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                  </svg>
+                  <span>Fijado en el Muro</span>
                 </span>
               }
             </div>
 
-            <div class="flex items-center gap-2">
-              <button (click)="abrirModalEditar(a)" class="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Editar">✏️</button>
-              <button (click)="eliminarAnuncio(a.id)" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Eliminar">🗑️</button>
+            <div class="flex items-center gap-1">
+              <button 
+                (click)="abrirModalEditar(a)" 
+                class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer" 
+                title="Editar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button 
+                (click)="eliminarAnuncio(a.id)" 
+                class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" 
+                title="Eliminar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
             </div>
           </div>
 
           <!-- Título y Contenido -->
-          <h2 class="text-lg font-bold text-slate-800 mb-2">{{ a.titulo }}</h2>
-          <p class="text-slate-600 text-sm whitespace-pre-line leading-relaxed mb-4">{{ a.contenido }}</p>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800 mb-2 leading-snug">{{ a.titulo }}</h2>
+          <p class="text-slate-600 text-xs sm:text-sm whitespace-pre-line leading-relaxed mb-4">{{ a.contenido }}</p>
 
           <!-- Adjunto si existe -->
           @if (a.urlAdjunto) {
             <div class="mb-4">
-              <a [href]="a.urlAdjunto" target="_blank" class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-indigo-300 text-indigo-600 text-xs font-semibold px-3 py-2 rounded-xl transition">
-                📎 Ver documento adjunto / Enlace oficial
+              <a [href]="a.urlAdjunto" target="_blank" class="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-400 text-slate-800 text-xs font-semibold px-3 py-2 rounded-xl transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <span>Ver documento adjunto / Enlace oficial</span>
               </a>
             </div>
           }
 
           <!-- Footer Metadatos -->
-        <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-400">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-slate-100 text-xs text-slate-400">
             <span>Publicado por: <strong class="text-slate-700">{{ a.usuarioRegistro }}</strong></span>
             
             <div class="flex items-center gap-3">
-                <!-- 🚀 Métrica de Alcance / Vistas -->
-                <span 
-                  (click)="abrirModalVistas(a)"
-                  class="inline-flex items-center gap-1 font-semibold text-slate-600 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-2.5 py-0.5 rounded-full transition cursor-pointer" 
-                  title="Haz clic para ver la lista de apoderados que leyeron este comunicado">
-                  👁️ 
+              <!-- Métrica de Alcance / Vistas -->
+              <button 
+                (click)="abrirModalVistas(a)"
+                class="inline-flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-full transition cursor-pointer" 
+                title="Haz clic para ver la lista de apoderados que leyeron este comunicado">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span>
                   @if ((a.cantidadVistas || 0) === 0) {
                     0 visualizaciones
                   } @else if (a.cantidadVistas === 1) {
@@ -132,42 +165,59 @@
                     {{ a.cantidadVistas }} vistas
                   }
                 </span>
-                <span>📅 {{ a.fechaPublicacion | date:'dd/MM/yyyy HH:mm' }}</span>
+              </button>
+              <span class="flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>{{ a.fechaPublicacion | date:'dd/MM/yyyy HH:mm' }}</span>
+              </span>
             </div>
-        </div>
+          </div>
 
         </div>
       } @empty {
-        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
-          <p class="text-slate-400 text-sm">No hay comunicados publicados en el muro para esta aula.</p>
+        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200 p-6">
+          <p class="text-slate-400 text-xs sm:text-sm font-medium">No hay comunicados publicados en el muro para esta aula.</p>
         </div>
       }
     </div>
 
   }
 
-  <!-- Modal Formulario -->
+  <!-- MODAL FORMULARIO -->
   @if (mostrarModal()) {
     <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
-        <h3 class="text-lg font-bold text-slate-800 mb-4">
-          {{ formAnuncio().id === 0 ? 'Publicar Comunicado Oficial' : 'Editar Comunicado' }}
-        </h3>
+      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-100 animate-fade-in">
+        
+        <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center">
+          <h3 class="font-bold text-sm sm:text-base flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+            {{ formAnuncio().id === 0 ? 'Publicar Comunicado Oficial' : 'Editar Comunicado' }}
+          </h3>
+          <button (click)="cerrarModal()" class="text-slate-400 hover:text-white cursor-pointer transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        <div class="space-y-4">
+        <div class="p-5 space-y-4">
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Título del Comunicado *</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Título del Comunicado *</label>
             <input 
               type="text" 
               [(ngModel)]="formAnuncio().titulo" 
               placeholder="Ej: CITACIÓN A ASAMBLEA EXTRAORDINARIA DE PADRES" 
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Categoría *</label>
-              <select [(ngModel)]="formAnuncio().categoria" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Categoría *</label>
+              <select [(ngModel)]="formAnuncio().categoria" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
                 <option value="INFORMATIVO">Informativo</option>
                 <option value="URGENTE">Urgente</option>
                 <option value="CITACION">Citación</option>
@@ -177,30 +227,36 @@
             </div>
 
             <div class="flex items-center pt-5">
-              <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
-                <input type="checkbox" [(ngModel)]="formAnuncio().esFijado" class="w-4 h-4 text-indigo-600 rounded">
-                <span>📌 Fijar en la parte superior</span>
+              <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 select-none">
+                <input type="checkbox" [(ngModel)]="formAnuncio().esFijado" class="w-4 h-4 text-slate-900 rounded border-slate-300 focus:ring-slate-900 cursor-pointer">
+                <span>Fijar en la parte superior</span>
               </label>
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Contenido del Mensaje *</label>
-            <textarea [(ngModel)]="formAnuncio().contenido" rows="5" placeholder="Escriba aquí el detalle del comunicado..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contenido del Mensaje *</label>
+            <textarea [(ngModel)]="formAnuncio().contenido" rows="5" placeholder="Escriba aquí el detalle del comunicado..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">URL / Enlace Adjunto (Opcional)</label>
-            <input type="text" [(ngModel)]="formAnuncio().urlAdjunto" placeholder="Ej: https://drive.google.com/... o enlace de circular" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL / Enlace Adjunto (Opcional)</label>
+            <input type="text" [(ngModel)]="formAnuncio().urlAdjunto" placeholder="Ej: https://drive.google.com/... o enlace de circular" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
         </div>
 
-        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-          <button (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-50 transition cursor-pointer">Cancelar</button>
-          <button (click)="guardarAnuncio()" [disabled]="guardando()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition disabled:bg-indigo-300 cursor-pointer">
-            {{ guardando() ? 'Publicando...' : 'Publicar Comunicado' }}
+        <div class="flex justify-end gap-2 p-4 bg-slate-50 border-t border-slate-100">
+          <button (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
+          <button (click)="guardarAnuncio()" [disabled]="guardando()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">
+            @if (guardando()) {
+              <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+              <span>Publicando...</span>
+            } @else {
+              <span>Publicar Comunicado</span>
+            }
           </button>
         </div>
+
       </div>
     </div>
   }
@@ -208,13 +264,13 @@
   <!-- MODAL DE AUDITORÍA Y CONTROL DE VISTAS POR APODERADO -->
   @if (mostrarModalAuditoria()) {
     <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-100">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-100 animate-fade-in">
         
         <!-- Encabezado Modal -->
-        <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+        <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center">
           <div>
-            <h3 class="font-bold text-sm">Control de Confirmación de Lectura</h3>
-            <p class="text-xs text-indigo-200 truncate max-w-lg">{{ anuncioAuditoriaTitulo() }}</p>
+            <h3 class="font-bold text-sm sm:text-base">Control de Confirmación de Lectura</h3>
+            <p class="text-xs text-slate-300 truncate max-w-lg mt-0.5">{{ anuncioAuditoriaTitulo() }}</p>
           </div>
           <button (click)="cerrarModalAuditoria()" class="text-slate-400 hover:text-white transition cursor-pointer">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -222,24 +278,24 @@
         </div>
 
         <!-- Filtros y Métricas Rápidas -->
-        <div class="bg-slate-50 p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div class="bg-slate-50/80 p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-1.5">
             <button 
               (click)="filtroAuditoria.set('TODOS')"
               class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-              [ngClass]="filtroAuditoria() === 'TODOS' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'">
+              [ngClass]="filtroAuditoria() === 'TODOS' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'">
               Todos ({{ resumenAuditoria()?.totalEstudiantesAula || 0 }})
             </button>
             <button 
               (click)="filtroAuditoria.set('LEIDOS')"
               class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-              [ngClass]="filtroAuditoria() === 'LEIDOS' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'">
+              [ngClass]="filtroAuditoria() === 'LEIDOS' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'">
               Vistas ({{ resumenAuditoria()?.totalLeidos || 0 }})
             </button>
             <button 
               (click)="filtroAuditoria.set('PENDIENTES')"
               class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-              [ngClass]="filtroAuditoria() === 'PENDIENTES' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'">
+              [ngClass]="filtroAuditoria() === 'PENDIENTES' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'">
               Pendientes ({{ resumenAuditoria()?.totalPendientes || 0 }})
             </button>
           </div>
@@ -248,40 +304,43 @@
         <!-- Tabla de Lecturas con Scroll Normal -->
         <div class="p-4 max-h-96 overflow-y-auto">
           @if (cargandoAuditoria()) {
-            <div class="text-center py-12 text-slate-400 font-semibold animate-pulse">
-              Cargando lista de lectura por apoderado...
+            <div class="text-center py-12 text-slate-400 font-medium">
+              <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-900 mb-2"></div>
+              <p class="text-xs">Cargando lista de lectura por apoderado...</p>
             </div>
           } @else {
             <table class="w-full text-left text-xs border-collapse">
-              <!-- 🚀 Encabezado estático/normal (Sin sticky) -->
-              <thead class="bg-slate-100 text-slate-700 uppercase font-extrabold">
+              <thead class="bg-slate-50 text-slate-700 uppercase font-bold">
                 <tr>
-                  <th class="p-3 rounded-l-lg">Estudiante</th>
+                  <th class="p-3 rounded-l-xl">Estudiante</th>
                   <th class="p-3">Apoderado / Contacto</th>
                   <th class="p-3 text-center">Estado</th>
-                  <th class="p-3 text-right rounded-r-lg">Fecha Lectura</th>
+                  <th class="p-3 text-right rounded-r-xl">Fecha Lectura</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 font-medium">
+              <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
                 @for (item of lecturasFiltradas(); track item.estudianteId) {
-                  <tr class="hover:bg-slate-50 transition">
-                    <td class="p-3 font-bold text-slate-800">{{ item.nombreEstudiante }}</td>
+                  <tr class="hover:bg-slate-50/80 transition">
+                    <td class="p-3 font-bold text-slate-900">{{ item.nombreEstudiante }}</td>
                     <td class="p-3 text-slate-600">
                       <span class="block font-semibold text-slate-800">{{ item.nombreApoderado }}</span>
                       @if (item.telefonoApoderado) {
-                        <span class="text-[11px] text-emerald-600 font-mono font-bold flex items-center gap-1 mt-0.5">
-                          📱 {{ item.telefonoApoderado }}
-                        </span>
+                        <a [href]="'https://wa.me/51' + item.telefonoApoderado" target="_blank" class="inline-flex items-center gap-1 text-emerald-700 hover:underline font-mono text-[11px] font-bold mt-0.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current text-emerald-600" viewBox="0 0 24 24">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                          </svg>
+                          <span>{{ item.telefonoApoderado }}</span>
+                        </a>
                       }
                     </td>
                     <td class="p-3 text-center whitespace-nowrap">
                       @if (item.leido) {
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           ✓ Visto
                         </span>
                       } @else {
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
-                          ⏳ Pendiente
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          Pendiente
                         </span>
                       }
                     </td>
@@ -291,7 +350,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="4" class="p-8 text-center text-slate-400 font-medium">No hay registros para mostrar en esta lista.</td>
+                    <td colspan="4" class="p-8 text-center text-slate-400 font-medium text-xs">No hay registros para mostrar en esta lista.</td>
                   </tr>
                 }
               </tbody>
@@ -301,7 +360,7 @@
 
         <!-- Footer Modal -->
         <div class="p-3 bg-slate-50 border-t border-slate-100 text-right">
-          <button (click)="cerrarModalAuditoria()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer">
+          <button (click)="cerrarModalAuditoria()" class="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl transition cursor-pointer">
             Cerrar
           </button>
         </div>

@@ -1,34 +1,38 @@
-<div class="p-6 bg-slate-50 min-h-screen">
+<div class="p-4 sm:p-6 bg-slate-50">
   
-  <!-- Header -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+  <!-- CABECERA -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
     <div class="flex items-center gap-3">
-      <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+      <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
       </div>
       <div>
-        <h1 class="text-2xl font-bold text-slate-800">Actas de Asamblea de Padres</h1>
-        <p class="text-slate-500 text-sm">Libro digital de acuerdos, resoluciones y actas firmadas por la asamblea.</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Actas de Asamblea de Padres</h1>
+        <p class="text-xs sm:text-sm text-slate-500">Libro digital de acuerdos, resoluciones y actas firmadas por la asamblea</p>
       </div>
     </div>
 
     <button 
       (click)="abrirModalNuevo()" 
       [disabled]="!tieneAulaSeleccionada()"
-      class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition cursor-pointer">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      class="inline-flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-black disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
       <span>Registrar Nueva Acta</span>
     </button>
   </div>
 
-  <!-- Filtro Superior Contextual 1 -> 2 -->
-  <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <!-- FILTRO SUPERIOR CONTEXTUAL 1 -> 2 -->
+  <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo</label>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
       <select 
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-sm cursor-pointer">
+        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm cursor-pointer transition">
         <option value="">-- Seleccione Año --</option>
         @for (p of periodos(); track p.id) {
           <option [value]="p.id">Periodo {{ p.anio }} {{ p.esActivo ? '(Vigente)' : '' }}</option>
@@ -37,12 +41,12 @@
     </div>
 
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer">
+        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer transition">
         @if (!tienePeriodoSeleccionado()) {
           <option value="">-- Seleccione Año Lectivo primero --</option>
         } @else if (cargandoAulas()) {
@@ -59,154 +63,201 @@
     </div>
   </div>
 
-  <!-- Contenido -->
+  <!-- CONTENIDO PRINCIPAL (ALTURA DINÁMICA) -->
   @if (!tieneAulaSeleccionada()) {
-    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
-      <div class="w-12 h-12 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">📄</div>
-      <h3 class="text-slate-700 font-semibold mb-1">Seleccione el Año y Aula</h3>
-      <p class="text-slate-400 text-sm">Elija los filtros para consultar o registrar las actas de asamblea.</p>
+    <div class="text-center py-12 sm:py-16 bg-white rounded-2xl border border-dashed border-slate-300 p-6">
+      <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <h3 class="text-slate-800 font-bold text-xs sm:text-sm mb-1">Seleccione el Año y Aula</h3>
+      <p class="text-slate-400 text-xs">Elija los filtros para consultar o registrar las actas de asamblea.</p>
     </div>
   } @else if (cargando()) {
-    <div class="text-center py-16">
-      <p class="text-slate-500 animate-pulse">Cargando libro de actas...</p>
+    <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-slate-900 mb-2"></div>
+      <p class="text-slate-500 text-xs sm:text-sm font-medium">Cargando libro de actas...</p>
     </div>
   } @else {
 
     <!-- Feed / Grid de Actas -->
     <div class="space-y-4 max-w-5xl mx-auto">
       @for (a of actas(); track a.id) {
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6 hover:shadow-xs transition">
   
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-100">
-                <div class="flex items-center gap-3">
-                <span class="bg-slate-900 text-white text-xs font-black px-3 py-1.5 rounded-lg tracking-wider">
-                    {{ a.numeroActa }}
-                </span>
-                <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase" [ngClass]="getEstadoClass(a.estadoActa)">
-                    {{ a.estadoActa === 'APROBADA' ? '✅ APROBADA' : '📝 BORRADOR' }}
-                </span>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <button 
-                        (click)="descargarPdfActa(a)" 
-                        title="Descargar Acta en PDF"
-                        class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer">
-                        <span>📥 Exportar PDF</span>
-                    </button>
-                    <button (click)="abrirModalEditar(a)" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Editar">✏️</button>
-                    <button (click)="eliminarActa(a.id)" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Eliminar">🗑️</button>
-                </div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <span class="bg-slate-900 text-white text-xs font-mono font-bold px-3 py-1 rounded-xl tracking-wider">
+                {{ a.numeroActa }}
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase" [ngClass]="getEstadoClass(a.estadoActa)">
+                {{ a.estadoActa === 'APROBADA' ? '✓ APROBADA' : 'BORRADOR' }}
+              </span>
             </div>
 
-            <div class="py-4">
-                <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
-                <span>📅 Fecha de Asamblea: {{ a.fechaReunion | date:'dd/MM/yyyy' }}</span>
-                </div>
-                <h2 class="text-lg font-bold text-slate-800 mb-3">{{ a.titulo }}</h2>
+            <div class="flex items-center gap-1.5">
+              <button 
+                (click)="descargarPdfActa(a)" 
+                title="Descargar Acta en PDF"
+                class="inline-flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Exportar PDF</span>
+              </button>
+              <button 
+                (click)="abrirModalEditar(a)" 
+                class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer" 
+                title="Editar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button 
+                (click)="eliminarActa(a.id)" 
+                class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" 
+                title="Eliminar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                <span class="text-xs font-bold text-slate-500 uppercase block mb-1">Puntos Tratados y Acuerdos:</span>
-                <p class="text-slate-700 text-sm whitespace-pre-line leading-relaxed">{{ a.agendaAcuerdos }}</p>
-                </div>
+          <div class="py-4">
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Fecha de Asamblea: {{ a.fechaReunion | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800 mb-3 leading-snug">{{ a.titulo }}</h2>
+
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+              <span class="text-xs font-bold text-slate-500 uppercase block mb-1">Puntos Tratados y Acuerdos:</span>
+              <p class="text-slate-700 text-xs sm:text-sm whitespace-pre-line leading-relaxed">{{ a.agendaAcuerdos }}</p>
+            </div>
+          </div>
+
+          @if (a.urlDocumentoPdf) {
+            <div class="mb-4">
+              <a [href]="a.urlDocumentoPdf" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Ver Documento Escaneado con Firmas (PDF / Drive)</span>
+              </a>
+            </div>
+          }
+
+          <!-- FOOTER DE AUDITORÍA -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-100 text-xs text-slate-400">
+            <div>
+              <span>Creado por: <strong class="text-slate-700">{{ a.usuarioRegistro }}</strong> el {{ a.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
 
-            @if (a.urlDocumentoPdf) {
-                <div class="mb-4">
-                <a [href]="a.urlDocumentoPdf" target="_blank" class="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl transition">
-                    📄 Ver Documento Escaneado con Firmas (PDF / Drive)
-                </a>
-                </div>
+            @if (a.usuarioActualizacion) {
+              <div class="text-amber-700 font-medium flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>Editado por: <strong class="text-amber-800">{{ a.usuarioActualizacion }}</strong> el {{ a.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
             }
-
-            <!-- 🚀 FOOTER DE AUDITORÍA COMPLETO -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 border-t border-slate-100 text-xs text-slate-400">
-                <div>
-                <span>Creado por: <strong class="text-slate-700">{{ a.usuarioRegistro }}</strong> el {{ a.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
-                </div>
-
-                <!-- Muestra última edición solo si existe un usuario de actualización -->
-                @if (a.usuarioActualizacion) {
-                <div class="text-amber-700 font-medium">
-                    <span>✏️ Editado por: <strong class="text-amber-800">{{ a.usuarioActualizacion }}</strong> el {{ a.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
-                </div>
-                }
-            </div>
+          </div>
 
         </div>
       } @empty {
-        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
-          <p class="text-slate-400 text-sm">No hay actas de asamblea registradas para esta aula en el periodo seleccionado.</p>
+        <div class="text-center py-16 bg-white rounded-2xl border border-slate-200 p-6">
+          <p class="text-slate-400 text-xs sm:text-sm font-medium">No hay actas de asamblea registradas para esta aula en el periodo seleccionado.</p>
         </div>
       }
     </div>
 
   }
 
-  <!-- Modal Formulario -->
+  <!-- MODAL FORMULARIO -->
   @if (mostrarModal()) {
     <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative">
-        <h3 class="text-lg font-bold text-slate-800 mb-4">
-          {{ formActa().id === 0 ? 'Registrar Acta de Asamblea' : 'Editar Acta' }}
-        </h3>
+      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-100 animate-fade-in">
+        
+        <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center">
+          <h3 class="font-bold text-sm sm:text-base flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {{ formActa().id === 0 ? 'Registrar Acta de Asamblea' : 'Editar Acta' }}
+          </h3>
+          <button (click)="cerrarModal()" class="text-slate-400 hover:text-white cursor-pointer transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        <div class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Código / N° de Acta *</label>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Código / N° de Acta *</label>
               <input 
                 type="text" 
                 [(ngModel)]="formActa().numeroActa" 
                 (input)="onInputToUppercase('numeroActa')"
                 placeholder="Ej: ACTA-001-2026" 
-                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 uppercase">
+                class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fecha de Asamblea *</label>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Asamblea *</label>
               <input 
                 type="date" 
                 [(ngModel)]="formActa().fechaReunion" 
-                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900">
+                class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Título de la Asamblea *</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Título de la Asamblea *</label>
             <input 
               type="text" 
               [(ngModel)]="formActa().titulo" 
               (input)="onInputToUppercase('titulo')"
               placeholder="Ej: ASAMBLEA ORDINARIA - APROBACIÓN DE CUOTA DE INICIO" 
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 uppercase">
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Estado del Acta *</label>
-            <select [(ngModel)]="formActa().estadoActa" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer">
-                <option value="BORRADOR">📝 Borrador (En Redacción / Edición)</option>
-                <option value="APROBADA">✅ Aprobada (Oficial y Publicada)</option>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado del Acta *</label>
+            <select [(ngModel)]="formActa().estadoActa" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
+              <option value="BORRADOR">Borrador (En Redacción / Edición)</option>
+              <option value="APROBADA">Aprobada (Oficial y Publicada)</option>
             </select>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Puntos Tratados y Acuerdos *</label>
-            <textarea [(ngModel)]="formActa().agendaAcuerdos" rows="5" placeholder="Detalle los puntos de la agenda y acuerdos acordados por los padres..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900"></textarea>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Puntos Tratados y Acuerdos *</label>
+            <textarea [(ngModel)]="formActa().agendaAcuerdos" rows="5" placeholder="Detalle los puntos de la agenda y acuerdos acordados por los padres..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">URL Enlace del Documento PDF / Escaneado</label>
-            <input type="text" [(ngModel)]="formActa().urlDocumentoPdf" placeholder="Ej: https://drive.google.com/file/d/..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900">
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL Enlace del Documento PDF / Escaneado</label>
+            <input type="text" [(ngModel)]="formActa().urlDocumentoPdf" placeholder="Ej: https://drive.google.com/file/d/..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
         </div>
 
-        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-          <button (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-50 transition cursor-pointer">Cancelar</button>
-          <button (click)="guardarActa()" [disabled]="guardando()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition disabled:bg-slate-300 cursor-pointer">
-            {{ guardando() ? 'Guardando...' : 'Guardar Acta' }}
+        <div class="flex justify-end gap-2 p-4 bg-slate-50 border-t border-slate-100">
+          <button (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
+          <button (click)="guardarActa()" [disabled]="guardando()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">
+            @if (guardando()) {
+              <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+              <span>Guardando...</span>
+            } @else {
+              <span>Guardar Acta</span>
+            }
           </button>
         </div>
+
       </div>
     </div>
   }

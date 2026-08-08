@@ -1,30 +1,40 @@
-<div class="p-6 bg-slate-50 min-h-screen">
+<div class="p-4 sm:p-6 bg-slate-50">
   
-  <!-- Header con Título -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-800">Gestión de Cuotas y Aportes</h1>
-      <p class="text-slate-500 text-sm">Apertura y seguimiento de compromisos financieros del Comité de Aula.</p>
+  <!-- CABECERA -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Gestión de Cuotas y Aportes</h1>
+        <p class="text-xs sm:text-sm text-slate-500">Apertura y seguimiento de compromisos financieros del Comité de Aula</p>
+      </div>
     </div>
     
     <button 
       (click)="abrirModal()" 
       [disabled]="!puedeCrearCuota()"
-      class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition">
-      <span>+ Nueva Cuota</span>
+      class="inline-flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-black disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>Nueva Cuota</span>
     </button>
   </div>
 
-  <!-- Barra de Filtro / Selector Contextual -->
-  <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <!-- BARRA DE FILTROS / SELECTOR CONTEXTUAL -->
+  <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
     
-    <!-- Selector 1: Periodo Lectivo (SIEMPRE HABILITADO) -->
+    <!-- Selector 1: Periodo Lectivo -->
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">1. Año Lectivo / Periodo</label>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo / Periodo</label>
       <select 
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm cursor-pointer transition">
         <option value="">-- Seleccione Año Lectivo --</option>
         @for (p of periodos(); track p.id) {
           <option [value]="p.id">
@@ -34,14 +44,14 @@
       </select>
     </div>
 
-    <!-- Selector 2: Aula - Sección (SOLO HABILITADO SI HAY PERIODO SELECCIONADO) -->
+    <!-- Selector 2: Aula - Sección -->
     <div>
-      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">2. Aula - Sección</label>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
-        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed">
+        class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition cursor-pointer">
         
         @if (!tienePeriodoSeleccionado()) {
           <option value="">-- Seleccione Año Lectivo primero --</option>
@@ -62,102 +72,118 @@
 
   </div>
 
-  <!-- Contenido Principal -->
+  <!-- CONTENIDO PRINCIPAL (ALTURA DINÁMICA) -->
   @if (!tieneAulaSeleccionada()) {
-    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
-      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">i</div>
-      <h3 class="text-slate-700 font-semibold mb-1">Seleccione un Año Lectivo y Aula</h3>
-      <p class="text-slate-400 text-sm">Para consultar o aperturar las cuotas del comité, elija el aula en los filtros superiores.</p>
+    <div class="text-center py-12 sm:py-16 bg-white rounded-2xl border border-dashed border-slate-300 p-6">
+      <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h3 class="text-slate-800 font-bold text-xs sm:text-sm mb-1">Seleccione un Año Lectivo y Aula</h3>
+      <p class="text-slate-400 text-xs">Para consultar o aperturar las cuotas del comité, elija el aula en los filtros superiores.</p>
     </div>
   } @else if (cargando()) {
-    <div class="text-center py-16">
-      <p class="text-slate-500 animate-pulse">Cargando compromisos de pago del aula...</p>
+    <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-slate-900 mb-2"></div>
+      <p class="text-slate-500 text-xs sm:text-sm font-medium">Cargando compromisos de pago del aula...</p>
     </div>
   } @else {
 
     <!-- Sub-Filtro por Tipo de Cuota -->
     <div class="flex items-center gap-2 mb-4">
-      <span class="text-xs font-semibold text-slate-500 uppercase">Filtrar:</span>
+      <span class="text-xs font-bold text-slate-500 uppercase">Filtrar:</span>
       <button 
         (click)="filtroTipoCuota.set('TODOS')" 
-        [class.bg-indigo-600]="filtroTipoCuota() === 'TODOS'"
+        [class.bg-slate-900]="filtroTipoCuota() === 'TODOS'"
         [class.text-white]="filtroTipoCuota() === 'TODOS'"
         [class.bg-white]="filtroTipoCuota() !== 'TODOS'"
-        class="px-3 py-1 rounded-full text-xs font-medium border border-slate-200 transition">
+        [class.text-slate-700]="filtroTipoCuota() !== 'TODOS'"
+        class="px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 transition cursor-pointer">
         Todas ({{ cuotas().length }})
       </button>
       <button 
         (click)="filtroTipoCuota.set('RECURRENTE_MENSUAL')" 
-        [class.bg-indigo-600]="filtroTipoCuota() === 'RECURRENTE_MENSUAL'"
+        [class.bg-slate-900]="filtroTipoCuota() === 'RECURRENTE_MENSUAL'"
         [class.text-white]="filtroTipoCuota() === 'RECURRENTE_MENSUAL'"
         [class.bg-white]="filtroTipoCuota() !== 'RECURRENTE_MENSUAL'"
-        class="px-3 py-1 rounded-full text-xs font-medium border border-slate-200 transition">
+        [class.text-slate-700]="filtroTipoCuota() !== 'RECURRENTE_MENSUAL'"
+        class="px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 transition cursor-pointer">
         Caja Chica Mensual
       </button>
       <button 
         (click)="filtroTipoCuota.set('EXTRAORDINARIA')" 
-        [class.bg-indigo-600]="filtroTipoCuota() === 'EXTRAORDINARIA'"
+        [class.bg-slate-900]="filtroTipoCuota() === 'EXTRAORDINARIA'"
         [class.text-white]="filtroTipoCuota() === 'EXTRAORDINARIA'"
         [class.bg-white]="filtroTipoCuota() !== 'EXTRAORDINARIA'"
-        class="px-3 py-1 rounded-full text-xs font-medium border border-slate-200 transition">
+        [class.text-slate-700]="filtroTipoCuota() !== 'EXTRAORDINARIA'"
+        class="px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 transition cursor-pointer">
         Actividades / Únicas
       </button>
     </div>
 
     <!-- Grid de Cuotas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       @for (cuota of cuotasFiltradas(); track cuota.id) {
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between hover:border-indigo-300 transition">
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 flex flex-col justify-between hover:border-slate-400 transition">
           <div>
             <div class="flex justify-between items-start mb-3">
               <span 
-                [class.bg-emerald-100]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
-                [class.text-emerald-800]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
-                [class.bg-purple-100]="cuota.tipoCuota === 'EXTRAORDINARIA'"
-                [class.text-purple-800]="cuota.tipoCuota === 'EXTRAORDINARIA'"
-                class="px-2.5 py-1 text-xs font-semibold rounded-full">
+                [class.bg-emerald-50]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                [class.text-emerald-700]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                [class.border-emerald-200]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                [class.bg-purple-50]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                [class.text-purple-700]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                [class.border-purple-200]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                class="px-2.5 py-0.5 text-xs font-bold rounded-full border">
                 {{ cuota.tipoCuota === 'RECURRENTE_MENSUAL' ? 'Mensual' : 'Actividad' }}
               </span>
-              <span class="text-xs text-slate-400">Vence: {{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+              <span class="text-xs text-slate-400 font-medium">Vence: {{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
             </div>
 
-            <h3 class="text-base font-bold text-slate-800 mb-1 leading-snug">{{ cuota.concepto }}</h3>
-            <p class="text-2xl font-extrabold text-indigo-600 mb-4">S/. {{ cuota.montoIndividual | number:'1.2-2' }} <span class="text-xs text-slate-400 font-normal">/ por estudiante</span></p>
+            <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-1 leading-snug">{{ cuota.concepto }}</h3>
+            <p class="text-xl sm:text-2xl font-black text-slate-900 mb-4">S/. {{ cuota.montoIndividual | number:'1.2-2' }} <span class="text-xs text-slate-400 font-normal">/ por estudiante</span></p>
 
             <!-- Barra de Progreso de Recaudación -->
             <div class="mb-4">
-              <div class="flex justify-between text-xs text-slate-600 mb-1">
-                <span>Recaudado: S/. {{ cuota.totalMontoRecaudado | number:'1.2-2' }}</span>
-                <span>Meta: S/. {{ cuota.totalMontoEsperado | number:'1.2-2' }}</span>
+              <div class="flex justify-between text-xs text-slate-600 font-medium mb-1.5">
+                <span>Recaudado: <strong>S/. {{ cuota.totalMontoRecaudado | number:'1.2-2' }}</strong></span>
+                <span>Meta: <strong>S/. {{ cuota.totalMontoEsperado | number:'1.2-2' }}</strong></span>
               </div>
-              <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" [style.width.%]="(cuota.totalMontoRecaudado / cuota.totalMontoEsperado) * 100 || 0"></div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="bg-slate-900 h-2 rounded-full transition-all duration-500" [style.width.%]="(cuota.totalMontoRecaudado / cuota.totalMontoEsperado) * 100 || 0"></div>
               </div>
             </div>
           </div>
 
           <!-- Resumen de Cumplimiento -->
           <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 text-center text-xs">
-            <div class="bg-slate-50 p-2 rounded-lg">
-              <span class="block font-bold text-emerald-600 text-sm">{{ cuota.estudiantesAlDia }}</span>
-              <span class="text-slate-500">Al día</span>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <span class="block font-bold text-emerald-700 text-sm sm:text-base">{{ cuota.estudiantesAlDia }}</span>
+              <span class="text-slate-500 font-medium">Al día</span>
             </div>
 
-            <!-- 🚀 BOTÓN ACCIONABLE DE DETALLE DE MOROSIDAD DIRECTA -->
+            <!-- BOTÓN ACCIONABLE DE DETALLE DE MOROSIDAD DIRECTA -->
             <button 
               (click)="abrirModalMorosos(cuota)"
-              class="bg-amber-50 hover:bg-amber-100 p-2 rounded-lg border border-amber-200/60 transition cursor-pointer text-left group">
+              class="bg-amber-50 hover:bg-amber-100/80 p-2 rounded-xl border border-amber-200/80 transition cursor-pointer text-left group">
               <div class="flex items-center justify-between">
-                <span class="block font-bold text-amber-600 text-sm group-hover:underline">{{ cuota.estudiantesPendientes }}</span>
-                <span class="text-[10px] text-amber-700 font-bold uppercase tracking-wider">👁️ Ver</span>
+                <span class="block font-bold text-amber-700 text-sm sm:text-base group-hover:underline">{{ cuota.estudiantesPendientes }}</span>
+                <span class="text-[10px] text-amber-800 font-bold uppercase tracking-wider flex items-center gap-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Ver
+                </span>
               </div>
-              <span class="text-slate-500 block text-[11px]">Pendientes</span>
+              <span class="text-slate-500 block text-[11px] font-medium">Pendientes</span>
             </button>
           </div>
         </div>
       } @empty {
-        <div class="col-span-full text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-          <p class="text-slate-500">No hay cuotas que coincidan con el filtro seleccionado.</p>
+        <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 p-6">
+          <p class="text-slate-500 text-xs sm:text-sm font-medium">No hay cuotas que coincidan con el filtro seleccionado.</p>
         </div>
       }
     </div>
@@ -166,17 +192,17 @@
 
 <!-- Modal Formulario con Integración a Cronograma de Actividades -->
 @if (mostrarModal()) {
-  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 border border-slate-100 animate-fade-in">
       
       <!-- Selector de Pestañas -->
-      <div class="bg-slate-100 p-1 rounded-xl flex gap-1 mb-5 border border-slate-200">
+      <div class="bg-slate-100 p-1 rounded-xl flex gap-1 mb-5 border border-slate-200/80">
         <button 
           type="button"
           (click)="tipoModal.set('EVENTUAL')"
           [class.bg-white]="tipoModal() === 'EVENTUAL'"
-          [class.text-indigo-600]="tipoModal() === 'EVENTUAL'"
-          [class.shadow-sm]="tipoModal() === 'EVENTUAL'"
+          [class.text-slate-900]="tipoModal() === 'EVENTUAL'"
+          [class.shadow-xs]="tipoModal() === 'EVENTUAL'"
           [class.text-slate-500]="tipoModal() !== 'EVENTUAL'"
           class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center cursor-pointer">
           Cuota / Actividad Única
@@ -186,8 +212,8 @@
           type="button"
           (click)="tipoModal.set('MENSUAL')"
           [class.bg-white]="tipoModal() === 'MENSUAL'"
-          [class.text-indigo-600]="tipoModal() === 'MENSUAL'"
-          [class.shadow-sm]="tipoModal() === 'MENSUAL'"
+          [class.text-slate-900]="tipoModal() === 'MENSUAL'"
+          [class.shadow-xs]="tipoModal() === 'MENSUAL'"
           [class.text-slate-500]="tipoModal() !== 'MENSUAL'"
           class="flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all duration-200 text-center cursor-pointer">
           Caja Chica Mensual
@@ -198,62 +224,65 @@
       @if (tipoModal() === 'EVENTUAL') {
         <form [formGroup]="cuotaForm" (ngSubmit)="guardarCuota()" class="space-y-4">
           
-          <!-- 🚀 SELECTOR OPCIONAL: Vincular Actividad del Cronograma -->
+          <!-- SELECTOR OPCIONAL: Vincular Actividad del Cronograma -->
           <div>
-            <label class="block text-xs font-semibold text-indigo-700 uppercase mb-1">
-              📌 Vincular con Actividad del Cronograma (Opcional)
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              Vincular con Actividad del Cronograma (Opcional)
             </label>
             <select 
               formControlName="actividadId" 
               (change)="onActividadChange($event)"
-              class="w-full border border-indigo-200 rounded-lg px-3 py-2 bg-indigo-50/50 text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-medium cursor-pointer">
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50/50 text-slate-800 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold cursor-pointer transition">
               <option [value]="null">-- Registro Manual Libre (Sin Actividad) --</option>
               @for (act of actividades(); track act.id) {
                 <option [value]="act.id">
-                  📅 {{ act.nombreActividad }} (S/. {{ act.cuotaSugeridaPorAlumno | number:'1.2-2' }})
+                  {{ act.nombreActividad }} (S/. {{ act.cuotaSugeridaPorAlumno | number:'1.2-2' }})
                 </option>
               }
             </select>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Concepto / Motivo</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto / Motivo *</label>
             <input 
               type="text" 
               formControlName="concepto" 
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500" 
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-500" 
               placeholder="Ej. Cuota Día del Maestro">
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Monto (S/.)</label>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
               <input 
                 type="number" 
                 formControlName="montoIndividual" 
-                class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500">
+                class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-500">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">F. Vencimiento</label>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">F. Vencimiento *</label>
               <input 
                 type="date" 
                 formControlName="fechaVencimiento" 
-                class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500">
+                class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-500">
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observación</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Observación</label>
             <textarea 
               formControlName="observacion" 
               rows="2" 
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" 
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition" 
               placeholder="Opcional..."></textarea>
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm cursor-pointer">Cancelar</button>
-            <button type="submit" [disabled]="cuotaForm.invalid" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-lg text-sm font-semibold cursor-pointer">Guardar Cuota</button>
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
+            <button type="submit" [disabled]="cuotaForm.invalid" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Guardar Cuota</button>
           </div>
         </form>
       }
@@ -261,18 +290,18 @@
       <!-- FORMULARIO 2: Programación Mensual -->
       @if (tipoModal() === 'MENSUAL') {
         <form [formGroup]="cuotaMensualForm" (ngSubmit)="guardarCuotaMensual()" class="space-y-4">
-          <div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg text-xs">
+          <div class="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs leading-relaxed font-medium">
             Se programarán o reajustarán las cuotas mensuales desde el mes elegido hasta Diciembre.
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Concepto Base</label>
-            <input type="text" formControlName="conceptoBase" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto Base *</label>
+            <input type="text" formControlName="conceptoBase" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition">
           </div>
           
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">A Partir del Mes</label>
-              <select formControlName="mesInicio" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm cursor-pointer">
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">A Partir del Mes *</label>
+              <select formControlName="mesInicio" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 cursor-pointer transition">
                 <option [value]="3">Marzo</option>
                 <option [value]="4">Abril</option>
                 <option [value]="5">Mayo</option>
@@ -286,19 +315,19 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Monto Mensual (S/.)</label>
-              <input type="number" formControlName="montoMensual" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto Mensual (S/.) *</label>
+              <input type="number" formControlName="montoMensual" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition">
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Día Límite de Pago en el Mes</label>
-            <input type="number" formControlName="diaVencimiento" min="1" max="28" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="Ej. Día 10">
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Día Límite de Pago en el Mes *</label>
+            <input type="number" formControlName="diaVencimiento" min="1" max="28" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition" placeholder="Ej. Día 10">
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-            <button type="button" (click)="cerrarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 text-sm cursor-pointer">Cancelar</button>
-            <button type="submit" [disabled]="cuotaMensualForm.invalid" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-lg text-sm font-semibold cursor-pointer">Programar Cuotas</button>
+            <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
+            <button type="submit" [disabled]="cuotaMensualForm.invalid" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Programar Cuotas</button>
           </div>
         </form>
       }
@@ -307,29 +336,38 @@
   </div>
 }
 
-<!-- 🚀 MODAL DIRECTO DE DETALLE DE ESTUDIANTES PENDIENTES / MOROSOS -->
+<!-- MODAL DIRECTO DE DETALLE DE ESTUDIANTES PENDIENTES / MOROSOS -->
 @if (modalMorososAbierto()) {
   <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-100">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 animate-fade-in">
       
       <!-- Cabecera del Modal -->
-      <div class="bg-amber-600 text-white p-4 flex justify-between items-center">
+      <div class="bg-amber-600 text-white px-5 py-4 flex justify-between items-center">
         <div>
-          <span class="text-xs font-bold text-amber-200 uppercase block tracking-wider">Lista de Morosidad Directa</span>
-          <h3 class="font-bold text-base leading-snug">{{ cuotaSeleccionadaMorosos()?.concepto }}</h3>
+          <span class="text-[10px] font-bold text-amber-200 uppercase block tracking-wider">Lista de Morosidad Directa</span>
+          <h3 class="font-bold text-sm sm:text-base leading-snug">{{ cuotaSeleccionadaMorosos()?.concepto }}</h3>
         </div>
-        <button (click)="cerrarModalMorosos()" class="text-amber-200 hover:text-white cursor-pointer"><i class="pi pi-times text-lg"></i></button>
+        <button (click)="cerrarModalMorosos()" class="text-amber-200 hover:text-white cursor-pointer transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
-      <div class="p-6">
+      <div class="p-5 sm:p-6">
         @if (cargandoMorosos()) {
           <div class="text-center py-12">
-            <p class="text-slate-500 animate-pulse font-semibold">Cargando apoderados pendientes...</p>
+            <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-amber-600 mb-2"></div>
+            <p class="text-slate-500 text-xs font-medium">Cargando apoderados pendientes...</p>
           </div>
         } @else if (estudiantesMorosos().length === 0) {
-          <div class="text-center py-12 bg-emerald-50 rounded-xl border border-emerald-200">
-            <div class="text-3xl mb-2">🎉</div>
-            <h4 class="font-bold text-emerald-800">¡Aula al Día!</h4>
+          <div class="text-center py-12 bg-emerald-50 rounded-2xl border border-emerald-200 p-6">
+            <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h4 class="font-bold text-emerald-800 text-sm">¡Aula al Día!</h4>
             <p class="text-xs text-emerald-600 mt-1">Todos los estudiantes han cancelado la cuota seleccionada.</p>
           </div>
         } @else {
@@ -337,7 +375,7 @@
             <span class="text-xs font-bold text-slate-500 uppercase">
               Total Pendientes: {{ estudiantesMorosos().length }} apoderados
             </span>
-            <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+            <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
               Monto Cuota: S/. {{ cuotaSeleccionadaMorosos()?.montoIndividual | number:'1.2-2' }}
             </span>
           </div>
@@ -345,7 +383,7 @@
           <!-- Tabla de Morosos -->
           <div class="max-h-72 overflow-y-auto border border-slate-200 rounded-xl">
             <table class="w-full text-left text-xs">
-              <thead class="bg-slate-100 text-slate-600 font-bold uppercase sticky top-0 border-b border-slate-200">
+              <thead class="bg-slate-50 text-slate-600 font-bold uppercase sticky top-0 border-b border-slate-200">
                 <tr>
                   <th class="p-3">Estudiante</th>
                   <th class="p-3">Apoderado Responsable</th>
@@ -361,12 +399,15 @@
                       <span class="text-[11px] font-mono text-slate-400">{{ item.tipoDocumento }}: {{ item.numeroDocumento }}</span>
                     </td>
                     <td class="p-3 text-slate-800 font-semibold">
-                      👤 {{ item.nombreApoderado }}
+                      {{ item.nombreApoderado }}
                     </td>
                     <td class="p-3 whitespace-nowrap">
                       @if (item.telefonoApoderado !== '-') {
                         <a [href]="'https://wa.me/51' + item.telefonoApoderado" target="_blank" class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold px-2 py-1 rounded-lg border border-emerald-200 transition">
-                          📱 {{ item.telefonoApoderado }}
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current text-emerald-600" viewBox="0 0 24 24">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                          </svg>
+                          <span>{{ item.telefonoApoderado }}</span>
                         </a>
                       } @else {
                         <span class="text-slate-400 font-mono">-</span>
@@ -387,7 +428,7 @@
       </div>
 
       <div class="flex justify-end p-4 bg-slate-50 border-t border-slate-100">
-        <button (click)="cerrarModalMorosos()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition cursor-pointer">
+        <button (click)="cerrarModalMorosos()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black text-white rounded-xl transition cursor-pointer">
           Cerrar
         </button>
       </div>
