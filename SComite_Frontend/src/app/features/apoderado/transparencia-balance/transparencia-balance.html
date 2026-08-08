@@ -1,28 +1,28 @@
-<div class="p-6 bg-slate-50 min-h-screen">
+<div class="p-4 sm:p-6 bg-slate-50">
   
-  <!-- Header con selector Multi-hijo -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+  <!-- CABECERA CON SELECTOR MULTI-HIJO -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
     <div class="flex items-center gap-3">
-      <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-sm">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       </div>
       <div>
-        <h1 class="text-2xl font-bold text-slate-800">Transparencia y Balance del Aula</h1>
-        <p class="text-slate-500 text-sm">Estado de caja mensual y rendición de cuentas de la tesorería.</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Transparencia y Balance del Aula</h1>
+        <p class="text-xs sm:text-sm text-slate-500">Estado de caja mensual y rendición de cuentas de la tesorería</p>
       </div>
     </div>
 
-    <!-- Selector Multi-hijo -->
+    <!-- SELECTOR MULTI-HIJO -->
     @if (hijos().length > 1) {
-      <div class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-bold text-slate-400 uppercase px-2">Seleccionar Hijo:</span>
+      <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
+        <span class="text-xs font-bold text-slate-400 uppercase px-2 shrink-0">Seleccionar Hijo:</span>
         @for (hijo of hijos(); track hijo.estudianteId) {
           <button 
             (click)="onSeleccionarHijo(hijo.estudianteId)"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-            [ngClass]="hijo.estudianteId === estudianteSeleccionadoId() ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'">
+            class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 whitespace-nowrap"
+            [ngClass]="hijo.estudianteId === estudianteSeleccionadoId() ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'">
             {{ hijo.nombreEstudiante }} ({{ hijo.nombreAula }})
           </button>
         }
@@ -31,179 +31,212 @@
   </div>
 
   @if (cargandoHijos() || cargandoBalance()) {
-    <div class="text-center py-16">
-      <p class="text-slate-500 font-semibold animate-pulse">Cargando balance y registros del aula...</p>
+    <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-slate-900 mb-2"></div>
+      <p class="text-slate-500 text-xs sm:text-sm font-medium">Cargando balance y registros del aula...</p>
     </div>
   } @else if (hijoActual()) {
 
-    <!-- Tarjetas de Métricas Resumen Acumulado -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <!-- TARJETAS DE MÉTRICAS RESUMEN ACUMULADO -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
     
-        <!-- Total Recaudado -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-            <span class="text-xs font-semibold text-slate-400 uppercase">
-                Total Recaudado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual + ')' }}
-            </span>
-            <h3 class="text-2xl font-black text-emerald-600 mt-0.5">S/. {{ totalIngresos() | number:'1.2-2' }}</h3>
-            </div>
-            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg text-xl">💰</div>
+      <!-- Total Recaudado -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase block mb-0.5">
+            Total Recaudado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual + ')' }}
+          </span>
+          <h3 class="text-xl sm:text-2xl font-black text-emerald-700">S/. {{ totalIngresos() | number:'1.2-2' }}</h3>
         </div>
-
-        <!-- Total Gastado -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-            <span class="text-xs font-semibold text-slate-400 uppercase">
-                Total Gastado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual + ')' }}
-            </span>
-            <h3 class="text-2xl font-black text-rose-600 mt-0.5">S/. {{ totalEgresos() | number:'1.2-2' }}</h3>
-            </div>
-            <div class="p-3 bg-rose-50 text-rose-600 rounded-lg text-xl">💸</div>
+        <div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
         </div>
-
-        <!-- Saldo en Caja -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-            <span class="text-xs font-semibold text-slate-400 uppercase">
-                {{ mesSeleccionadoData() ? 'Balance Net. (' + mesSeleccionadoData()?.nombreMes + ')' : 'Saldo Disponible en Caja' }}
-            </span>
-            <h3 class="text-2xl font-black text-indigo-600 mt-0.5">S/. {{ saldoDisponible() | number:'1.2-2' }}</h3>
-            </div>
-            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg text-xl">🏛️</div>
-        </div>
-    </div>
-
-    <!-- Tabla 1: Desglose Mensual (Ingresos vs Egresos por Mes) -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">
-          📊 Resumen de Caja Mensual
-        </h2>
-        <span class="text-xs text-slate-400">Haz clic en un mes para filtrar la lista de egresos</span>
       </div>
 
-      <table class="w-full text-left text-sm">
-        <thead class="bg-slate-100 text-slate-600 font-bold uppercase text-xs border-b border-slate-200">
-          <tr>
-            <th class="p-4">Mes</th>
-            <th class="p-4 text-right">Recaudado (Ingresos)</th>
-            <th class="p-4 text-right">Gastado (Egresos)</th>
-            <th class="p-4 text-right">Balance del Mes</th>
-            <th class="p-4 text-center">Filtro</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          @for (m of desgloseMensual(); track m.mesNum) {
-            <tr 
-              (click)="onFiltrarPorMes(m.mesNum)"
-              class="hover:bg-slate-50 transition cursor-pointer"
-              [ngClass]="{'bg-indigo-50/60': mesFiltroSeleccionado() === m.mesNum}">
-              <td class="p-4 font-bold text-slate-800 capitalize">
-                📅 {{ m.nombreMes }} {{ m.anio }}
-              </td>
-              <td class="p-4 text-right font-bold text-emerald-600">
-                + S/. {{ m.totalIngresosMes | number:'1.2-2' }}
-              </td>
-              <td class="p-4 text-right font-bold text-rose-600">
-                - S/. {{ m.totalEgresosMes | number:'1.2-2' }}
-              </td>
-              <td class="p-4 text-right font-black" [ngClass]="m.saldoMes >= 0 ? 'text-indigo-600' : 'text-amber-600'">
-                S/. {{ m.saldoMes | number:'1.2-2' }}
-              </td>
-              <td class="p-4 text-center">
-                <span 
-                  class="px-2.5 py-1 text-xs font-bold rounded-lg border"
-                  [ngClass]="mesFiltroSeleccionado() === m.mesNum ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 border-slate-200'">
-                  {{ mesFiltroSeleccionado() === m.mesNum ? 'Filtrado' : 'Ver Gastos' }}
-                </span>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="5" class="text-center py-8 text-slate-400">
-                No hay movimientos registrados por mes.
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <!-- Total Gastado -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase block mb-0.5">
+            Total Gastado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual + ')' }}
+          </span>
+          <h3 class="text-xl sm:text-2xl font-black text-rose-700">S/. {{ totalEgresos() | number:'1.2-2' }}</h3>
+        </div>
+        <div class="p-3 bg-rose-50 text-rose-700 rounded-xl border border-rose-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Saldo en Caja -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase block mb-0.5">
+            {{ mesSeleccionadoData() ? 'Balance Net. (' + mesSeleccionadoData()?.nombreMes + ')' : 'Saldo Disponible en Caja' }}
+          </span>
+          <h3 class="text-xl sm:text-2xl font-black text-slate-900">S/. {{ saldoDisponible() | number:'1.2-2' }}</h3>
+        </div>
+        <div class="p-3 bg-slate-100 text-slate-700 rounded-xl border border-slate-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7h12m0 0l-3 9a5.002 5.002 0 006.001 0M18 7l-3 9m-5.736-6h8.018" />
+          </svg>
+        </div>
+      </div>
     </div>
 
-    <!-- Tabla 2: Historial de Egresos / Gastos (Filtrable) -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">
-          🧾 Detalle de Gastos {{ mesFiltroSeleccionado() ? '(Filtrado)' : '(Todos los Meses)' }}
+    <!-- TABLA 1: DESGLOSE MENSUAL (ALTURA DINÁMICA) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden mb-5 inline-block w-full">
+      <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <span>Resumen de Caja Mensual</span>
+        </h2>
+        <span class="text-xs text-slate-400 font-medium">Haz clic en un mes para filtrar la lista de egresos</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 font-bold uppercase text-xs border-b border-slate-200">
+              <th class="p-3.5 sm:p-4">Mes</th>
+              <th class="p-3.5 sm:p-4 text-right">Recaudado (Ingresos)</th>
+              <th class="p-3.5 sm:p-4 text-right">Gastado (Egresos)</th>
+              <th class="p-3.5 sm:p-4 text-right">Balance del Mes</th>
+              <th class="p-3.5 sm:p-4 text-center">Filtro</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-slate-700">
+            @for (m of desgloseMensual(); track m.mesNum) {
+              <tr 
+                (click)="onFiltrarPorMes(m.mesNum)"
+                class="hover:bg-slate-50/80 transition cursor-pointer"
+                [ngClass]="{'bg-slate-100/70': mesFiltroSeleccionado() === m.mesNum}">
+                <td class="p-3.5 sm:p-4 font-bold text-slate-900 capitalize flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>{{ m.nombreMes }} {{ m.anio }}</span>
+                </td>
+                <td class="p-3.5 sm:p-4 text-right font-semibold text-emerald-700">
+                  + S/. {{ m.totalIngresosMes | number:'1.2-2' }}
+                </td>
+                <td class="p-3.5 sm:p-4 text-right font-semibold text-rose-700">
+                  - S/. {{ m.totalEgresosMes | number:'1.2-2' }}
+                </td>
+                <td class="p-3.5 sm:p-4 text-right font-black" [ngClass]="m.saldoMes >= 0 ? 'text-slate-900' : 'text-amber-700'">
+                  S/. {{ m.saldoMes | number:'1.2-2' }}
+                </td>
+                <td class="p-3.5 sm:p-4 text-center">
+                  <span 
+                    class="px-2.5 py-1 text-xs font-bold rounded-xl border transition"
+                    [ngClass]="mesFiltroSeleccionado() === m.mesNum ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-700 border-slate-200'">
+                    {{ mesFiltroSeleccionado() === m.mesNum ? 'Filtrado' : 'Ver Gastos' }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center py-8 text-slate-400 text-xs sm:text-sm">
+                  No hay movimientos registrados por mes.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABLA 2: HISTORIAL DE EGRESOS / GASTOS (ALTURA DINÁMICA) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden inline-block w-full">
+      <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Detalle de Gastos {{ mesFiltroSeleccionado() ? '(Filtrado)' : '(Todos los Meses)' }}</span>
         </h2>
         @if (mesFiltroSeleccionado()) {
           <button 
             (click)="onFiltrarPorMes(null)"
-            class="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
-            ✖ Quitar Filtro de Mes
+            class="text-xs font-bold text-rose-600 hover:underline cursor-pointer flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>Quitar Filtro de Mes</span>
           </button>
         }
       </div>
 
-      <table class="w-full text-left text-sm">
-        <thead class="bg-slate-100 text-slate-600 font-bold uppercase text-xs border-b border-slate-200">
-          <tr>
-            <th class="p-4">Fecha</th>
-            <th class="p-4">Concepto / Detalle</th>
-            <th class="p-4">Categoría</th>
-            <th class="p-4">Proveedor</th>
-            <th class="p-4 text-center">Comprobante</th>
-            <th class="p-4 text-right">Monto</th>
-            <th class="p-4 text-center">Sustento</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          @for (gasto of egresosFiltrados(); track gasto.id) {
-            <tr class="hover:bg-slate-50 transition">
-              <td class="p-4 font-semibold text-slate-700 whitespace-nowrap">
-                📅 {{ gasto.fechaGasto | date:'dd/MM/yyyy' }}
-              </td>
-              <td class="p-4">
-                <span class="block font-bold text-slate-800">{{ gasto.concepto }}</span>
-              </td>
-              <td class="p-4">
-                <span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-                  {{ gasto.categoria }}
-                </span>
-              </td>
-              <td class="p-4 text-slate-600">
-                {{ gasto.proveedor || '-' }}
-              </td>
-              <td class="p-4 text-center whitespace-nowrap text-xs text-slate-500">
-                @if (gasto.tipoComprobante) {
-                  <span class="font-medium">{{ gasto.tipoComprobante }}: {{ gasto.numeroComprobante || 'S/N' }}</span>
-                } @else {
-                  <span>-</span>
-                }
-              </td>
-              <td class="p-4 text-right font-black text-rose-600 whitespace-nowrap">
-                S/. {{ gasto.monto | number:'1.2-2' }}
-              </td>
-              <td class="p-4 text-center whitespace-nowrap">
-                @if (gasto.urlComprobante) {
-                  <button 
-                    (click)="abrirComprobante(gasto.urlComprobante)"
-                    class="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition cursor-pointer">
-                    📄 Ver Comprobante
-                  </button>
-                } @else {
-                  <span class="text-xs text-slate-400 italic">Sin adjunto</span>
-                }
-              </td>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 font-bold uppercase text-xs border-b border-slate-200">
+              <th class="p-3.5 sm:p-4">Fecha</th>
+              <th class="p-3.5 sm:p-4">Concepto / Detalle</th>
+              <th class="p-3.5 sm:p-4">Categoría</th>
+              <th class="p-3.5 sm:p-4">Proveedor</th>
+              <th class="p-3.5 sm:p-4 text-center">Comprobante</th>
+              <th class="p-3.5 sm:p-4 text-right">Monto</th>
+              <th class="p-3.5 sm:p-4 text-center">Sustento</th>
             </tr>
-          } @empty {
-            <tr>
-              <td colspan="7" class="text-center py-12 text-slate-400">
-                No hay egresos registrados para la selección realizada.
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-slate-700">
+            @for (gasto of egresosFiltrados(); track gasto.id) {
+              <tr class="hover:bg-slate-50/80 transition">
+                <td class="p-3.5 sm:p-4 font-semibold text-slate-700 font-mono text-xs sm:text-sm whitespace-nowrap">
+                  {{ gasto.fechaGasto | date:'dd/MM/yyyy' }}
+                </td>
+                <td class="p-3.5 sm:p-4">
+                  <span class="block font-bold text-slate-900 text-xs sm:text-sm">{{ gasto.concepto }}</span>
+                </td>
+                <td class="p-3.5 sm:p-4">
+                  <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
+                    {{ gasto.categoria }}
+                  </span>
+                </td>
+                <td class="p-3.5 sm:p-4 text-slate-600 text-xs sm:text-sm">
+                  {{ gasto.proveedor || '-' }}
+                </td>
+                <td class="p-3.5 sm:p-4 text-center whitespace-nowrap text-xs text-slate-500">
+                  @if (gasto.tipoComprobante) {
+                    <span class="font-medium text-slate-800">{{ gasto.tipoComprobante }}: {{ gasto.numeroComprobante || 'S/N' }}</span>
+                  } @else {
+                    <span>-</span>
+                  }
+                </td>
+                <td class="p-3.5 sm:p-4 text-right font-black text-rose-700 text-xs sm:text-sm whitespace-nowrap">
+                  S/. {{ gasto.monto | number:'1.2-2' }}
+                </td>
+                <td class="p-3.5 sm:p-4 text-center whitespace-nowrap">
+                  @if (gasto.urlComprobante) {
+                    <button 
+                      (click)="abrirComprobante(gasto.urlComprobante)"
+                      class="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer inline-flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <span>Ver Comprobante</span>
+                    </button>
+                  } @else {
+                    <span class="text-xs text-slate-400 italic">Sin adjunto</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center py-8 text-slate-400 text-xs sm:text-sm">
+                  No hay egresos registrados para la selección realizada.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
 
   }

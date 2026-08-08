@@ -1,21 +1,28 @@
-<div class="p-6 bg-slate-50 min-h-screen">
+<div class="p-4 sm:p-6 bg-slate-50">
   
-  <!-- Header -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-800">Mis Pagos y Pendientes</h1>
-      <p class="text-slate-500 text-sm">Estado de cuenta y notificaciones de pago del comité de aula.</p>
+  <!-- CABECERA -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800">Mis Pagos y Pendientes</h1>
+        <p class="text-xs sm:text-sm text-slate-500">Estado de cuenta y notificaciones de pago del comité de aula</p>
+      </div>
     </div>
 
-    <!-- 🚀 SELECTOR / CHIPS DE SELECCIÓN DE HIJO SI TIENE MÁS DE 1 -->
+    <!-- SELECTOR / CHIPS DE SELECCIÓN DE HIJO SI TIENE MÁS DE 1 -->
     @if (hijos().length > 1) {
-      <div class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-bold text-slate-400 uppercase px-2">Seleccionar Hijo:</span>
+      <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
+        <span class="text-xs font-bold text-slate-400 uppercase px-2 shrink-0">Seleccionar Hijo:</span>
         @for (hijo of hijos(); track hijo.estudianteId) {
           <button 
             (click)="onSeleccionarHijo(hijo.estudianteId)"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
-            [ngClass]="hijo.estudianteId === estudianteSeleccionadoId() ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'">
+            class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 whitespace-nowrap"
+            [ngClass]="hijo.estudianteId === estudianteSeleccionadoId() ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'">
             {{ hijo.nombreEstudiante }} ({{ hijo.nombreAula }})
           </button>
         }
@@ -24,101 +31,118 @@
   </div>
 
   @if (cargandoHijos() || cargandoCuotas()) {
-    <div class="text-center py-16">
-      <p class="text-slate-500 font-semibold animate-pulse">Cargando estado de cuenta del estudiante...</p>
+    <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-slate-900 mb-2"></div>
+      <p class="text-slate-500 text-xs sm:text-sm font-medium">Cargando estado de cuenta del estudiante...</p>
     </div>
   } @else if (hijoActual() && resumen()) {
 
     <!-- FICHA Y MEDIOS DE PAGO ESPECÍFICOS DEL AULA DEL HIJO -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
       
       <!-- Total Pendiente del Hijo -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
         <div>
           <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Pendiente ({{ hijoActual()?.nombreEstudiante }})</span>
-          <span class="text-3xl font-black text-rose-700">S/. {{ resumen()?.totalPendiente | number:'1.2-2' }}</span>
+          <span class="text-2xl sm:text-3xl font-black text-rose-700">S/. {{ resumen()?.totalPendiente | number:'1.2-2' }}</span>
         </div>
         @if ((resumen()?.cantidadVencidas || 0) > 0) {
-          <span class="text-xs font-bold text-rose-600 mt-2 block">⚠️ {{ resumen()?.cantidadVencidas }} cuota(s) vencida(s)</span>
+          <span class="text-xs font-bold text-rose-700 mt-2 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>{{ resumen()?.cantidadVencidas }} cuota(s) vencida(s)</span>
+          </span>
         } @else {
-          <span class="text-xs text-slate-400 mt-2 block">Al día con las cuotas de este salón</span>
+          <span class="text-xs text-slate-400 mt-2 block font-medium">Al día con las cuotas de este salón</span>
         }
       </div>
 
       <!-- Total Pagado del Hijo -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
         <div>
           <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Aportado / Validado</span>
-          <span class="text-3xl font-black text-emerald-700">S/. {{ resumen()?.totalPagado | number:'1.2-2' }}</span>
+          <span class="text-2xl sm:text-3xl font-black text-emerald-700">S/. {{ resumen()?.totalPagado | number:'1.2-2' }}</span>
         </div>
-        <span class="text-xs text-slate-400 mt-2 block">Verificado por Tesorería del Aula</span>
+        <span class="text-xs text-slate-400 mt-2 block font-medium">Verificado por Tesorería del Aula</span>
       </div>
 
       <!-- Datos del Tesorero Específico del Aula -->
-      <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-2xl p-5 shadow-sm">
-        <span class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-200 block mb-1">
-          Tesorería Aula {{ hijoActual()?.nombreAula }}
-        </span>
-        <div class="mt-1">
-          <p class="text-sm font-bold">{{ hijoActual()?.tesoreroNombre || 'Tesorero de Aula' }}</p>
-          <p class="text-xs text-indigo-200">
-            📱 Yape / Plin / Cel: <strong class="text-white font-mono text-sm">{{ hijoActual()?.tesoreroTelefono || 'No registrado' }}</strong>
-          </p>
+      <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+            Tesorería Aula {{ hijoActual()?.nombreAula }}
+          </span>
+          <div class="mt-1">
+            <p class="text-xs sm:text-sm font-bold text-white">{{ hijoActual()?.tesoreroNombre || 'Tesorero de Aula' }}</p>
+            <p class="text-xs text-slate-300 mt-0.5 flex items-center gap-1.5">
+              <span>Yape / Plin / Cel:</span>
+              <strong class="text-white font-mono text-xs sm:text-sm">{{ hijoActual()?.tesoreroTelefono || 'No registrado' }}</strong>
+            </p>
+          </div>
         </div>
-        <p class="text-[11px] text-indigo-300 mt-3 pt-2 border-t border-indigo-800/80">
+        <p class="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-800">
           Notifique sus abonos directo al WhatsApp del Tesorero de esta aula.
         </p>
       </div>
 
     </div>
 
-    <!-- TABLA DE CRONOGRAMA DE CUOTAS DEL ESTUDIANTE -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">
-          Cronograma de Cuotas - {{ hijoActual()?.nombreEstudiante }} ({{ hijoActual()?.nombreAula }})
+    <!-- TABLA DE CRONOGRAMA DE CUOTAS DEL ESTUDIANTE (ALTURA DINÁMICA) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden inline-block w-full">
+      <div class="p-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
+        <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span>Cronograma de Cuotas - {{ hijoActual()?.nombreEstudiante }} ({{ hijoActual()?.nombreAula }})</span>
         </h2>
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-100 text-slate-600 text-xs uppercase font-extrabold border-b border-slate-200">
-            <tr>
-              <th class="p-3.5">Concepto</th>
-              <th class="p-3.5">Tipo</th>
-              <th class="p-3.5">Vencimiento</th>
-              <th class="p-3.5 text-right">Monto (S/.)</th>
-              <th class="p-3.5 text-center">Estado</th>
-              <th class="p-3.5 text-center">Acción</th>
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 uppercase text-xs font-bold border-b border-slate-200">
+              <th class="p-3.5 sm:p-4">Concepto</th>
+              <th class="p-3.5 sm:p-4">Tipo</th>
+              <th class="p-3.5 sm:p-4">Vencimiento</th>
+              <th class="p-3.5 sm:p-4 text-right">Monto (S/.)</th>
+              <th class="p-3.5 sm:p-4 text-center">Estado</th>
+              <th class="p-3.5 sm:p-4 text-center">Acción</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100 font-medium">
+          <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-slate-700">
             @for (cuota of resumen()?.cuotas; track cuota.cuotaId) {
-              <tr class="hover:bg-slate-50 transition">
-                <td class="p-3.5 font-bold text-slate-900">{{ cuota.concepto }}</td>
-                <td class="p-3.5 text-xs font-bold text-slate-500 uppercase">{{ cuota.tipoCuota }}</td>
-                <td class="p-3.5 text-xs font-semibold text-slate-600">{{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
-                <td class="p-3.5 text-right font-extrabold text-slate-900">S/. {{ cuota.montoTotalCuota | number:'1.2-2' }}</td>
-                <td class="p-3.5 text-center">
-                  <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase" [ngClass]="getBadgeClass(cuota.estadoVisual)">
-                    {{ cuota.estadoVisual === 'PAGADO' ? '✅ Pagado' : (cuota.estadoVisual === 'VENCIDO' ? '🚨 Vencido' : '⏳ Pendiente') }}
+              <tr class="hover:bg-slate-50/80 transition">
+                <td class="p-3.5 sm:p-4 font-bold text-slate-900">{{ cuota.concepto }}</td>
+                <td class="p-3.5 sm:p-4 text-xs font-bold text-slate-500 uppercase">{{ cuota.tipoCuota }}</td>
+                <td class="p-3.5 sm:p-4 text-xs font-semibold text-slate-600 font-mono">{{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                <td class="p-3.5 sm:p-4 text-right font-black text-slate-900">S/. {{ cuota.montoTotalCuota | number:'1.2-2' }}</td>
+                <td class="p-3.5 sm:p-4 text-center">
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase" [ngClass]="getBadgeClass(cuota.estadoVisual)">
+                    {{ cuota.estadoVisual === 'PAGADO' ? '✓ Pagado' : (cuota.estadoVisual === 'VENCIDO' ? '🚨 Vencido' : 'Pendiente') }}
                   </span>
                 </td>
-                <td class="p-3.5 text-center">
+                <td class="p-3.5 sm:p-4 text-center">
                   @if (cuota.estadoVisual === 'PAGADO') {
-                    <span class="text-xs text-emerald-700 font-bold">✓ Validado</span>
+                    <span class="inline-flex items-center gap-1 text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      ✓ Validado
+                    </span>
                   } @else {
                     <button 
                       (click)="notificarPorWhatsApp(cuota)"
-                      class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm cursor-pointer">
-                      <span>📱 Notificar Pago por WhatsApp</span>
+                      class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-xs cursor-pointer">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current text-white" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                      </svg>
+                      <span>Notificar por WhatsApp</span>
                     </button>
                   }
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="p-8 text-center text-slate-400">No hay cuotas asignadas para este estudiante.</td>
+                <td colspan="6" class="p-8 text-center text-slate-400 text-xs sm:text-sm">No hay cuotas asignadas para este estudiante.</td>
               </tr>
             }
           </tbody>
@@ -128,7 +152,7 @@
 
   } @else {
     <div class="bg-white rounded-2xl p-8 text-center border border-slate-200">
-      <p class="text-slate-500 font-semibold">No se encontraron estudiantes asociados a su usuario de apoderado.</p>
+      <p class="text-slate-500 font-semibold text-xs sm:text-sm">No se encontraron estudiantes asociados a su usuario de apoderado.</p>
     </div>
   }
 
