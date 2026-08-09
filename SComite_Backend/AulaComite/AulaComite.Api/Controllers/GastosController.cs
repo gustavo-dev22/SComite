@@ -12,10 +12,12 @@ namespace AulaComite.Api.Controllers
     public class GastosController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ILogger<GastosController> _logger;
 
-        public GastosController(IMediator mediator)
+        public GastosController(IMediator mediator, ILogger<GastosController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         [HttpGet("aula/{aulaId:int}")]
@@ -55,7 +57,8 @@ namespace AulaComite.Api.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { mensaje = ex.Message });
+                _logger.LogError(ex, "Error al actualizar el gasto {GastoId}.", id);
+                return BadRequest(new { mensaje = "Ocurrió un error al procesar la solicitud de gastos. Inténtalo de nuevo." });
             }
         }
 
@@ -95,6 +98,7 @@ namespace AulaComite.Api.Controllers
             }
             catch (ArgumentException ex)
             {
+                _logger.LogWarning("Comprobante rechazado: {Message}", ex.Message);
                 return BadRequest(new { mensaje = ex.Message });
             }
         }

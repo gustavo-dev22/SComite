@@ -198,10 +198,11 @@ try
 
 
     // Aplicar Migraciones Automáticas en el arranque SOLO en Desarrollo.
-    // En Producción las migraciones se aplican vía CI/CD o herramientas dedicadas.
-    //if (app.Environment.IsDevelopment())
-    //{
-    using (var scope = app.Services.CreateScope())
+    // En Producción las migraciones NUNCA se aplican automáticamente: se ejecutan
+    // vía CI/CD o herramientas dedicadas (por ejemplo, `dotnet ef database update`).
+    if (app.Environment.IsDevelopment())
+    {
+        using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
             try
@@ -215,7 +216,7 @@ try
                 Log.Warning("Atención al verificar migraciones: {Message}", ex.Message);
             }
         }
-    //}
+    }
 
     app.Run();
 }
