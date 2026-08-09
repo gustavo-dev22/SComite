@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { InstitucionService } from '../../../core/services/institucion.service';
@@ -7,8 +7,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import Swal from 'sweetalert2';
 
+const MAX_LOGO_MB = 1;
+const TIPOS_LOGO_PERMITIDOS = ['image/png', 'image/jpeg', 'image/webp'];
+
 @Component({
   selector: 'app-ie',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './ie.html',
   styleUrl: './ie.scss',
@@ -17,6 +21,11 @@ export class IeComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private institucionService = inject(InstitucionService);
   private authService = inject(AuthService);
+  private timerMensaje: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.limpiarTimerMensaje());
+  }
 
   cargando = signal<boolean>(false);
   guardando = signal<boolean>(false);
@@ -52,23 +61,43 @@ export class IeComponent implements OnInit {
   // Cargar imagen de logo local en formato Base64 para guardado seguro en la BD
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
+    if (!input.files || input.files.length === 0) return;
 
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        const result = e.target?.result;
-        if (typeof result === 'string') {
-          this.formDatos.update(f => ({ ...f, urlLogo: result }));
-        }
-      };
+    const file = input.files[0];
 
-      reader.readAsDataURL(file);
+    // 🚀 Validar tipo MIME permitido
+    if (!TIPOS_LOGO_PERMITIDOS.includes(file.type)) {
+      input.value = '';
+      Swal.fire('Formato no válido', 'Solo se permiten imágenes PNG, JPG o WEBP.', 'warning');
+      return;
     }
+
+    // 🚀 Validar tamaño máximo (evita strings base64 gigantes y errores HTTP 413)
+    const maxBytes = MAX_LOGO_MB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      input.value = '';
+      Swal.fire('Imagen demasiado grande', `El logo no puede superar ${MAX_LOGO_MB} MB.`, 'warning');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        this.formDatos.update(f => ({ ...f, urlLogo: result }));
+      }
+    };
+
+    reader.readAsDataURL(file);
   }
 
   removerLogo(): void {
     this.formDatos.update(f => ({ ...f, urlLogo: '' }));
+  }
+
+  actualizarCampo(campo: string, valor: unknown): void {
+    this.formDatos.update(f => ({ ...f, [campo]: valor }) as Partial<InstitucionEducativa>);
   }
 
   guardar(): void {
@@ -77,15 +106,17 @@ export class IeComponent implements OnInit {
 
     const usuario = this.authService.usuarioActual();
     const nombreUsuario = usuario ? usuario : 'ADMINISTRADOR';
-    datos.usuarioActualizacion = nombreUsuario;
 
     this.guardando.set(true);
     this.mensajeExito.set(null);
+    this.limpiarTimerMensaje();
 
-    this.institucionService.guardarConfiguracion(datos).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    const payload = { ...datos, usuarioActualizacion: nombreUsuario };
+
+    this.institucionService.guardarConfiguracion(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
-        this.guardando.set(true);
-        
+        this.guardando.set(false);
+
         // 🚀 Actualizar la fecha y usuario de la UI inmediatamente
         this.formDatos.update(f => ({
           ...f,
@@ -93,14 +124,20 @@ export class IeComponent implements OnInit {
           fechaActualizacion: res.fechaActualizacion || new Date().toISOString()
         }));
 
-        this.guardando.set(false);
         this.mensajeExito.set('Los datos de la Institución Educativa se actualizaron correctamente.');
-        setTimeout(() => this.mensajeExito.set(null), 4000);
+        this.timerMensaje = setTimeout(() => this.mensajeExito.set(null), 4000);
       },
       error: (err) => {
         this.guardando.set(false);
         Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar la configuración.', 'error');
       }
     });
+  }
+
+  private limpiarTimerMensaje(): void {
+    if (this.timerMensaje !== null) {
+      clearTimeout(this.timerMensaje);
+      this.timerMensaje = null;
+    }
   }
 }

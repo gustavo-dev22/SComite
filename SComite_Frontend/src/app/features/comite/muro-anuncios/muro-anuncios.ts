@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AnuncioService } from '../../../core/services/anuncio.service';
@@ -10,8 +10,16 @@ import { Aula } from '../../../core/models/aula.model';
 import { AuthService } from '../../../core/services/auth.service';
 import Swal from 'sweetalert2';
 
+const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
+  'URGENTE': 'bg-rose-100 text-rose-700 border-rose-200',
+  'CITACION': 'bg-amber-100 text-amber-800 border-amber-200',
+  'TESORERIA': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'EVENTO': 'bg-indigo-100 text-indigo-800 border-indigo-200'
+};
+
 @Component({
   selector: 'app-muro-anuncios',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './muro-anuncios.html',
   styleUrl: './muro-anuncios.scss',
@@ -223,13 +231,11 @@ export class MuroAnunciosComponent implements OnInit {
   }
 
   getCategoriaBadgeClass(categoria: string): string {
-    switch (categoria) {
-      case 'URGENTE': return 'bg-rose-100 text-rose-700 border-rose-200';
-      case 'CITACION': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'TESORERIA': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'EVENTO': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
+    return BADGES_CATEGORIA_ANUNCIO[categoria] || 'bg-slate-100 text-slate-700 border-slate-200';
+  }
+
+  actualizarCampo(campo: string, valor: unknown): void {
+    this.formAnuncio.update(f => ({ ...f, [campo]: valor }) as Partial<AnuncioComite>);
   }
 
   abrirModalVistas(anuncio: AnuncioComite): void {

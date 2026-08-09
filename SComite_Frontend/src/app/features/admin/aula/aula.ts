@@ -1,5 +1,6 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { AulaService } from '../../../core/services/aula.service';
@@ -9,14 +10,20 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-aula',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './aula.html',
   styleUrl: './aula.scss',
 })
 export class AulaComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private aulaService = inject(AulaService);
   private fb = inject(FormBuilder);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   aulas = signal<Aula[]>([]);
   periodos = signal<PeriodoLectivo[]>([]);
@@ -53,8 +60,9 @@ export class AulaComponent implements OnInit {
   }
 
   cargarAulas(): void {
+    this.reiniciarCarga$.next();
     this.cargando.set(true);
-    this.aulaService.getAulas(this.periodoFiltroSelected() || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getAulas(this.periodoFiltroSelected() || undefined).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargando.set(false);

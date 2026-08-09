@@ -1,32 +1,54 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import Swal from 'sweetalert2';
 
+const MAPA_ICONOS: { [key: string]: string } = {
+  'school': 'pi pi-building',
+  'user-plus': 'pi pi-user-plus',
+  'users': 'pi pi-users',
+  'pie-chart': 'pi pi-chart-pie',
+  'shield-check': 'pi pi-shield',
+  'wallet': 'pi pi-wallet',
+  'check-circle': 'pi pi-check-circle',
+  'receipt': 'pi pi-receipt',
+  'bar-chart': 'pi pi-chart-bar',
+  'calendar': 'pi pi-calendar',
+  'megaphone': 'pi pi-megaphone',
+  'vote': 'pi pi-list-check',
+  'file-text': 'pi pi-file',
+  'layers': 'pi pi-file',
+  'trash': 'pi pi-trash',
+  'gift': 'pi pi-gift',
+  'message-square': 'pi pi-whatsapp'
+};
+
 @Component({
   selector: 'app-layout',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './layout.html',
   styleUrl: './layout.scss',
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent {
   authService = inject(AuthService);
 
   sidebarAbierto = signal<boolean>(true);
   sidebarMovilAbierto = signal<boolean>(false);
   menuDesplegado = signal<{ [key: number]: boolean }>({});
 
-  ngOnInit(): void {
+  // 🚀 Re-inicializa los submenús abiertos cada vez que cambia el árbol de menú (rol/sesión),
+  // en lugar del setTimeout(100) sucio que dependía de carreras de detección de cambios.
+  private _efectoMenu = effect(() => {
+    this.authService.menuJerarquico();
     this.inicializarSubmenusAbiertos();
-  }
+  });
 
   // 🚀 Evento para alternar de rol
   onRolChange(event: Event): void {
     const idRol = Number((event.target as HTMLSelectElement).value);
     this.authService.cambiarRol(idRol);
-    // Re-inicializamos los submenús abiertos para el nuevo árbol del menú
-    setTimeout(() => this.inicializarSubmenusAbiertos(), 100);
   }
 
   private inicializarSubmenusAbiertos(): void {
@@ -88,26 +110,6 @@ export class LayoutComponent implements OnInit {
     }
 
     // 3. Mapeo de nombres comunes recibidos de SASI a PrimeIcons
-    const mapaIconos: { [key: string]: string } = {
-      'school': 'pi pi-building',
-      'user-plus': 'pi pi-user-plus',
-      'users': 'pi pi-users',
-      'pie-chart': 'pi pi-chart-pie',
-      'shield-check': 'pi pi-shield',
-      'wallet': 'pi pi-wallet',
-      'check-circle': 'pi pi-check-circle',
-      'receipt': 'pi pi-receipt',
-      'bar-chart': 'pi pi-chart-bar',
-      'calendar': 'pi pi-calendar',
-      'megaphone': 'pi pi-megaphone',
-      'vote': 'pi pi-list-check',
-      'file-text': 'pi pi-file',
-      'layers': 'pi pi-file',
-      'trash': 'pi pi-trash',
-      'gift': 'pi pi-gift',
-      'message-square': 'pi pi-whatsapp'
-    };
-
-    return mapaIconos[icono] || `pi pi-${icono}`;
+    return MAPA_ICONOS[icono] || `pi pi-${icono}`;
   }
 }

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-login',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './login.html',
@@ -33,11 +34,13 @@ export class LoginComponent {
   }
 
   onSubmit(): void {
+    if (this.cargando()) return; // Evita doble envío por clics repetidos
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
     }
 
+    this.errorMensaje.set(null);
     this.cargando.set(true);
 
     Swal.fire({
@@ -71,8 +74,7 @@ export class LoginComponent {
       error: (err) => {
         this.cargando.set(false);
         const mensajeError = err.error?.mensaje || 'Ocurrió un error al intentar iniciar sesión.';
-        
-        // 🚀 Alerta de Error/Rechazo de Acceso con SweetAlert2
+        this.errorMensaje.set(mensajeError);
         Swal.fire({
           icon: 'error',
           title: 'Acceso Denegado',

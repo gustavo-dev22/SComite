@@ -1,3 +1,7 @@
+import { EstadoPago } from './cuota.model';
+import { EstadoActa } from './acta.model';
+import { EstadoActividad } from './actividad.model';
+
 export interface HijoApoderado {
   estudianteId: number;
   nombreEstudiante: string;
@@ -18,7 +22,7 @@ export interface CuotaApoderado {
   fechaVencimiento: string;
   montoPagado: number;
   montoPendiente: number;
-  estadoPago: string;
+  estadoPago: EstadoPago;
   estadoVisual: 'PAGADO' | 'VENCIDO' | 'PENDIENTE';
   fechaPago?: string;
 }
@@ -53,7 +57,7 @@ export interface EventoCronogramaApoderado {
   fechaProgramada: string;
   montoPresupuestado: number;
   cuotaSugeridaPorAlumno: number;
-  estado: string; // PLANIFICADA, EN_PROCESO, FINALIZADA, CANCELADA
+  estado: EstadoActividad;
 }
 
 export interface ActaApoderado {
@@ -63,7 +67,7 @@ export interface ActaApoderado {
   titulo: string;
   fechaReunion: string;
   agendaAcuerdos: string;
-  estadoActa: string;
+  estadoActa: EstadoActa;
   urlDocumentoPdf?: string;
   usuarioRegistro: string;
   fechaRegistro: string;

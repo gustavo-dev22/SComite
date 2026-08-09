@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { AulaService } from '../../../core/services/aula.service';
@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-gestion-donaciones',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './gestion-donaciones.html',
   styleUrl: './gestion-donaciones.scss',
@@ -157,6 +158,10 @@ export class GestionDonacionesComponent implements OnInit {
   onInputToUppercase(campo: 'donante' | 'concepto'): void {
     const val = this.formDonacion()[campo] || '';
     this.formDonacion.update(f => ({ ...f, [campo]: val.toUpperCase() }));
+  }
+
+  actualizarCampo(campo: string, valor: unknown): void {
+    this.formDonacion.update(f => ({ ...f, [campo]: valor }) as Partial<DonacionComite>);
   }
 
   guardarDonacion(): void {

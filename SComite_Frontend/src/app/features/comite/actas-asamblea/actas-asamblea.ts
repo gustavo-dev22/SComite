@@ -1,5 +1,5 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule, DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActaService } from '../../../core/services/acta.service';
@@ -17,6 +17,7 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-actas-asamblea',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './actas-asamblea.html',
   styleUrl: './actas-asamblea.scss',
@@ -45,7 +46,6 @@ export class ActasAsambleaComponent implements OnInit {
   mostrarModal = signal<boolean>(false);
 
   descargandoPdf = signal<boolean>(false);
-  fechaEmision = new Date();
 
   formActa = signal<Partial<ActaAsambleaComite>>({
     id: 0,
@@ -199,6 +199,9 @@ export class ActasAsambleaComponent implements OnInit {
         });
         
         this.mostrarModal.set(true);
+      },
+      error: (err) => {
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo obtener el número de acta. Intente nuevamente.', 'error');
       }
     });
   }
@@ -228,6 +231,10 @@ export class ActasAsambleaComponent implements OnInit {
   onInputToUppercase(campo: 'numeroActa' | 'titulo'): void {
     const val = this.formActa()[campo] || '';
     this.formActa.update(f => ({ ...f, [campo]: val.toUpperCase() }));
+  }
+
+  actualizarCampo(campo: string, valor: unknown): void {
+    this.formActa.update(f => ({ ...f, [campo]: valor }) as Partial<ActaAsambleaComite>);
   }
 
   guardarActa(): void {

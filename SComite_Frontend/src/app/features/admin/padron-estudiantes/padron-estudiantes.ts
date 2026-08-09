@@ -1,5 +1,6 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { EstudianteService } from '../../../core/services/estudiante.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { ComiteService } from '../../../core/services/comite.service';
@@ -11,6 +12,10 @@ import { UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
+
+const MAX_ARCHIVO_MB = 5;
+const MAX_FILAS_CARGA = 1000;
+const FILAS_POR_PAGINA_PREVIEW = 20;
 
 interface FilaEstudianteExcel {
   TipoDocumento?: string;
@@ -29,6 +34,15 @@ interface FilaEstudianteExcel {
   telefonoApoderado?: string;
 }
 
+function escaparHtml(valor: string): string {
+  return valor
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 interface RegistroPrevioEstudiante {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -44,12 +58,14 @@ interface RegistroPrevioEstudiante {
 
 @Component({
   selector: 'app-padron-estudiantes',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './padron-estudiantes.html',
   styleUrl: './padron-estudiantes.scss',
 })
 export class PadronEstudiantesComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private estudianteService = inject(EstudianteService);
   private aulaService = inject(AulaService);
   private comiteService = inject(ComiteService);
@@ -85,9 +101,23 @@ export class PadronEstudiantesComponent implements OnInit {
   registrosPrevios = signal<RegistroPrevioEstudiante[]>([]);
   nombreArchivoCargado = signal<string>('');
 
+  previewPagina = signal<number>(1);
+  registrosPaginados = computed<RegistroPrevioEstudiante[]>(() => {
+    const lista = this.registrosPrevios();
+    const inicio = (this.previewPagina() - 1) * FILAS_POR_PAGINA_PREVIEW;
+    return lista.slice(inicio, inicio + FILAS_POR_PAGINA_PREVIEW);
+  });
+  totalPaginasPreview = computed<number>(() =>
+    Math.max(1, Math.ceil(this.registrosPrevios().length / FILAS_POR_PAGINA_PREVIEW))
+  );
+
   ngOnInit(): void {
     this.cargarPeriodos();
     this.cargarApoderadosSasi();
+  }
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
   onInputToUppercase(controlName: string): void {
@@ -120,7 +150,8 @@ export class PadronEstudiantesComponent implements OnInit {
   }
 
   cargarAulasPorPeriodo(periodoId: number): void {
-    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
+    this.reiniciarCarga$.next();
+    this.aulaService.getAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.aulas.set(data);
       if (data.length > 0) {
         this.aulaSeleccionada.set(data[0].id);
@@ -143,8 +174,9 @@ export class PadronEstudiantesComponent implements OnInit {
   }
 
   cargarEstudiantes(aulaId: number): void {
+    this.reiniciarCarga$.next();
     this.cargando.set(true);
-    this.estudianteService.getEstudiantesPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.estudianteService.getEstudiantesPorAula(aulaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         const ordenados = [...data].sort((a, b) => {
           const apellidoA = `${a.apellidoPaterno} ${a.apellidoMaterno}`.trim();
@@ -291,6 +323,7 @@ export class PadronEstudiantesComponent implements OnInit {
       return;
     }
     this.registrosPrevios.set([]);
+    this.previewPagina.set(1);
     this.nombreArchivoCargado.set('');
     this.modalCargaMasivaAbierto.set(true);
   }
@@ -333,6 +366,16 @@ export class PadronEstudiantesComponent implements OnInit {
     const file = input.files[0];
     this.nombreArchivoCargado.set(file.name);
 
+    // 🚀 Validar tamaño máximo del archivo (evita strings/base64 gigantes y congelamientos)
+    const maxBytes = MAX_ARCHIVO_MB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      input.value = '';
+      this.nombreArchivoCargado.set('');
+      this.registrosPrevios.set([]);
+      Swal.fire('Archivo demasiado grande', `El archivo excede el límite de ${MAX_ARCHIVO_MB} MB.`, 'warning');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e: ProgressEvent<FileReader>) => {
       const result = e.target?.result;
@@ -342,8 +385,19 @@ export class PadronEstudiantesComponent implements OnInit {
 
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
+      if (!worksheet || !worksheet['!ref']) {
+        this.registrosPrevios.set([]);
+        Swal.fire('Archivo sin datos', 'No se encontró contenido válido en la hoja del Excel.', 'warning');
+        return;
+      }
 
-      const jsonResult = XLSX.utils.sheet_to_json<FilaEstudianteExcel>(worksheet, { defval: '' });
+      // 🚀 Lectura limitada por rango para no congelar el hilo principal
+      const rango = XLSX.utils.decode_range(worksheet['!ref']);
+      const filaMaxLectura = Math.min(rango.e.r, MAX_FILAS_CARGA);
+      const jsonResult = XLSX.utils.sheet_to_json<FilaEstudianteExcel>(worksheet, {
+        defval: '',
+        range: { s: { r: 0, c: rango.s.c }, e: { r: filaMaxLectura, c: rango.e.c } }
+      });
 
       const apoderadosCatalogo = this.apoderadosSasi();
 
@@ -372,7 +426,7 @@ export class PadronEstudiantesComponent implements OnInit {
           apellidoMaterno: String(row.ApellidoMaterno || row.apellidoMaterno || '').trim().toUpperCase(),
           nombreApoderado: nombreApoderadoExcel,
           telefonoApoderado: String(row.TelefonoApoderado || row.telefonoApoderado || '').trim(),
-          
+
           // 🚀 Banderas para la vista previa
           tieneApoderadoExcel: !!nombreApoderadoExcel,
           existeEnSasi: existeSasi,
@@ -381,9 +435,22 @@ export class PadronEstudiantesComponent implements OnInit {
       });
 
       this.registrosPrevios.set(estudiantesParsed);
+      this.previewPagina.set(1);
+
+      // 🚀 Avisar si el archivo supera el límite de filas por lote
+      if (rango.e.r > MAX_FILAS_CARGA) {
+        Swal.fire('Límite de filas', `El archivo contiene más de ${MAX_FILAS_CARGA} filas. Solo se procesarán los primeros ${MAX_FILAS_CARGA} registros.`, 'warning');
+      }
     };
 
     reader.readAsArrayBuffer(file);
+  }
+
+  cambiarPaginaPreview(delta: number): void {
+    const nueva = this.previewPagina() + delta;
+    if (nueva >= 1 && nueva <= this.totalPaginasPreview()) {
+      this.previewPagina.set(nueva);
+    }
   }
 
 
@@ -408,7 +475,7 @@ export class PadronEstudiantesComponent implements OnInit {
         if (res.detallesObservaciones && res.detallesObservaciones.length > 0) {
           detallesHtml += `
             <div class="max-h-40 overflow-y-auto bg-slate-100 p-2.5 rounded-lg border border-slate-200 font-mono text-[11px] space-y-1 text-slate-700">
-              ${res.detallesObservaciones.map((obs: string) => `<div>• ${obs}</div>`).join('')}
+              ${res.detallesObservaciones.map((obs: string) => `<div>• ${escaparHtml(obs)}</div>`).join('')}
             </div>
           `;
         }

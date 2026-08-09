@@ -1,12 +1,20 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { AnuncioApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
 import Swal from 'sweetalert2';
 
+const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
+  'URGENTE': 'bg-rose-100 text-rose-700 border-rose-200',
+  'CITACION': 'bg-amber-100 text-amber-800 border-amber-200',
+  'TESORERIA': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'EVENTO': 'bg-indigo-100 text-indigo-800 border-indigo-200'
+};
+
 @Component({
   selector: 'app-muros-comunicados',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   templateUrl: './muros-comunicados.html',
   styleUrl: './muros-comunicados.scss',
@@ -22,6 +30,8 @@ export class MurosComunicadosComponent implements OnInit {
   estudianteSeleccionadoId = signal<number | null>(null);
 
   anuncios = signal<AnuncioApoderado[]>([]);
+
+  private lecturasEnCurso = new Set<number>();
 
   anioLectivoActual = new Date().getFullYear();
 
@@ -62,13 +72,6 @@ export class MurosComunicadosComponent implements OnInit {
       next: (data) => {
         this.anuncios.set(data);
         this.cargandoAnuncios.set(false);
-
-        // 🚀 Marcar como leídos automáticamente los comunicados visibles
-        data.forEach(anuncio => {
-          if (!anuncio.leido) {
-            this.marcarComoLeido(anuncio);
-          }
-        });
       },
       error: (err) => {
         this.cargandoAnuncios.set(false);
@@ -82,29 +85,34 @@ export class MurosComunicadosComponent implements OnInit {
     this.cargarAnuncios();
   }
 
-  // 🚀 Al hacer hover/interactuar con la tarjeta, si no ha sido leído, marca la vista en la BD
+  // 🚀 Al interactuar con la tarjeta, si no ha sido leído, marca la vista en la BD
   marcarComoLeido(anuncio: AnuncioApoderado): void {
-    if (anuncio.leido) return;
+    if (anuncio.leido || this.lecturasEnCurso.has(anuncio.id)) return;
 
     const estudianteId = this.estudianteSeleccionadoId();
     if (!estudianteId) return;
 
+    this.lecturasEnCurso.add(anuncio.id);
+
     this.apoderadoService.marcarLecturaAnuncio(anuncio.id, estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        anuncio.leido = true;
-        anuncio.cantidadVistas = (anuncio.cantidadVistas || 0) + 1;
+        this.lecturasEnCurso.delete(anuncio.id);
+        this.anuncios.update(lista =>
+          lista.map(item =>
+            item.id === anuncio.id
+              ? { ...item, leido: true, cantidadVistas: (item.cantidadVistas || 0) + 1 }
+              : item
+          )
+        );
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar la lectura del comunicado.', 'error')
+      error: (err) => {
+        this.lecturasEnCurso.delete(anuncio.id);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar la lectura del comunicado.', 'error');
+      }
     });
   }
 
   getCategoriaBadgeClass(categoria: string): string {
-    switch (categoria) {
-      case 'URGENTE': return 'bg-rose-100 text-rose-700 border-rose-200';
-      case 'CITACION': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'TESORERIA': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'EVENTO': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
+    return BADGES_CATEGORIA_ANUNCIO[categoria] || 'bg-slate-100 text-slate-700 border-slate-200';
   }
 }

@@ -1,3 +1,5 @@
+export type EstadoActividad = 'PLANIFICADA' | 'EN_PROCESO' | 'FINALIZADA' | 'CANCELADA';
+
 export interface ActividadComite {
   id: number;
   aulaId: number;
@@ -6,6 +8,6 @@ export interface ActividadComite {
   fechaProgramada: string;
   montoPresupuestado: number;
   cuotaSugeridaPorAlumno: number;
-  estado: 'PLANIFICADA' | 'EN_PROCESO' | 'FINALIZADA' | 'CANCELADA';
+  estado: EstadoActividad;
   fechaRegistro?: string;
 }

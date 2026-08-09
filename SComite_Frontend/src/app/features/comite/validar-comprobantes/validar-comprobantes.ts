@@ -1,25 +1,32 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
-import { Cuota, CuotaEstudianteCobro } from '../../../core/models/cuota.model';
+import { Cuota, CuotaEstudianteCobro, EstadoPago } from '../../../core/models/cuota.model';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-validar-comprobantes',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './validar-comprobantes.html',
   styleUrl: './validar-comprobantes.scss',
 })
 export class ValidarComprobantesComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private fb = inject(FormBuilder);
   private cuotaService = inject(CuotaService);
   private aulaService = inject(AulaService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   // Listas
   periodos = signal<PeriodoLectivo[]>([]);
@@ -31,7 +38,7 @@ export class ValidarComprobantesComponent implements OnInit {
   periodoSeleccionadoId = signal<number | null>(null);
   aulaSeleccionadaId = signal<number | null>(null);
   cuotaSeleccionadaId = signal<number | null>(null);
-  filtroEstado = signal<string>('TODOS'); // 'TODOS' | 'PENDIENTE' | 'COMPLETO'
+  filtroEstado = signal<'TODOS' | EstadoPago>('TODOS');
 
   cargando = signal<boolean>(false);
   cargandoAulas = signal<boolean>(false);
@@ -70,6 +77,7 @@ export class ValidarComprobantesComponent implements OnInit {
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const id = Number((event.target as HTMLSelectElement).value) || null;
     this.periodoSeleccionadoId.set(id);
     this.aulaSeleccionadaId.set(null);
@@ -83,7 +91,7 @@ export class ValidarComprobantesComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
@@ -96,6 +104,7 @@ export class ValidarComprobantesComponent implements OnInit {
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const aulaId = Number((event.target as HTMLSelectElement).value) || null;
     this.aulaSeleccionadaId.set(aulaId);
     this.cuotaSeleccionadaId.set(null);
@@ -109,7 +118,7 @@ export class ValidarComprobantesComponent implements OnInit {
 
   cargarCuotasPorAula(aulaId: number): void {
     this.cargandoCuotas.set(true);
-    this.cuotaService.obtenerPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.cuotaService.obtenerPorAula(aulaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.cuotas.set(data);
         this.cargandoCuotas.set(false);
@@ -122,6 +131,7 @@ export class ValidarComprobantesComponent implements OnInit {
   }
 
   onCuotaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const cuotaId = Number((event.target as HTMLSelectElement).value) || null;
     this.cuotaSeleccionadaId.set(cuotaId);
 
@@ -134,7 +144,7 @@ export class ValidarComprobantesComponent implements OnInit {
 
   cargarCobros(cuotaId: number): void {
     this.cargando.set(true);
-    this.cuotaService.obtenerCobrosPorCuota(cuotaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.cuotaService.obtenerCobrosPorCuota(cuotaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.cobrosEstudiantes.set(data);
         this.cargando.set(false);
@@ -162,7 +172,7 @@ export class ValidarComprobantesComponent implements OnInit {
           timer: 1500,
           showConfirmButton: false
         });
-this.cargarCobros(this.cuotaSeleccionadaId()!);
+this.recargarCobros();
           },
           error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo revertir el pago.', 'error')
         });
@@ -209,7 +219,7 @@ this.cargarCobros(this.cuotaSeleccionadaId()!);
           timer: 1500,
           showConfirmButton: false
         });
-        this.cargarCobros(this.cuotaSeleccionadaId()!);
+        this.recargarCobros();
       },
       error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar el abono.', 'error')
     });
@@ -238,12 +248,19 @@ this.cargarCobros(this.cuotaSeleccionadaId()!);
               timer: 1500,
               showConfirmButton: false
 });
-        this.cargarCobros(this.cuotaSeleccionadaId()!);
+        this.recargarCobros();
       },
       error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar el pago.', 'error')
     });
   }
     });
+  }
+
+  recargarCobros(): void {
+    const cuotaId = this.cuotaSeleccionadaId();
+    if (cuotaId && cuotaId > 0) {
+      this.cargarCobros(cuotaId);
+    }
   }
 
   cerrarModal(): void {

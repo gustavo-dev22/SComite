@@ -154,7 +154,7 @@
           <!-- Adjunto si existe -->
           @if (a.urlAdjunto) {
             <div class="mb-4">
-              <a [href]="a.urlAdjunto" target="_blank" class="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-400 text-slate-800 text-xs font-semibold px-3 py-2 rounded-xl transition">
+              <a [href]="a.urlAdjunto" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-400 text-slate-800 text-xs font-semibold px-3 py-2 rounded-xl transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
@@ -230,7 +230,8 @@
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Título del Comunicado *</label>
             <input 
               type="text" 
-              [(ngModel)]="formAnuncio().titulo" 
+              [ngModel]="formAnuncio().titulo"
+              (ngModelChange)="actualizarCampo('titulo', $event)" 
               placeholder="Ej: CITACIÓN A ASAMBLEA EXTRAORDINARIA DE PADRES" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
@@ -238,7 +239,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Categoría *</label>
-              <select [(ngModel)]="formAnuncio().categoria" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
+              <select [ngModel]="formAnuncio().categoria" (ngModelChange)="actualizarCampo('categoria', $event)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
                 <option value="INFORMATIVO">Informativo</option>
                 <option value="URGENTE">Urgente</option>
                 <option value="CITACION">Citación</option>
@@ -249,7 +250,7 @@
 
             <div class="flex items-center pt-5">
               <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 select-none">
-                <input type="checkbox" [(ngModel)]="formAnuncio().esFijado" class="w-4 h-4 text-slate-900 rounded border-slate-300 focus:ring-slate-900 cursor-pointer">
+                <input type="checkbox" [ngModel]="formAnuncio().esFijado" (ngModelChange)="actualizarCampo('esFijado', $event)" class="w-4 h-4 text-slate-900 rounded border-slate-300 focus:ring-slate-900 cursor-pointer">
                 <span>Fijar en la parte superior</span>
               </label>
             </div>
@@ -257,12 +258,12 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Contenido del Mensaje *</label>
-            <textarea [(ngModel)]="formAnuncio().contenido" rows="5" placeholder="Escriba aquí el detalle del comunicado..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
+            <textarea [ngModel]="formAnuncio().contenido" (ngModelChange)="actualizarCampo('contenido', $event)" rows="5" placeholder="Escriba aquí el detalle del comunicado..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL / Enlace Adjunto (Opcional)</label>
-            <input type="text" [(ngModel)]="formAnuncio().urlAdjunto" placeholder="Ej: https://drive.google.com/... o enlace de circular" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
+            <input type="text" [ngModel]="formAnuncio().urlAdjunto" (ngModelChange)="actualizarCampo('urlAdjunto', $event)" placeholder="Ej: https://drive.google.com/... o enlace de circular" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
         </div>
 
@@ -346,7 +347,7 @@
                     <td class="p-3 text-slate-600">
                       <span class="block font-semibold text-slate-800">{{ item.nombreApoderado }}</span>
                       @if (item.telefonoApoderado) {
-                        <a [href]="'https://wa.me/51' + item.telefonoApoderado" target="_blank" class="inline-flex items-center gap-1 text-emerald-700 hover:underline font-mono text-[11px] font-bold mt-0.5">
+                        <a [href]="'https://wa.me/51' + item.telefonoApoderado" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-emerald-700 hover:underline font-mono text-[11px] font-bold mt-0.5">
                           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current text-emerald-600" viewBox="0 0 24 24">
                             <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
                           </svg>

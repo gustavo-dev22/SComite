@@ -37,6 +37,7 @@
             type="text" 
             id="userName" 
             formControlName="userName"
+            autocomplete="username"
             placeholder="ejemplo@correo.com"
             [class.is-invalid]="loginForm.get('userName')?.touched && loginForm.get('userName')?.invalid"
           />
@@ -60,6 +61,7 @@
             [type]="mostrarPassword() ? 'text' : 'password'" 
             id="password" 
             formControlName="password"
+            autocomplete="current-password"
             placeholder="••••••••"
             [class.is-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
           />

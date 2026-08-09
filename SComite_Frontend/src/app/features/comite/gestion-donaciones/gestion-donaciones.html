@@ -229,7 +229,8 @@
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Donante / Aportante *</label>
             <input 
               type="text" 
-              [(ngModel)]="formDonacion().donante" 
+              [ngModel]="formDonacion().donante" 
+              (ngModelChange)="actualizarCampo('donante', $event)"
               (input)="onInputToUppercase('donante')"
               placeholder="Ej: PROF. MARÍA LÓPEZ / PADRINO" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
@@ -239,7 +240,8 @@
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto / Motivo *</label>
             <input 
               type="text" 
-              [(ngModel)]="formDonacion().concepto" 
+              [ngModel]="formDonacion().concepto" 
+              (ngModelChange)="actualizarCampo('concepto', $event)"
               (input)="onInputToUppercase('concepto')"
               placeholder="Ej: APORTE PARA MEJORAS DEL AULA" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
@@ -248,18 +250,18 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
-              <input type="number" [(ngModel)]="formDonacion().monto" step="1.00" min="1" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
+              <input type="number" [ngModel]="formDonacion().monto" (ngModelChange)="actualizarCampo('monto', $event)" step="1.00" min="1" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Donación *</label>
-              <input type="date" [(ngModel)]="formDonacion().fechaDonacion" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
+              <input type="date" [ngModel]="formDonacion().fechaDonacion" (ngModelChange)="actualizarCampo('fechaDonacion', $event)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
             </div>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Observaciones</label>
-            <textarea [(ngModel)]="formDonacion().observacion" rows="2" placeholder="Opcional..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
+            <textarea [ngModel]="formDonacion().observacion" (ngModelChange)="actualizarCampo('observacion', $event)" rows="2" placeholder="Opcional..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
           </div>
         </div>
 

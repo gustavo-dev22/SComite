@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActividadService } from '../../../core/services/actividad.service';
@@ -9,8 +9,17 @@ import { Aula } from '../../../core/models/aula.model';
 import { ActividadComite } from '../../../core/models/actividad.model';
 import Swal from 'sweetalert2';
 
+const BADGES_ESTADO_ACTIVIDAD: Record<string, string> = {
+  'PLANIFICADA': 'bg-amber-100 text-amber-800 border-amber-200',
+  'EN_PROCESO': 'bg-blue-100 text-blue-800 border-blue-200',
+  'EN PROCESO': 'bg-blue-100 text-blue-800 border-blue-200',
+  'FINALIZADA': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'CANCELADA': 'bg-rose-100 text-rose-800 border-rose-200'
+};
+
 @Component({
   selector: 'app-cronograma-actividades',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './cronograma-actividades.html',
   styleUrl: './cronograma-actividades.scss',
@@ -213,13 +222,11 @@ export class CronogramaActividadesComponent implements OnInit {
     });
   }
 
+  actualizarCampo(campo: string, valor: unknown): void {
+    this.formActividad.update(f => ({ ...f, [campo]: valor }) as Partial<ActividadComite>);
+  }
+
   getBadgeColor(estado: string): string {
-    switch (estado) {
-      case 'PLANIFICADA': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'EN_PROCESO': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'FINALIZADA': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'CANCELADA': return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: return 'bg-slate-100 text-slate-800 border-slate-200';
-    }
+    return BADGES_ESTADO_ACTIVIDAD[estado] || 'bg-slate-100 text-slate-800 border-slate-200';
   }
 }

@@ -1,22 +1,29 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { BalanceAula } from '../../../core/models/gastoTransparencia.model';
 import { TransparenciaService } from '../../../core/services/transparencia.service';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { HijoApoderado } from '../../../core/models/apoderado.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-transparencia-balance',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   templateUrl: './transparencia-balance.html',
   styleUrl: './transparencia-balance.scss',
 })
 export class TransparenciaBalanceComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private apoderadoService = inject(ApoderadoService);
   private transparenciaService = inject(TransparenciaService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   cargandoHijos = signal<boolean>(false);
   cargandoBalance = signal<boolean>(false);
@@ -97,12 +104,13 @@ export class TransparenciaBalanceComponent implements OnInit {
   }
 
   cargarBalance(): void {
+    this.reiniciarCarga$.next();
     const hijo = this.hijoActual();
     if (!hijo || !hijo.aulaId) return;
 
     this.cargandoBalance.set(true);
     this.transparenciaService.getBalanceAula(hijo.aulaId, this.anioLectivoActual)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
           this.balance.set(data);
@@ -127,8 +135,9 @@ export class TransparenciaBalanceComponent implements OnInit {
 
   abrirComprobante(url?: string): void {
     if (!url) return;
+    if (!/^https?:\/\//i.test(url)) return;
     const timestamp = new Date().getTime();
     const separator = url.includes('?') ? '&' : '?';
-    window.open(`${url}${separator}_t=${timestamp}`, '_blank');
+    window.open(`${url}${separator}_t=${timestamp}`, '_blank', 'noopener,noreferrer');
   }
 }

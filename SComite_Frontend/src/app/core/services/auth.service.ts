@@ -154,7 +154,15 @@ export class AuthService {
 
   private obtenerRolesStorage(): RolComite[] {
     const raw = sessionStorage.getItem('roles_aula');
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      sessionStorage.removeItem('roles_aula');
+      sessionStorage.removeItem('rol_activo_id');
+      return [];
+    }
   }
 
   private obtenerRolActivoInicial(): number | null {

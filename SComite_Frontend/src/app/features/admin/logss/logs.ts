@@ -1,5 +1,6 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { LogService } from '../../../core/services/log.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LogSistema, PagedResult } from '../../../core/models/log.model';
@@ -8,14 +9,20 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-logs',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './logs.html',
   styleUrl: './logs.scss',
 })
 export class LogsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private logService = inject(LogService);
   private fb = inject(FormBuilder);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   logs = signal<LogSistema[]>([]);
   totalRegistros = signal<number>(0);
@@ -27,7 +34,7 @@ export class LogsComponent implements OnInit {
   modalDetalleAbierto = signal<boolean>(false);
 
   modulosDisponibles = ['AUTH', 'AULAS', 'ESTUDIANTES', 'COMITE', 'PERIODOS', 'TESORERIA'];
-  nivelesDisponibles = ['INFO', 'WARN', 'ERROR', 'CRITICAL'];
+  nivelesDisponibles = ['INFO', 'WARNING', 'ERROR', 'CRITICAL'];
 
   filtrosForm: FormGroup = this.fb.group({
     fechaInicio: [''],
@@ -53,6 +60,7 @@ export class LogsComponent implements OnInit {
   }
 
   cargarLogs(pagina: number = 1): void {
+    this.reiniciarCarga$.next();
     this.cargando.set(true);
     this.paginaActual.set(pagina);
 
@@ -63,7 +71,7 @@ export class LogsComponent implements OnInit {
       tamanoPagina: 15
     };
 
-    this.logService.getLogs(filtros).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.logService.getLogs(filtros).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res: PagedResult<LogSistema>) => {
         this.logs.set(res.items);
         this.totalRegistros.set(res.totalRegistros);
@@ -115,7 +123,7 @@ export class LogsComponent implements OnInit {
   getNivelBadgeClass(nivel: string): string {
     switch (nivel.toUpperCase()) {
       case 'INFO': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'WARN': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'WARNING': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'ERROR': return 'bg-rose-100 text-rose-800 border-rose-200';
       case 'CRITICAL': return 'bg-purple-100 text-purple-900 border-purple-300 font-bold';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';

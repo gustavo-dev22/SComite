@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BalanceService } from '../../../core/services/balance.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -15,6 +15,7 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-balance-caja',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   templateUrl: './balance-caja.html',
   styleUrl: './balance-caja.scss',
@@ -57,7 +58,6 @@ export class BalanceCajaComponent implements OnInit {
   cargando = signal<boolean>(false);
   cargandoAulas = signal<boolean>(false);
   descargandoPdf = signal<boolean>(false);
-  fechaEmision = new Date();
 
   tienePeriodoSeleccionado = computed(() => this.periodoSeleccionadoId() !== null && this.periodoSeleccionadoId()! > 0);
   tieneAulaSeleccionada = computed(() => this.aulaSeleccionadaId() !== null && this.aulaSeleccionadaId()! > 0);

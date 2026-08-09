@@ -83,7 +83,8 @@
                 <div class="relative">
                   <input 
                     type="text" 
-                    [(ngModel)]="formDatos().nombreInstitucion" 
+                    [ngModel]="formDatos().nombreInstitucion"
+                    (ngModelChange)="actualizarCampo('nombreInstitucion', $event)"
                     placeholder="Ej: I.E. 2084 MARIA PARADO DE BELLIDO" 
                     class="w-full border border-slate-300 rounded-lg pl-3 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 font-bold uppercase text-slate-800 transition">
                 </div>
@@ -107,7 +108,8 @@
             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Dirección del Colegio</label>
             <input 
               type="text" 
-              [(ngModel)]="formDatos().direccion" 
+              [ngModel]="formDatos().direccion"
+              (ngModelChange)="actualizarCampo('direccion', $event)" 
               placeholder="Ej: Av. Universitaria N° 4580, Los Olivos - Lima" 
               class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
           </div>

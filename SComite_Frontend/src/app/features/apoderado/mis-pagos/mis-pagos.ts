@@ -1,6 +1,14 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
+
+const BADGES_ESTADO_CUOTA: Record<string, string> = {
+  'PAGADO': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'VENCIDO': 'bg-rose-100 text-rose-800 border-rose-200',
+  'VENCIDA': 'bg-rose-100 text-rose-800 border-rose-200',
+  'PENDIENTE': 'bg-amber-100 text-amber-800 border-amber-200'
+};
 import { FormsModule } from '@angular/forms';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { CuotaApoderado, HijoApoderado, ResumenPagosApoderado } from '../../../core/models/apoderado.model';
@@ -8,13 +16,19 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-mis-pagos',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './mis-pagos.html',
   styleUrl: './mis-pagos.scss',
 })
 export class MisPagosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private apoderadoService = inject(ApoderadoService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   cargandoHijos = signal<boolean>(false);
   cargandoCuotas = signal<boolean>(false);
@@ -57,11 +71,12 @@ export class MisPagosComponent implements OnInit {
   }
 
   cargarCuotasEstudiante(): void {
+    this.reiniciarCarga$.next();
     const estudianteId = this.estudianteSeleccionadoId();
     if (!estudianteId) return;
 
     this.cargandoCuotas.set(true);
-    this.apoderadoService.getCuotasPendientes(estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getCuotasPendientes(estudianteId, this.anioLectivoActual).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.resumen.set(data);
         this.cargandoCuotas.set(false);
@@ -85,17 +100,15 @@ export class MisPagosComponent implements OnInit {
     const tesoreroTel = hijo.tesoreroTelefono.replace(/[^0-9]/g, '');
     const tesoreroNom = hijo.tesoreroNombre || 'Tesorero(a)';
 
+    if (!tesoreroTel) return;
+
     const mensaje = `Hola ${tesoreroNom}, le escribo para notificarle que acabo de realizar el pago de S/. ${cuota.montoTotalCuota.toFixed(2)} por concepto de "${cuota.concepto}" para el alumno ${hijo.nombreEstudiante} del aula ${hijo.nombreAula}. Adjunto mi comprobante.`;
 
     const url = `https://wa.me/51${tesoreroTel}?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   getBadgeClass(estado: string): string {
-    switch (estado) {
-      case 'PAGADO': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'VENCIDO': return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: return 'bg-amber-100 text-amber-800 border-amber-200';
-    }
+    return BADGES_ESTADO_CUOTA[estado] || 'bg-amber-100 text-amber-800 border-amber-200';
   }
 }

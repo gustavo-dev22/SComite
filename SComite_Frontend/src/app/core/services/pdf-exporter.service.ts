@@ -13,6 +13,10 @@ export interface FichaCampoPdf {
   valor: string;
 }
 
+interface JsPDFConAutoTable {
+  lastAutoTable?: { finalY: number } | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -478,8 +482,7 @@ export class PdfExporterService {
       }
     });
 
-    // @ts-ignore
-    startY = doc.lastAutoTable.finalY + 7;
+    startY = ((doc as JsPDFConAutoTable).lastAutoTable?.finalY ?? startY) + 7;
 
     // 4. CUADRO II: DESGLOSE DE INGRESOS RECAUDADOS
     doc.setFont('helvetica', 'bold');
@@ -517,8 +520,7 @@ export class PdfExporterService {
       }
     });
 
-    // @ts-ignore
-    startY = doc.lastAutoTable.finalY + 7;
+    startY = ((doc as JsPDFConAutoTable).lastAutoTable?.finalY ?? startY) + 7;
 
     // 5. CUADRO III: DESGLOSE DETALLADO DE EGRESOS POR CATEGORÍA Y CONCEPTO
     doc.setFont('helvetica', 'bold');

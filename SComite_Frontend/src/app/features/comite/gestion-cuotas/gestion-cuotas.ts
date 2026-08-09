@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
@@ -13,21 +13,28 @@ import Swal from 'sweetalert2';
 import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { InstitucionService } from '../../../core/services/institucion.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-gestion-cuotas',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './gestion-cuotas.html',
   styleUrl: './gestion-cuotas.scss',
 })
 export class GestionCuotasComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private fb = inject(FormBuilder);
   private cuotaService = inject(CuotaService);
   private aulaService = inject(AulaService);
   private actividadService = inject(ActividadService);
   private pdfExporter = inject(PdfExporterService);
   private institucionService = inject(InstitucionService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
@@ -77,7 +84,6 @@ export class GestionCuotasComponent implements OnInit {
 
   descargandoPdfMorosos = signal<boolean>(false);
   institucion = signal<InstitucionEducativa | null>(null);
-  fechaEmision = new Date();
 
   ngOnInit(): void {
     this.cargarPeriodos();
@@ -135,6 +141,7 @@ export class GestionCuotasComponent implements OnInit {
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const value = (event.target as HTMLSelectElement).value;
     const id = value ? Number(value) : null;
     
@@ -151,7 +158,7 @@ export class GestionCuotasComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
@@ -164,6 +171,7 @@ export class GestionCuotasComponent implements OnInit {
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const value = (event.target as HTMLSelectElement).value;
     const aulaId = value ? Number(value) : null;
 
@@ -179,7 +187,7 @@ export class GestionCuotasComponent implements OnInit {
 
   cargarCuotas(aulaId: number): void {
     this.cargando.set(true);
-    this.cuotaService.obtenerPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.cuotaService.obtenerPorAula(aulaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.cuotas.set(data);
         this.cargando.set(false);
@@ -195,7 +203,7 @@ export class GestionCuotasComponent implements OnInit {
     const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
-    this.actividadService.getActividadesPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.actividadService.getActividadesPorAula(aulaId, anio).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.actividades.set(data),
       error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actividades.', 'error')
     });

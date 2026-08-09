@@ -42,7 +42,6 @@
       @for (a of anuncios(); track a.id) {
         <div 
           (click)="marcarComoLeido(a)"
-          (mouseenter)="marcarComoLeido(a)"
           [class.border-slate-800]="a.esFijado" 
           [class.ring-2]="a.esFijado" 
           [class.ring-slate-200]="a.esFijado" 
@@ -88,7 +87,7 @@
           <!-- Documento Adjunto si existe -->
           @if (a.urlAdjunto) {
             <div class="mb-4">
-              <a [href]="a.urlAdjunto" target="_blank" (click)="$event.stopPropagation()" class="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-400 text-slate-800 text-xs font-semibold px-3 py-2 rounded-xl transition">
+              <a [href]="a.urlAdjunto" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()" class="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-400 text-slate-800 text-xs font-semibold px-3 py-2 rounded-xl transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>

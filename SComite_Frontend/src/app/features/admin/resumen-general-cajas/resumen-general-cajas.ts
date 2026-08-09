@@ -1,6 +1,13 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
+
+const BADGES_ESTADO_CAJA: Record<string, string> = {
+  'AL_DIA': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'SIN_MOVIMIENTO': 'bg-slate-100 text-slate-700 border-slate-200',
+  'ALERTA_ROJO': 'bg-rose-100 text-rose-800 border-rose-200'
+};
 import { FormsModule } from '@angular/forms';
 import { AuditoriaService } from '../../../core/services/auditoria.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -13,16 +20,22 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-resumen-general-cajas',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './resumen-general-cajas.html',
   styleUrl: './resumen-general-cajas.scss',
 })
 export class ResumenGeneralCajasComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private auditoriaService = inject(AuditoriaService);
   private aulaService = inject(AulaService);
   private institucionService = inject(InstitucionService);
   private pdfExporter = inject(PdfExporterService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   cargando = signal<boolean>(false);
   periodos = signal<PeriodoLectivo[]>([]);
@@ -33,7 +46,6 @@ export class ResumenGeneralCajasComponent implements OnInit {
   institucion = signal<InstitucionEducativa | null>(null);
 
   descargandoPdf = signal<boolean>(false);
-  fechaEmision = new Date();
 
   anioActual = computed(() => {
     const id = this.periodoSeleccionadoId();
@@ -70,11 +82,12 @@ export class ResumenGeneralCajasComponent implements OnInit {
   }
 
   cargarResumen(): void {
+    this.reiniciarCarga$.next();
     const anio = this.anioActual();
     const nivel = this.nivelFiltro();
 
     this.cargando.set(true);
-    this.auditoriaService.getResumenGeneralCajas(anio, nivel).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.auditoriaService.getResumenGeneralCajas(anio, nivel).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.dataConsolidada.set(res);
         this.cargando.set(false);
@@ -99,12 +112,7 @@ export class ResumenGeneralCajasComponent implements OnInit {
   }
 
   getEstadoBadgeClass(estado: string): string {
-    switch (estado) {
-      case 'AL_DIA': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'SIN_MOVIMIENTO': return 'bg-slate-100 text-slate-700 border-slate-200';
-      case 'ALERTA_ROJO': return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: return 'bg-slate-100 text-slate-700';
-    }
+    return BADGES_ESTADO_CAJA[estado] || 'bg-slate-100 text-slate-700';
   }
 
   // Exportar Consolidado Global a PDF

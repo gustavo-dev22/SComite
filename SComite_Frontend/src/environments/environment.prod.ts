@@ -10,5 +10,5 @@ const apiUrlInyectada =
 
 export const environment = {
   production: true,
-  apiUrl: apiUrlInyectada || 'http://comite-app.runasp.net/api'
+  apiUrl: apiUrlInyectada || 'https://comite-app.runasp.net/api'
 };

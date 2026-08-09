@@ -1,3 +1,5 @@
+export type EstadoActa = 'BORRADOR' | 'APROBADA';
+
 export interface ActaAsambleaComite {
   id: number;
   aulaId: number;
@@ -5,7 +7,7 @@ export interface ActaAsambleaComite {
   titulo: string;
   fechaReunion: string;
   agendaAcuerdos: string;
-  estadoActa: 'BORRADOR' | 'APROBADA';
+  estadoActa: EstadoActa;
   urlDocumentoPdf?: string;
   usuarioRegistro: string;
   fechaRegistro: string;

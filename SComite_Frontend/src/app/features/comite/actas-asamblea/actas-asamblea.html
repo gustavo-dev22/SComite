@@ -163,7 +163,7 @@
 
           @if (a.urlDocumentoPdf) {
             <div class="mb-4">
-              <a [href]="a.urlDocumentoPdf" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl transition">
+              <a [href]="a.urlDocumentoPdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -223,7 +223,8 @@
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Código / N° de Acta *</label>
               <input 
                 type="text" 
-                [(ngModel)]="formActa().numeroActa" 
+[ngModel]="formActa().numeroActa"
+                (ngModelChange)="actualizarCampo('numeroActa', $event)"
                 (input)="onInputToUppercase('numeroActa')"
                 placeholder="Ej: ACTA-001-2026" 
                 class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
@@ -233,7 +234,8 @@
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Asamblea *</label>
               <input 
                 type="date" 
-                [(ngModel)]="formActa().fechaReunion" 
+                [ngModel]="formActa().fechaReunion"
+                (ngModelChange)="actualizarCampo('fechaReunion', $event)" 
                 class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
             </div>
           </div>
@@ -242,7 +244,8 @@
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Título de la Asamblea *</label>
             <input 
               type="text" 
-              [(ngModel)]="formActa().titulo" 
+[ngModel]="formActa().titulo"
+              (ngModelChange)="actualizarCampo('titulo', $event)"
               (input)="onInputToUppercase('titulo')"
               placeholder="Ej: ASAMBLEA ORDINARIA - APROBACIÓN DE CUOTA DE INICIO" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold uppercase text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
@@ -250,7 +253,7 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado del Acta *</label>
-            <select [(ngModel)]="formActa().estadoActa" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
+            <select [ngModel]="formActa().estadoActa" (ngModelChange)="actualizarCampo('estadoActa', $event)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
               <option value="BORRADOR">Borrador (En Redacción / Edición)</option>
               <option value="APROBADA">Aprobada (Oficial y Publicada)</option>
             </select>
@@ -258,12 +261,12 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Puntos Tratados y Acuerdos *</label>
-            <textarea [(ngModel)]="formActa().agendaAcuerdos" rows="5" placeholder="Detalle los puntos de la agenda y acuerdos acordados por los padres..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
+            <textarea [ngModel]="formActa().agendaAcuerdos" (ngModelChange)="actualizarCampo('agendaAcuerdos', $event)" rows="5" placeholder="Detalle los puntos de la agenda y acuerdos acordados por los padres..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL Enlace del Documento PDF / Escaneado</label>
-            <input type="text" [(ngModel)]="formActa().urlDocumentoPdf" placeholder="Ej: https://drive.google.com/file/d/..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
+            <input type="text" [ngModel]="formActa().urlDocumentoPdf" (ngModelChange)="actualizarCampo('urlDocumentoPdf', $event)" placeholder="Ej: https://drive.google.com/file/d/..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
         </div>
 

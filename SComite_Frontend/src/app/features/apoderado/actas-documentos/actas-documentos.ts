@@ -1,6 +1,7 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { CommonModule, DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { ActaApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
@@ -10,15 +11,21 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-actas-documentos',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   templateUrl: './actas-documentos.html',
   styleUrl: './actas-documentos.scss',
 })
 export class ActasDocumentosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private apoderadoService = inject(ApoderadoService);
   private institucionService = inject(InstitucionService);
   private pdfExporter = inject(PdfExporterService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   cargandoHijos = signal<boolean>(false);
   cargandoActas = signal<boolean>(false);
@@ -71,11 +78,12 @@ export class ActasDocumentosComponent implements OnInit {
   }
 
   cargarActas(): void {
+    this.reiniciarCarga$.next();
     const estudianteId = this.estudianteSeleccionadoId();
     if (!estudianteId) return;
 
     this.cargandoActas.set(true);
-    this.apoderadoService.getActasAprobadas(estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getActasAprobadas(estudianteId, this.anioLectivoActual).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.actas.set(data);
         this.cargandoActas.set(false);

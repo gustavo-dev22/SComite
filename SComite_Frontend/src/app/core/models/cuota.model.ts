@@ -1,3 +1,5 @@
+export type EstadoPago = 'PENDIENTE' | 'PARCIAL' | 'COMPLETO';
+
 export interface Cuota {
   id: number;
   aulaId: number;
@@ -42,7 +44,7 @@ export interface CuotaEstudianteCobro {
   telefonoApoderado: string;
   montoAsignado: number;
   montoPagado: number;
-  estadoPago: 'PENDIENTE' | 'PARCIAL' | 'COMPLETO';
+  estadoPago: EstadoPago;
   fechaUltimoPago?: string;
 }
 
@@ -62,5 +64,5 @@ export interface EstudiantePendienteCuota {
   montoAsignado: number;
   montoPagado: number;
   montoPendiente: number;
-  estadoPago: string; // PENDIENTE o PARCIAL
+  estadoPago: EstadoPago;
 }

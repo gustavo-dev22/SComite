@@ -361,7 +361,7 @@
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
-                    @for (r of registrosPrevios(); track $index) {
+                    @for (r of registrosPaginados(); track $index) {
                       <tr class="hover:bg-slate-50 transition">
                         <td class="p-3 font-mono font-bold text-slate-600">{{ r.tipoDocumento }}: {{ r.numeroDocumento }}</td>
                         <td class="p-3 font-bold text-slate-900">{{ r.apellidoPaterno }} {{ r.apellidoMaterno }}, {{ r.nombres }}</td>
@@ -384,6 +384,27 @@
                   </tbody>
                 </table>
               </div>
+
+              <!-- Paginación de la Vista Previa -->
+              @if (totalPaginasPreview() > 1) {
+                <div class="flex items-center justify-between mt-2">
+                  <span class="text-[11px] text-slate-500">Página {{ previewPagina() }} de {{ totalPaginasPreview() }}</span>
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      (click)="cambiarPaginaPreview(-1)"
+                      [disabled]="previewPagina() <= 1"
+                      class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition">
+                      Anterior
+                    </button>
+                    <button
+                      (click)="cambiarPaginaPreview(1)"
+                      [disabled]="previewPagina() >= totalPaginasPreview()"
+                      class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition">
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           }
 

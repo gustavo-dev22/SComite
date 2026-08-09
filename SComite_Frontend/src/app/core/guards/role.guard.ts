@@ -9,7 +9,9 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot): boolean
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (!authService.tieneSesionValida()) return true;
+  if (!authService.tieneSesionValida()) {
+    return router.createUrlTree(['/login']);
+  }
 
   const rolActivo = authService.rolActivoObj();
   if (!rolActivo) return true;

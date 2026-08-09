@@ -1,5 +1,13 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
+
+const BADGES_CARGO: Record<string, string> = {
+  'PRESIDENTE': 'bg-purple-100 text-purple-800 border-purple-200',
+  'TESORERO': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'SECRETARIO': 'bg-blue-100 text-blue-800 border-blue-200',
+  'VOCAL': 'bg-amber-100 text-amber-800 border-amber-200'
+};
 import { ComiteService } from '../../../core/services/comite.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -11,15 +19,21 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-asignacion-comite',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './asignacion-comite.html',
   styleUrl: './asignacion-comite.scss',
 })
 export class AsignacionComiteComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private comiteService = inject(ComiteService);
   private aulaService = inject(AulaService);
   private fb = inject(FormBuilder);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
@@ -67,7 +81,7 @@ export class AsignacionComiteComponent implements OnInit {
   }
 
   cargarAulasPorPeriodo(periodoId: number): void {
-    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
+    this.aulaService.getAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.aulas.set(data);
       if (data.length > 0) {
         this.aulaSeleccionada.set(data[0].id);
@@ -91,7 +105,7 @@ export class AsignacionComiteComponent implements OnInit {
 
   cargarComiteAula(aulaId: number): void {
     this.cargando.set(true);
-    this.comiteService.getComitePorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.comiteService.getComitePorAula(aulaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.integrantes.set(data);
         this.cargando.set(false);
@@ -104,12 +118,14 @@ export class AsignacionComiteComponent implements OnInit {
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const periodoId = Number((event.target as HTMLSelectElement).value);
     this.periodoSeleccionado.set(periodoId);
     this.cargarAulasPorPeriodo(periodoId);
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const aulaId = Number((event.target as HTMLSelectElement).value);
     this.aulaSeleccionada.set(aulaId);
     this.cargarComiteAula(aulaId);
@@ -187,11 +203,6 @@ export class AsignacionComiteComponent implements OnInit {
   }
 
   getCargoBadgeClass(cargo: string): string {
-    switch (cargo.toUpperCase()) {
-      case 'PRESIDENTE': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'TESORERO': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'SECRETARIO': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-amber-100 text-amber-800 border-amber-200';
-    }
+    return BADGES_CARGO[cargo.toUpperCase()] || 'bg-amber-100 text-amber-800 border-amber-200';
   }
 }

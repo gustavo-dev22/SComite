@@ -1,16 +1,29 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { NavigationStart, Router } from '@angular/router';
+import { catchError, filter, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AuthService } from '../services/auth.service';
 
 let sesionExpiradaEnCurso = false;
 let permisosAlertaEnCurso = false;
+let suscripcionNavegacionRegistrada = false;
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+
+  // Si el usuario navega a otra ruta antes de que se resuelvan las alertas,
+  // re-limpiar las banderas globales evita que queden bloqueadas indefinidamente.
+  if (!suscripcionNavegacionRegistrada) {
+    suscripcionNavegacionRegistrada = true;
+    router.events
+      .pipe(filter((e) => e instanceof NavigationStart))
+      .subscribe(() => {
+        sesionExpiradaEnCurso = false;
+        permisosAlertaEnCurso = false;
+      });
+  }
 
   const esSolicitudLogin = req.url.toLowerCase().includes('/auth/login');
 
