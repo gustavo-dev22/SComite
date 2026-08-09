@@ -185,11 +185,40 @@ export class MuroAnunciosComponent implements OnInit {
   }
 
   eliminarAnuncio(id: number): void {
-    if (!confirm('¿Está seguro de eliminar este comunicado oficial?')) return;
-
-    this.anuncioService.eliminarAnuncio(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.cargarAnuncios(this.aulaSeleccionadaId()!),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el comunicado.', 'error')
+    Swal.fire({
+      title: '¿Eliminar comunicado?',
+      text: 'Esta acción removerá el comunicado de la cartelera digital del aula.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0f172a', // slate-900
+      cancelButtonColor: '#94a3b8',  // slate-400
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl font-bold text-xs px-4 py-2.5',
+        cancelButton: 'rounded-xl font-semibold text-xs px-4 py-2.5'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.anuncioService.eliminarAnuncio(id, this.aulaSeleccionadaId()!)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              Swal.fire({
+                title: '¡Eliminado!',
+                text: 'El comunicado oficial ha sido eliminado.',
+                icon: 'success',
+                timer: 1800,
+                showConfirmButton: false
+              });
+              this.cargarAnuncios(this.aulaSeleccionadaId()!);
+            },
+            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el comunicado.', 'error')
+          });
+      }
     });
   }
 

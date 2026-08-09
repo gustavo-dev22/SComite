@@ -109,18 +109,33 @@ export class ResumenGeneralCajasComponent implements OnInit {
 
   // Exportar Consolidado Global a PDF
   async exportarPdf(): Promise<void> {
-    const element = document.getElementById('reporte-resumen-general-pdf');
-    if (!element) {
-      Swal.fire('Error', 'No se encontró el contenedor del reporte.', 'error');
+    const data = this.dataConsolidada();
+    if (!data) {
+      Swal.fire('Error', 'No hay datos cargados para exportar.', 'error');
       return;
     }
 
-    this.fechaEmision = new Date();
     const nombreArchivo = `Resumen_General_Cajas_${this.anioActual()}.pdf`;
 
     this.descargandoPdf.set(true);
     try {
-      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+      await this.pdfExporter.exportarResumenGeneralCajas({
+        nombreArchivo,
+        nombreInstitucion: this.institucion()?.nombreInstitucion,
+        urlLogo: this.institucion()?.urlLogo,
+        anioLectivo: this.anioActual(),
+        totalIngresos: data.totalIngresosInstitucional || 0,
+        totalEgresos: data.totalEgresosInstitucional || 0,
+        saldoNeto: data.saldoNetoInstitucional || 0,
+        aulas: (data.detalleAulas || []).map(a => ({
+          nombreAula: a.nombreAula,
+          nivel: a.nivel,
+          totalIngresos: a.totalIngresos,
+          totalEgresos: a.totalEgresos,
+          saldoNeto: a.saldoNeto
+        })),
+        fechaEmision: new Date() // Fecha y hora exacta actual de la descarga
+      });
     } catch {
       Swal.fire('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.', 'error');
     } finally {

@@ -180,11 +180,40 @@ export class GestionDonacionesComponent implements OnInit {
   }
 
   eliminarDonacion(id: number): void {
-    if (!confirm('¿Está seguro de eliminar este registro de donación?')) return;
-
-    this.donacionService.eliminarDonacion(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.cargarDonaciones(this.aulaSeleccionadaId()!),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la donación.', 'error')
+    Swal.fire({
+      title: '¿Eliminar donación?',
+      text: 'Esta acción no se puede deshacer y afectará los saldos del aula.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0f172a', // slate-900
+      cancelButtonColor: '#94a3b8',  // slate-400
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl font-bold text-xs px-4 py-2.5',
+        cancelButton: 'rounded-xl font-semibold text-xs px-4 py-2.5'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.donacionService.eliminarDonacion(id, this.aulaSeleccionadaId()!)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              Swal.fire({
+                title: '¡Eliminada!',
+                text: 'El registro de donación ha sido eliminado correctamente.',
+                icon: 'success',
+                timer: 1800,
+                showConfirmButton: false
+              });
+              this.cargarDonaciones(this.aulaSeleccionadaId()!);
+            },
+            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la donación.', 'error')
+          });
+      }
     });
   }
 }

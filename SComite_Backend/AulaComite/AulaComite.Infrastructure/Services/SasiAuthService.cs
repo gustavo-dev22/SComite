@@ -12,11 +12,13 @@ namespace AulaComite.Infrastructure.Services
         private readonly HttpClient _httpClient;
         private readonly ILogger<SasiAuthService> _logger;
         private readonly int _sistemaIdTarget;
+        private readonly IJwtTokenService _jwtTokenService;
 
-        public SasiAuthService(HttpClient httpClient, IConfiguration configuration, ILogger<SasiAuthService> logger)
+        public SasiAuthService(HttpClient httpClient, IConfiguration configuration, ILogger<SasiAuthService> logger, IJwtTokenService jwtTokenService)
         {
             _httpClient = httpClient;
             _logger = logger;
+            _jwtTokenService = jwtTokenService;
             var configVal = configuration["SasiSettings:SistemaId"]
                 ?? throw new InvalidOperationException("SasiSettings:SistemaId no está configurado.");
             _sistemaIdTarget = int.Parse(configVal);
@@ -53,10 +55,19 @@ namespace AulaComite.Infrastructure.Services
                     };
                 }
 
+                if (sasiResult.Usuario == null)
+                {
+                    return new AuthResultDto { Exito = false, Mensaje = "Respuesta inválida de SASI." };
+                }
+
+                // Emitir un JWT propio de la aplicación, firmado con la clave local
+                // (JwtSettings), para que los endpoints [Authorize] lo acepten.
+                var tokenLocal = _jwtTokenService.GenerarToken(sasiResult.Usuario, sistemaComite);
+
                 return new AuthResultDto
                 {
                     Exito = true,
-                    Token = sasiResult.Token,
+                    Token = tokenLocal,
                     NombreUsuario = sasiResult.Usuario?.NombreCompleto ?? string.Empty,
                     Email = sasiResult.Usuario?.Email ?? string.Empty,
                     SistemaComite = sistemaComite

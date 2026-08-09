@@ -253,13 +253,9 @@ export class BalanceCajaComponent implements OnInit {
   }
 
   async descargarPdfDirecto(): Promise<void> {
-    const element = document.getElementById('reporte-imprimible-pdf');
-    if (!element) {
-      Swal.fire('Error', 'No se encontró el contenedor del reporte.', 'error');
-      return;
-    }
-
     const id = this.aulaSeleccionadaId();
+    if (!id) return;
+
     const aula = this.aulas().find(a => a.id === id);
     const mesVal = this.mesSeleccionado();
 
@@ -288,9 +284,38 @@ export class BalanceCajaComponent implements OnInit {
 
     this.descargandoPdf.set(true);
     try {
-      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+      const c = this.consolidado();
+
+      await this.pdfExporter.exportarRendicionCaja({
+        nombreArchivo,
+        nombreInstitucion: this.institucion()?.nombreInstitucion,
+        urlLogo: this.institucion()?.urlLogo,
+        aulaNombre: this.aulaNombreActual(),
+        anioLectivo: this.anioActual(),
+        periodoTexto: this.nombreMesActual(),
+        fechaEmision: new Date(), // Hora exacta de descarga
+        cuadro1: {
+          saldoAnterior: c.saldoAnteriorArrastrado || 0,
+          totalIngresosMes: c.totalIngresosMes || 0,
+          totalEgresosMes: c.totalEgresosMes || 0,
+          saldoNeto: c.saldoNetoEnCaja || 0
+        },
+        cuadro2: {
+          ingresosMensuales: c.ingresosMensuales || 0,
+          ingresosExtraordinarios: c.ingresosExtraordinarios || 0,
+          ingresosDonaciones: c.ingresosDonaciones || 0
+        },
+        cuadro3Gastos: (this.gastosAgrupados() || []).map(g => ({
+          categoria: g.categoria,
+          concepto: g.concepto,
+          proveedor: g.proveedor,
+          tipoComprobante: g.tipoComprobante,
+          numeroComprobante: g.numeroComprobante,
+          monto: g.monto
+        }))
+      });
     } catch {
-      Swal.fire('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.', 'error');
+      Swal.fire('Error', 'No se pudo generar el PDF de Rendición de Cuentas.', 'error');
     } finally {
       this.descargandoPdf.set(false);
     }

@@ -24,6 +24,7 @@ namespace AulaComite.Infrastructure
             services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 
             services.AddScoped<IUserContextService, UserContextService>();
+            services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IAulaRepository, AulaRepository>();
             services.AddScoped<IComiteRepository, ComiteRepository>();
             services.AddScoped<IEstudianteRepository, EstudianteRepository>();

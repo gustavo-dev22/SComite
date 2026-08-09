@@ -94,16 +94,32 @@ export class GestionCuotasComponent implements OnInit {
     }
 
   async exportarPdfMorosos(): Promise<void> {
-    const element = document.getElementById('reporte-morosos-pdf');
-    if (!element) return;
+    const cuota = this.cuotaSeleccionadaMorosos();
+    const morosos = this.estudiantesMorosos();
 
-    this.fechaEmision = new Date();
-    const conceptoLimpio = this.cuotaSeleccionadaMorosos()?.concepto.replace(/[^a-zA-Z0-9]/g, '_') || 'Cuota';
+    if (!cuota || morosos.length === 0) return;
+
+    const conceptoLimpio = cuota.concepto.replace(/[^a-zA-Z0-9]/g, '_') || 'Cuota';
     const nombreArchivo = `Pendientes_${conceptoLimpio}.pdf`;
-    
+
     this.descargandoPdfMorosos.set(true);
     try {
-      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+      await this.pdfExporter.exportarReporteMorosos({
+        nombreArchivo,
+        nombreInstitucion: this.institucion()?.nombreInstitucion,
+        urlLogo: this.institucion()?.urlLogo,
+        conceptoCuota: cuota.concepto,
+        montoCuota: cuota.montoIndividual,
+        totalPendientes: morosos.length,
+        estudiantes: morosos.map(item => ({
+          nombreEstudiante: item.nombreEstudiante,
+          documentoEstudiante: `${item.tipoDocumento}: ${item.numeroDocumento}`,
+          nombreApoderado: item.nombreApoderado,
+          telefonoApoderado: item.telefonoApoderado,
+          montoPendiente: item.montoPendiente
+        })),
+        fechaEmision: new Date() // Fecha y hora exacta actual
+      });
     } catch {
       Swal.fire('Error', 'No se pudo generar el reporte en PDF.', 'error');
     } finally {

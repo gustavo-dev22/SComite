@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -45,7 +45,6 @@ export class ActasAsambleaComponent implements OnInit {
   mostrarModal = signal<boolean>(false);
 
   descargandoPdf = signal<boolean>(false);
-  actaParaPdf = signal<ActaAsambleaComite | null>(null);
   fechaEmision = new Date();
 
   formActa = signal<Partial<ActaAsambleaComite>>({
@@ -252,11 +251,40 @@ export class ActasAsambleaComponent implements OnInit {
   }
 
   eliminarActa(id: number): void {
-    if (!confirm('¿Está seguro de eliminar esta acta de asamblea?')) return;
-
-    this.actaService.eliminarActa(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.cargarActas(this.aulaSeleccionadaId()!),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el acta.', 'error')
+    Swal.fire({
+      title: '¿Eliminar acta de asamblea?',
+      text: 'Esta acción eliminará el registro del libro digital de actas del aula.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0f172a', // slate-900
+      cancelButtonColor: '#94a3b8',  // slate-400
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl font-bold text-xs px-4 py-2.5',
+        cancelButton: 'rounded-xl font-semibold text-xs px-4 py-2.5'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.actaService.eliminarActa(id, this.aulaSeleccionadaId()!)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              Swal.fire({
+                title: '¡Eliminada!',
+                text: 'El acta de asamblea ha sido eliminada correctamente.',
+                icon: 'success',
+                timer: 1800,
+                showConfirmButton: false
+              });
+              this.cargarActas(this.aulaSeleccionadaId()!);
+            },
+            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el acta.', 'error')
+          });
+      }
     });
   }
 
@@ -269,21 +297,28 @@ export class ActasAsambleaComponent implements OnInit {
   }
 
   async descargarPdfActa(acta: ActaAsambleaComite): Promise<void> {
-    this.actaParaPdf.set(acta);
-
-    const element = document.getElementById('acta-imprimible-pdf');
-    if (!element) {
-      Swal.fire('Error', 'No se encontró el contenedor del acta.', 'error');
-      this.descargandoPdf.set(false);
-      return;
-    }
-
     const numActaClean = acta.numeroActa.replace(/[^A-Z0-9]/gi, '_');
     const nombreArchivo = `${numActaClean}.pdf`;
 
+    const datePipe = new DatePipe('en-US');
+    const fechaReunionStr = datePipe.transform(acta.fechaReunion, 'dd/MM/yyyy') || '';
+
     this.descargandoPdf.set(true);
     try {
-      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+      await this.pdfExporter.exportarActaOficial({
+        nombreArchivo,
+        nombreInstitucion: this.institucion()?.nombreInstitucion,
+        urlLogo: this.institucion()?.urlLogo,
+        aulaNombre: this.aulaNombreActual(),
+        anioLectivo: this.anioActual(),
+        numeroActa: acta.numeroActa,
+        estadoActa: acta.estadoActa,
+        fechaReunion: fechaReunionStr,
+        usuarioRegistro: acta.usuarioRegistro,
+        tituloAsamblea: acta.titulo,
+        agendaAcuerdos: acta.agendaAcuerdos,
+        fechaEmision: new Date() // Fecha y hora exacta de descarga
+      });
     } catch {
       Swal.fire('Error', 'No se pudo generar el PDF del acta. Inténtalo de nuevo.', 'error');
     } finally {

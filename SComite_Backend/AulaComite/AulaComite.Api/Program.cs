@@ -5,6 +5,7 @@ using AulaComite.Api.Middlewares;
 using AulaComite.Api.Services;
 using AulaComite.Application;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Models;
 using AulaComite.Infrastructure;
 using AulaComite.Infrastructure.Persistence;
 using AulaComite.Infrastructure.Services;
@@ -39,6 +40,9 @@ try
     // Configuración de Servicios
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
+
+    // Vincular JwtSettings a opciones para emisión y validación de tokens locales
+    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
     var secretKey = jwtSettings["SecretKey"]

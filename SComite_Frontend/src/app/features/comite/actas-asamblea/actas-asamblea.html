@@ -106,22 +106,43 @@
                 </svg>
                 <span>Exportar PDF</span>
               </button>
-              <button 
-                (click)="abrirModalEditar(a)" 
-                class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer" 
-                title="Editar">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button 
-                (click)="eliminarActa(a.id)" 
-                class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" 
-                title="Eliminar">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+
+              <!-- 🚀 BOTÓN EDITAR CON TOOLTIP FLOTANTE -->
+              <div class="relative group inline-block">
+                <button 
+                  (click)="abrirModalEditar(a)" 
+                  class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <!-- Tooltip Editar -->
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-20 pointer-events-none transition-all">
+                  <span class="relative z-10 p-1.5 px-2.5 text-[10px] font-bold text-white leading-none whitespace-nowrap bg-slate-900 rounded-md shadow-xs">
+                    Editar Acta
+                  </span>
+                  <div class="w-2 h-2 -mt-1 bg-slate-900 rotate-45"></div>
+                </div>
+              </div>
+
+              <!-- 🚀 BOTÓN ELIMINAR CON TOOLTIP FLOTANTE -->
+              <div class="relative group inline-block">
+                <button 
+                  (click)="eliminarActa(a.id)" 
+                  class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+                <!-- Tooltip Eliminar -->
+                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-20 pointer-events-none transition-all">
+                  <span class="relative z-10 p-1.5 px-2.5 text-[10px] font-bold text-white leading-none whitespace-nowrap bg-slate-900 rounded-md shadow-xs">
+                    Eliminar Acta
+                  </span>
+                  <div class="w-2 h-2 -mt-1 bg-slate-900 rotate-45"></div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -274,92 +295,3 @@
     </div>
   </div>
 }
-
-<!-- ======================================================= -->
-<!-- 🚀 CONTENEDOR OCULTO PARA IMPRESIÓN OFICIAL DEL ACTA (A4 - SIN TAILWIND) -->
-<!-- ======================================================= -->
-<div id="acta-imprimible-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 40px; width: 210mm; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box;">
-  
-  @if (actaParaPdf()) {
-    <!-- Cabecera Institucional -->
-    <div style="border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left;">
-        <tr>
-          <!-- Logo de la IE (85px x 85px) -->
-          @if (institucion()?.urlLogo) {
-            <td style="width: 95px; vertical-align: middle; padding-right: 18px;">
-              <img 
-                [src]="institucion()?.urlLogo" 
-                alt="Logo Colegio" 
-                style="width: 85px; height: 85px; object-fit: contain; display: block; margin: 0 auto;">
-            </td>
-          }
-          
-          <!-- Datos Oficiales de la IE y Título del Acta -->
-          <td style="vertical-align: middle;">
-            <h1 style="font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin: 0; line-height: 1.25; letter-spacing: 0.3px;">
-              {{ institucion()?.nombreInstitucion || 'INSTITUCIÓN EDUCATIVA' }}
-            </h1>
-
-            <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #e2e8f0;">
-              <h2 style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #1e293b; margin: 0;">
-                ACTA OFICIAL DE ASAMBLEA DE PADRES DE FAMILIA
-              </h2>
-              <p style="font-size: 11px; font-weight: 700; color: #334155; margin-top: 2px; margin-bottom: 0;">
-                Comité de Aula - {{ aulaNombreActual() }} | Año Lectivo {{ anioActual() }}
-              </p>
-            </div>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-    <!-- Ficha de Datos del Acta -->
-    <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-        <tr>
-          <td style="width: 50%; padding-bottom: 8px; vertical-align: top;">
-            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Código / N° de Acta:</span>
-            <strong style="font-size: 14px; color: #0f172a; font-family: monospace;">{{ actaParaPdf()?.numeroActa }}</strong>
-          </td>
-          <td style="width: 50%; padding-bottom: 8px; vertical-align: top;">
-            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Estado del Documento:</span>
-            <strong style="font-size: 13px; color: #047857; text-transform: uppercase;">{{ actaParaPdf()?.estadoActa }}</strong>
-          </td>
-        </tr>
-        <tr>
-          <td style="width: 50%; vertical-align: top;">
-            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Fecha de Celebración:</span>
-            <span style="color: #1e293b; font-weight: 600;">{{ actaParaPdf()?.fechaReunion | date:'dd/MM/yyyy' }}</span>
-          </td>
-          <td style="width: 50%; vertical-align: top;">
-            <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 10px;">Registrado Por:</span>
-            <span style="color: #1e293b; font-weight: 600;">{{ actaParaPdf()?.usuarioRegistro }}</span>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-    <!-- Título y Agenda -->
-    <div style="margin-bottom: 24px;">
-      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px;">Agenda / Asunto Principal:</span>
-      <h2 style="font-size: 15px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0; line-height: 1.3;">{{ actaParaPdf()?.titulo }}</h2>
-    </div>
-
-    <!-- Puntos Tratados y Acuerdos -->
-    <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; margin-bottom: 32px; min-height: 240px; background-color: #ffffff;">
-      <h3 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #0f172a; padding-bottom: 8px; margin-top: 0; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
-        Puntos Tratados y Acuerdos Aprobados por la Asamblea:
-      </h3>
-      <p style="font-size: 12px; color: #1e293b; white-space: pre-line; line-height: 1.6; margin: 0;">
-        {{ actaParaPdf()?.agendaAcuerdos }}
-      </p>
-    </div>
-
-    <!-- Pie de página -->
-    <div style="text-align: center; margin-top: 32px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8;">
-      Documento emitido desde el Sistema de Comité de Aula (SCA) - Fecha de impresión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
-    </div>
-  }
-
-</div>

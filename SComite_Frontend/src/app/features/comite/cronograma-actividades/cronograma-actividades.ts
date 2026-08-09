@@ -176,11 +176,40 @@ export class CronogramaActividadesComponent implements OnInit {
   }
 
   eliminarActividad(id: number): void {
-    if (!confirm('¿Está seguro de eliminar esta actividad del cronograma?')) return;
-
-    this.actividadService.eliminarActividad(id, this.aulaSeleccionadaId()!).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.cargarActividades(this.aulaSeleccionadaId()!),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la actividad.', 'error')
+    Swal.fire({
+      title: '¿Eliminar actividad?',
+      text: 'Esta acción eliminará el evento del cronograma de actividades del aula.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0f172a', // slate-900
+      cancelButtonColor: '#94a3b8',  // slate-400
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-xl font-bold text-xs px-4 py-2.5',
+        cancelButton: 'rounded-xl font-semibold text-xs px-4 py-2.5'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.actividadService.eliminarActividad(id, this.aulaSeleccionadaId()!)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              Swal.fire({
+                title: '¡Eliminada!',
+                text: 'La actividad ha sido eliminada del cronograma.',
+                icon: 'success',
+                timer: 1800,
+                showConfirmButton: false
+              });
+              this.cargarActividades(this.aulaSeleccionadaId()!);
+            },
+            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la actividad.', 'error')
+          });
+      }
     });
   }
 

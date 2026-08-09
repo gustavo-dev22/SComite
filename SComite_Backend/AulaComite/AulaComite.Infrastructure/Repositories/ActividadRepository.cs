@@ -50,7 +50,7 @@ namespace AulaComite.Infrastructure.Repositories
         public async Task<bool> EliminarAsync(int id, int aulaId)
         {
             using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.ExecuteAsync(
+            var rows = await connection.ExecuteScalarAsync<int>(
                 "sp_Actividades_Eliminar",
                 new { Id = id, AulaId = aulaId },
                 commandType: CommandType.StoredProcedure

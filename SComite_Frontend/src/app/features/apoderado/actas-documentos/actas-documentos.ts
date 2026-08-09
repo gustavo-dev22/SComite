@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
@@ -30,9 +30,6 @@ export class ActasDocumentosComponent implements OnInit {
   institucion = signal<InstitucionEducativa | null>(null);
 
   descargandoPdf = signal<boolean>(false);
-  actaParaPdf = signal<ActaApoderado | null>(null);
-  fechaEmision = new Date();
-
   anioLectivoActual = new Date().getFullYear();
 
   hijoActual = computed(() => {
@@ -96,21 +93,28 @@ export class ActasDocumentosComponent implements OnInit {
   }
 
   async descargarPdfActa(acta: ActaApoderado): Promise<void> {
-    this.actaParaPdf.set(acta);
-
-    const element = document.getElementById('acta-imprimible-pdf');
-    if (!element) {
-      Swal.fire('Error', 'No se encontró el contenedor del acta.', 'error');
-      this.descargandoPdf.set(false);
-      return;
-    }
-
     const numActaClean = acta.numeroActa.replace(/[^A-Z0-9]/gi, '_');
     const nombreArchivo = `${numActaClean}.pdf`;
 
+    const datePipe = new DatePipe('en-US');
+    const fechaReunionStr = datePipe.transform(acta.fechaReunion, 'dd/MM/yyyy') || '';
+
     this.descargandoPdf.set(true);
     try {
-      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+      await this.pdfExporter.exportarActaOficial({
+        nombreArchivo,
+        nombreInstitucion: this.institucion()?.nombreInstitucion,
+        urlLogo: this.institucion()?.urlLogo,
+        aulaNombre: this.hijoActual()?.nombreAula || '',
+        anioLectivo: this.anioLectivoActual,
+        numeroActa: acta.numeroActa,
+        estadoActa: acta.estadoActa,
+        fechaReunion: fechaReunionStr,
+        usuarioRegistro: acta.usuarioRegistro,
+        tituloAsamblea: acta.titulo,
+        agendaAcuerdos: acta.agendaAcuerdos,
+        fechaEmision: new Date() // Hora actual exacta del clic
+      });
     } catch {
       Swal.fire('Error', 'No se pudo generar el PDF del acta. Inténtalo de nuevo.', 'error');
     } finally {
