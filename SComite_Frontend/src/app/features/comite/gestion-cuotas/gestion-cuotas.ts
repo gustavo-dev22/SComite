@@ -43,7 +43,7 @@ export class GestionCuotasComponent implements OnInit {
 
   periodoSeleccionadoId = signal<number | null>(null);
   aulaSeleccionadaId = signal<number | null>(null);
-  filtroTipoCuota = signal<string>('TODOS');
+  filtroTipoCuota = signal<'TODOS' | 'EXTRAORDINARIA' | 'RECURRENTE_MENSUAL'>('TODOS');
 
   cargando = signal<boolean>(false);
   cargandoAulas = signal<boolean>(false);

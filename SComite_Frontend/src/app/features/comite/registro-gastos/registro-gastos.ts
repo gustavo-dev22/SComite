@@ -309,6 +309,6 @@ export class RegistroGastosComponent implements OnInit {
     const separator = fullUrl.includes('?') ? '&' : '?';
     const urlConCacheBuster = `${fullUrl}${separator}_t=${timestamp}`;
 
-    window.open(urlConCacheBuster, '_blank');
+    window.open(urlConCacheBuster, '_blank', 'noopener,noreferrer');
   }
 }
