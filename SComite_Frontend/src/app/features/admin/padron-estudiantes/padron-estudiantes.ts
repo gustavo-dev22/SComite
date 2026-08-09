@@ -267,7 +267,9 @@ export class PadronEstudiantesComponent implements OnInit {
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       confirmButtonText: 'Sí, desactivar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      allowEscapeKey: false,
+      allowOutsideClick: false
     }).then((res) => {
       if (res.isConfirmed) {
         this.estudianteService.eliminarEstudiante(e.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

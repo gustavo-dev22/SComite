@@ -72,7 +72,7 @@
 
   </div>
 
-  <!-- CONTENIDO PRINCIPAL (ALTURA DINÁMICA) -->
+  <!-- CONTENIDO PRINCIPAL -->
   @if (!tieneAulaSeleccionada()) {
     <div class="text-center py-12 sm:py-16 bg-white rounded-2xl border border-dashed border-slate-300 p-6">
       <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -163,13 +163,13 @@
               <span class="text-slate-500 font-medium">Al día</span>
             </div>
 
-            <!-- BOTÓN ACCIONABLE DE DETALLE DE MOROSIDAD DIRECTA -->
+            <!-- BOTÓN PENDIENTES SIN SUBRAYADO -->
             <button 
               (click)="abrirModalMorosos(cuota)"
-              class="bg-amber-50 hover:bg-amber-100/80 p-2 rounded-xl border border-amber-200/80 transition cursor-pointer text-left group">
+              class="bg-amber-50 hover:bg-amber-100/80 p-2 rounded-xl border border-amber-200/80 transition cursor-pointer text-left no-underline">
               <div class="flex items-center justify-between">
-                <span class="block font-bold text-amber-700 text-sm sm:text-base group-hover:underline">{{ cuota.estudiantesPendientes }}</span>
-                <span class="text-[10px] text-amber-800 font-bold uppercase tracking-wider flex items-center gap-0.5">
+                <span class="block font-bold text-amber-700 text-sm sm:text-base no-underline">{{ cuota.estudiantesPendientes }}</span>
+                <span class="text-[10px] text-amber-800 font-bold uppercase tracking-wider flex items-center gap-0.5 no-underline">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -177,7 +177,7 @@
                   Ver
                 </span>
               </div>
-              <span class="text-slate-500 block text-[11px] font-medium">Pendientes</span>
+              <span class="text-slate-500 block text-[11px] font-medium no-underline">Pendientes</span>
             </button>
           </div>
         </div>
@@ -190,7 +190,7 @@
   }
 </div>
 
-<!-- Modal Formulario con Integración a Cronograma de Actividades -->
+<!-- Modal Formulario de Cuota -->
 @if (mostrarModal()) {
   <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 border border-slate-100 animate-fade-in">
@@ -224,7 +224,6 @@
       @if (tipoModal() === 'EVENTUAL') {
         <form [formGroup]="cuotaForm" (ngSubmit)="guardarCuota()" class="space-y-4">
           
-          <!-- SELECTOR OPCIONAL: Vincular Actividad del Cronograma -->
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -341,17 +340,30 @@
   <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 animate-fade-in">
       
-      <!-- Cabecera del Modal -->
+      <!-- Cabecera del Modal con Botón Exportar PDF -->
       <div class="bg-amber-600 text-white px-5 py-4 flex justify-between items-center">
         <div>
           <span class="text-[10px] font-bold text-amber-200 uppercase block tracking-wider">Lista de Morosidad Directa</span>
           <h3 class="font-bold text-sm sm:text-base leading-snug">{{ cuotaSeleccionadaMorosos()?.concepto }}</h3>
         </div>
-        <button (click)="cerrarModalMorosos()" class="text-amber-200 hover:text-white cursor-pointer transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          @if (estudiantesMorosos().length > 0) {
+            <button 
+              (click)="exportarPdfMorosos()"
+              class="inline-flex items-center gap-1.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-xs cursor-pointer"
+              title="Exportar Lista de Pendientes en PDF">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 01-2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Exportar PDF</span>
+            </button>
+          }
+          <button (click)="cerrarModalMorosos()" class="text-amber-200 hover:text-white cursor-pointer transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="p-5 sm:p-6">
@@ -436,3 +448,88 @@
     </div>
   </div>
 }
+
+<!-- ======================================================= -->
+<!-- 🚀 MODAL / SPINNER DE DESCARGA PDF DE MOROSOS -->
+<!-- ======================================================= -->
+@if (descargandoPdfMorosos()) {
+  <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background-color: #ffffff; padding: 1rem 2rem; border-radius: 9999px; display: flex; gap: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+      <div style="width: 1.25rem; height: 1.25rem; border: 3px solid #0f172a; border-top-color: transparent; border-radius: 50%;" class="animate-spin"></div>
+      <span style="font-size: 0.875rem; font-weight: 700; color: #1e293b;">Generando PDF de Lista de Pendientes...</span>
+    </div>
+  </div>
+}
+
+<!-- ======================================================= -->
+<!-- 🚀 CONTENEDOR OCULTO PARA IMPRESIÓN DEL PDF DE MOROSOS (A4) -->
+<!-- ======================================================= -->
+<div id="reporte-morosos-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 20px; width: 210mm; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box;">
+  
+  <div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
+      <tr>
+        @if (institucion()?.urlLogo) {
+          <td style="width: 85px; vertical-align: middle; padding-right: 12px;">
+            <img [src]="institucion()?.urlLogo" alt="Logo Colegio" style="width: 75px; height: 75px; object-fit: contain; display: block; margin: 0 auto;">
+          </td>
+        }
+        <td style="vertical-align: middle;">
+          <h1 style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin: 0; line-height: 1.2;">
+            {{ institucion()?.nombreInstitucion || 'INSTITUCIÓN EDUCATIVA' }}
+          </h1>
+          <p style="font-size: 10px; color: #be123c; margin: 3px 0 0 0; font-weight: 800; text-transform: uppercase;">
+            REPORTE OFICIAL DE MOROSIDAD / ESTUDIANTES PENDIENTES
+          </p>
+          <p style="font-size: 9.5px; color: #64748b; margin-top: 2px; margin-bottom: 0;">
+            Cuota: <strong>{{ cuotaSeleccionadaMorosos()?.concepto }}</strong> | Fecha de Emisión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+          </p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 10.5px; table-layout: fixed;">
+      <tr>
+        <td style="width: 50%; vertical-align: top;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 8.5px;">Total Apoderados Pendientes:</span>
+          <strong style="font-size: 12px; color: #be123c; display: block; margin-top: 2px;">{{ estudiantesMorosos().length }} Estudiantes</strong>
+        </td>
+        <td style="width: 50%; vertical-align: top;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 8.5px;">Monto Individual de Cuota:</span>
+          <strong style="font-size: 12px; color: #0f172a; display: block; margin-top: 2px;">S/. {{ cuotaSeleccionadaMorosos()?.montoIndividual | number:'1.2-2' }}</strong>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; table-layout: fixed; box-sizing: border-box;">
+    <thead>
+      <tr style="background-color: #f1f5f9; color: #0f172a; font-weight: 800; border-bottom: 2px solid #cbd5e1;">
+        <th style="padding: 6px 4px; text-align: left; width: 35%;">Estudiante</th>
+        <th style="padding: 6px 4px; text-align: left; width: 35%;">Apoderado Responsable</th>
+        <th style="padding: 6px 4px; text-align: center; width: 15%;">Teléfono</th>
+        <th style="padding: 6px 4px; text-align: right; width: 15%;">Pendiente (S/.)</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of estudiantesMorosos(); track item.estudianteId) {
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 6px 4px; font-weight: 700; color: #0f172a; word-wrap: break-word;">
+            {{ item.nombreEstudiante }}
+            <span style="display: block; font-size: 8.5px; font-family: monospace; color: #64748b;">{{ item.tipoDocumento }}: {{ item.numeroDocumento }}</span>
+          </td>
+          <td style="padding: 6px 4px; font-weight: 600; color: #334155; word-wrap: break-word;">{{ item.nombreApoderado }}</td>
+          <td style="padding: 6px 4px; text-align: center; font-family: monospace; color: #475569;">{{ item.telefonoApoderado }}</td>
+          <td style="padding: 6px 4px; text-align: right; font-weight: 800; color: #be123c;">S/. {{ item.montoPendiente | number:'1.2-2' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <div style="text-align: center; margin-top: 25px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 8.5px; color: #94a3b8; width: 100%;">
+    Documento Oficial de Tesorería emitido desde el Sistema de Comité de Aula - Fecha de impresión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
+  </div>
+
+</div>

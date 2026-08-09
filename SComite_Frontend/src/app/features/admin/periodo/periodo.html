@@ -71,14 +71,27 @@
                   }
                 </td>
                 <td class="p-3.5 sm:p-4 text-center">
-                  <button 
-                    (click)="abrirModalEditar(p)" 
-                    title="Editar" 
-                    class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
+                  <div class="flex items-center justify-center gap-1">
+                    
+                    <!-- 🚀 BOTÓN EDITAR CON TOOLTIP FLOTANTE DE TAILWIND -->
+                    <div class="relative group inline-block">
+                      <button 
+                        (click)="abrirModalEditar(p)" 
+                        class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <!-- Tooltip -->
+                      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-20 pointer-events-none transition-all">
+                        <span class="relative z-10 p-1.5 px-2.5 text-[10px] font-bold text-white leading-none whitespace-nowrap bg-slate-900 rounded-md shadow-xs">
+                          Editar Periodo
+                        </span>
+                        <div class="w-2 h-2 -mt-1 bg-slate-900 rotate-45"></div>
+                      </div>
+                    </div>
+
+                  </div>
                 </td>
               </tr>
             }

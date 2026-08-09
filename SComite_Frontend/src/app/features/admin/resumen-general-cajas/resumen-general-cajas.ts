@@ -115,6 +115,7 @@ export class ResumenGeneralCajasComponent implements OnInit {
       return;
     }
 
+    this.fechaEmision = new Date();
     const nombreArchivo = `Resumen_General_Cajas_${this.anioActual()}.pdf`;
 
     this.descargandoPdf.set(true);

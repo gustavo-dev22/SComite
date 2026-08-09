@@ -128,25 +128,25 @@
 <!-- ======================================================= -->
 <!-- 🚀 CONTENEDOR OCULTO PARA IMPRESIÓN DEL REPORT PDF (A4) -->
 <!-- ======================================================= -->
-<div id="reporte-resumen-general-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 35px; width: 210mm; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box;">
+<div id="reporte-resumen-general-pdf" style="display: none; background-color: #ffffff; color: #0f172a; padding: 20px; width: 210mm; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box;">
   
-  <!-- Cabecera Institucional con Logo (85px) -->
-  <div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px;">
-    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+  <!-- Cabecera Institucional con Logo -->
+  <div style="border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
       <tr>
         @if (institucion()?.urlLogo) {
-          <td style="width: 95px; vertical-align: middle; padding-right: 18px;">
-            <img [src]="institucion()?.urlLogo" alt="Logo Colegio" style="width: 85px; height: 85px; object-fit: contain; display: block; margin: 0 auto;">
+          <td style="width: 85px; vertical-align: middle; padding-right: 12px;">
+            <img [src]="institucion()?.urlLogo" alt="Logo Colegio" style="width: 75px; height: 75px; object-fit: contain; display: block; margin: 0 auto;">
           </td>
         }
         <td style="vertical-align: middle;">
-          <h1 style="font-size: 16px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin: 0;">
+          <h1 style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; margin: 0; line-height: 1.2;">
             {{ institucion()?.nombreInstitucion || 'INSTITUCIÓN EDUCATIVA' }}
           </h1>
-          <p style="font-size: 10.5px; color: #475569; margin: 3px 0 0 0; font-weight: 600;">
+          <p style="font-size: 10px; color: #475569; margin: 3px 0 0 0; font-weight: 700; text-transform: uppercase;">
             CONSOLIDADO GENERAL DE AUDITORÍA FINANCIERA DE CAJAS
           </p>
-          <p style="font-size: 10px; color: #64748b; margin-top: 2px; margin-bottom: 0;">
+          <p style="font-size: 9.5px; color: #64748b; margin-top: 2px; margin-bottom: 0;">
             Año Lectivo {{ anioActual() }} | Fecha de Emisión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
           </p>
         </td>
@@ -155,51 +155,51 @@
   </div>
 
   <!-- Resumen de Totales Institucionales -->
-  <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
-    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+  <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 10.5px; table-layout: fixed;">
       <tr>
-        <td style="width: 33%; vertical-align: top;">
-          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 9px;">Total Recaudado Institucional:</span>
-          <strong style="font-size: 13px; color: #047857;">S/. {{ dataConsolidada()?.totalIngresosInstitucional | number:'1.2-2' }}</strong>
+        <td style="width: 33.33%; vertical-align: top; padding-right: 5px; box-sizing: border-box;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 8.5px;">Total Recaudado Institucional:</span>
+          <strong style="font-size: 12px; color: #047857; display: block; margin-top: 2px;">S/. {{ dataConsolidada()?.totalIngresosInstitucional | number:'1.2-2' }}</strong>
         </td>
-        <td style="width: 33%; vertical-align: top;">
-          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 9px;">Total Egresos Ejecutados:</span>
-          <strong style="font-size: 13px; color: #be123c;">S/. {{ dataConsolidada()?.totalEgresosInstitucional | number:'1.2-2' }}</strong>
+        <td style="width: 33.33%; vertical-align: top; padding-right: 5px; box-sizing: border-box;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 8.5px;">Total Egresos Ejecutados:</span>
+          <strong style="font-size: 12px; color: #be123c; display: block; margin-top: 2px;">S/. {{ dataConsolidada()?.totalEgresosInstitucional | number:'1.2-2' }}</strong>
         </td>
-        <td style="width: 33%; vertical-align: top;">
-          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 9px;">Saldo Neto Disponible:</span>
-          <strong style="font-size: 13px; color: #1e1b4b;">S/. {{ dataConsolidada()?.saldoNetoInstitucional | number:'1.2-2' }}</strong>
+        <td style="width: 33.33%; vertical-align: top; box-sizing: border-box;">
+          <span style="font-weight: 700; text-transform: uppercase; color: #64748b; display: block; font-size: 8.5px;">Saldo Neto Disponible:</span>
+          <strong style="font-size: 12px; color: #1e1b4b; display: block; margin-top: 2px;">S/. {{ dataConsolidada()?.saldoNetoInstitucional | number:'1.2-2' }}</strong>
         </td>
       </tr>
     </table>
   </div>
 
-  <!-- Tabla del PDF -->
-  <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px;">
+  <!-- Tabla del PDF (Anchos estandarizados para evitar cortes) -->
+  <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; table-layout: fixed; box-sizing: border-box;">
     <thead>
       <tr style="background-color: #f1f5f9; color: #0f172a; font-weight: 800; border-bottom: 2px solid #cbd5e1;">
-        <th style="padding: 8px; text-align: left;">Aula / Grado</th>
-        <th style="padding: 8px; text-align: left;">Nivel</th>
-        <th style="padding: 8px; text-align: right;">Ingresos (S/.)</th>
-        <th style="padding: 8px; text-align: right;">Egresos (S/.)</th>
-        <th style="padding: 8px; text-align: right;">Saldo Neto (S/.)</th>
+        <th style="padding: 6px 4px; text-align: left; width: 32%;">Aula / Grado</th>
+        <th style="padding: 6px 4px; text-align: left; width: 18%;">Nivel</th>
+        <th style="padding: 6px 4px; text-align: right; width: 16.6%;">Ingresos (S/.)</th>
+        <th style="padding: 6px 4px; text-align: right; width: 16.6%;">Egresos (S/.)</th>
+        <th style="padding: 6px 4px; text-align: right; width: 16.8%;">Saldo Neto (S/.)</th>
       </tr>
     </thead>
     <tbody>
       @for (aula of dataConsolidada()?.detalleAulas; track aula.aulaId) {
         <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 8px; font-weight: 700; color: #0f172a;">{{ aula.nombreAula }}</td>
-          <td style="padding: 8px; color: #475569; text-transform: uppercase;">{{ aula.nivel }}</td>
-          <td style="padding: 8px; text-align: right; color: #047857; font-weight: 600;">S/. {{ aula.totalIngresos | number:'1.2-2' }}</td>
-          <td style="padding: 8px; text-align: right; color: #be123c; font-weight: 600;">S/. {{ aula.totalEgresos | number:'1.2-2' }}</td>
-          <td style="padding: 8px; text-align: right; font-weight: 800; color: #0f172a;">S/. {{ aula.saldoNeto | number:'1.2-2' }}</td>
+          <td style="padding: 6px 4px; font-weight: 700; color: #0f172a; word-wrap: break-word; overflow: hidden;">{{ aula.nombreAula }}</td>
+          <td style="padding: 6px 4px; color: #475569; text-transform: uppercase; word-wrap: break-word; overflow: hidden;">{{ aula.nivel }}</td>
+          <td style="padding: 6px 4px; text-align: right; color: #047857; font-weight: 600; white-space: nowrap;">S/. {{ aula.totalIngresos | number:'1.2-2' }}</td>
+          <td style="padding: 6px 4px; text-align: right; color: #be123c; font-weight: 600; white-space: nowrap;">S/. {{ aula.totalEgresos | number:'1.2-2' }}</td>
+          <td style="padding: 6px 4px; text-align: right; font-weight: 800; color: #0f172a; white-space: nowrap;">S/. {{ aula.saldoNeto | number:'1.2-2' }}</td>
         </tr>
       }
     </tbody>
   </table>
 
   <!-- Pie de página -->
-  <div style="text-align: center; margin-top: 30px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 9px; color: #94a3b8;">
+  <div style="text-align: center; margin-top: 25px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 8.5px; color: #94a3b8; width: 100%;">
     Documento Oficial de Auditoría emitido desde el Sistema de Comité de Aula - Fecha de impresión: {{ fechaEmision | date:'dd/MM/yyyy HH:mm' }}
   </div>
 

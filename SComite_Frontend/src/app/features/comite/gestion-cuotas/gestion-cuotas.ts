@@ -10,6 +10,9 @@ import { Aula } from '../../../core/models/aula.model';
 import { ActividadService } from '../../../core/services/actividad.service';
 import { ActividadComite } from '../../../core/models/actividad.model';
 import Swal from 'sweetalert2';
+import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import { InstitucionEducativa } from '../../../core/models/institucion.model';
+import { InstitucionService } from '../../../core/services/institucion.service';
 
 @Component({
   selector: 'app-gestion-cuotas',
@@ -23,6 +26,8 @@ export class GestionCuotasComponent implements OnInit {
   private cuotaService = inject(CuotaService);
   private aulaService = inject(AulaService);
   private actividadService = inject(ActividadService);
+  private pdfExporter = inject(PdfExporterService);
+  private institucionService = inject(InstitucionService);
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
@@ -70,8 +75,40 @@ export class GestionCuotasComponent implements OnInit {
   cuotaSeleccionadaMorosos = signal<Cuota | null>(null);
   estudiantesMorosos = signal<EstudiantePendienteCuota[]>([]);
 
+  descargandoPdfMorosos = signal<boolean>(false);
+  institucion = signal<InstitucionEducativa | null>(null);
+  fechaEmision = new Date();
+
   ngOnInit(): void {
     this.cargarPeriodos();
+    this.cargarDatosInstitucion();
+  }
+
+  cargarDatosInstitucion(): void {
+      this.institucionService.getConfiguracion().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (data) => {
+          if (data) this.institucion.set(data);
+        },
+        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
+      });
+    }
+
+  async exportarPdfMorosos(): Promise<void> {
+    const element = document.getElementById('reporte-morosos-pdf');
+    if (!element) return;
+
+    this.fechaEmision = new Date();
+    const conceptoLimpio = this.cuotaSeleccionadaMorosos()?.concepto.replace(/[^a-zA-Z0-9]/g, '_') || 'Cuota';
+    const nombreArchivo = `Pendientes_${conceptoLimpio}.pdf`;
+    
+    this.descargandoPdfMorosos.set(true);
+    try {
+      await this.pdfExporter.exportarElemento(element, nombreArchivo);
+    } catch {
+      Swal.fire('Error', 'No se pudo generar el reporte en PDF.', 'error');
+    } finally {
+      this.descargandoPdfMorosos.set(false);
+    }
   }
 
   cargarPeriodos(): void {

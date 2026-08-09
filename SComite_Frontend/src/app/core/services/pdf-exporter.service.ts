@@ -14,7 +14,7 @@ export class PdfExporterService {
     try {
       await html2pdf()
         .set({
-          margin: 10,
+          margin: 0, // 👈 1. Sin margen externo para no desplazar la imagen 10mm a la derecha
           filename,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: {
@@ -22,6 +22,7 @@ export class PdfExporterService {
             useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
+            windowWidth: 794, // 👈 2. Ancho A4 exacto en px a 96 DPI (210mm)
             onclone: (clonedDoc: Document) => {
               this.sanitizarEstilosOklch(clonedDoc, element.id);
             }
@@ -40,6 +41,8 @@ export class PdfExporterService {
     if (!elemento) return;
 
     elemento.style.display = 'block';
+    elemento.style.width = '210mm'; // 👈 3. Encajar el elemento al ancho total A4
+    elemento.style.boxSizing = 'border-box';
     elemento.style.backgroundColor = '#ffffff';
     elemento.style.color = '#0f172a';
 

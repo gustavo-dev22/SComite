@@ -170,7 +170,9 @@ export class AsignacionComiteComponent implements OnInit {
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#64748b',
       confirmButtonText: 'Sí, remover',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      allowOutsideClick: false,
+      allowEscapeKey: false
     }).then((result) => {
       if (result.isConfirmed) {
         this.comiteService.eliminarIntegrante(integrante.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
