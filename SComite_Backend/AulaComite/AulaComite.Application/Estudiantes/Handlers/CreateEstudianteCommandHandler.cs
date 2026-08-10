@@ -49,18 +49,16 @@ namespace AulaComite.Application.Estudiantes.Handlers
 
             int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                int estudianteId = await _repository.CrearEstudianteAsync(e, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "INFO",
-                    modulo: "ESTUDIANTES",
-                    accion: "CREAR_ESTUDIANTE",
-                    mensaje: mensajeLegible,
-                    transaction: transaction
-                );
-
-                return estudianteId;
+                return await _repository.CrearEstudianteAsync(e, transaction);
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            await _logRepository.RegistrarAsync(
+                nivel: "INFO",
+                modulo: "ESTUDIANTES",
+                accion: "CREAR_ESTUDIANTE",
+                mensaje: mensajeLegible
+            );
 
             return id;
         }

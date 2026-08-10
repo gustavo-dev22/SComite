@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AulaComite.Infrastructure.Persistence
@@ -22,41 +23,41 @@ namespace AulaComite.Infrastructure.Persistence
             return new SqlConnection(connectionString);
         }
 
-        public async Task ExecuteInTransactionAsync(Func<IDbConnection, IDbTransaction, Task> action)
+        public async Task ExecuteInTransactionAsync(Func<IDbConnection, IDbTransaction, Task> action, CancellationToken cancellationToken = default)
         {
             await using var connection = CreateConnection() as SqlConnection
                 ?? throw new InvalidOperationException("La conexión creada no es compatible con SQL Server.");
-            await connection.OpenAsync();
+            await connection.OpenAsync(cancellationToken);
 
-            using var transaction = connection.BeginTransaction();
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
             try
             {
                 await action(connection, transaction);
-                transaction.Commit();
+                await transaction.CommitAsync(cancellationToken);
             }
             catch
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
         }
 
-        public async Task<T> ExecuteInTransactionAsync<T>(Func<IDbConnection, IDbTransaction, Task<T>> action)
+        public async Task<T> ExecuteInTransactionAsync<T>(Func<IDbConnection, IDbTransaction, Task<T>> action, CancellationToken cancellationToken = default)
         {
             await using var connection = CreateConnection() as SqlConnection
                 ?? throw new InvalidOperationException("La conexión creada no es compatible con SQL Server.");
-            await connection.OpenAsync();
+            await connection.OpenAsync(cancellationToken);
 
-            using var transaction = connection.BeginTransaction();
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
             try
             {
                 var result = await action(connection, transaction);
-                transaction.Commit();
+                await transaction.CommitAsync(cancellationToken);
                 return result;
             }
             catch
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
         }

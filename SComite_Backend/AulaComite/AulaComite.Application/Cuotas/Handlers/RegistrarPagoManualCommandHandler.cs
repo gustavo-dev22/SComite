@@ -37,15 +37,15 @@ namespace AulaComite.Application.Cuotas.Handlers
             await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 await _cuotaRepository.RegistrarPagoManualAsync(request.CuotaDetalleId, request.MontoAbonado, request.FormaPago, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "INFO",
-                    modulo: "TESORERIA",
-                    accion: "REGISTRAR_PAGO_MANUAL",
-                    mensaje: $"Se registró un pago manual de S/. {request.MontoAbonado:F2} ({request.FormaPago}) para la cuota detalle #{request.CuotaDetalleId}.",
-                    transaction: transaction
-                );
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            await _logRepository.RegistrarAsync(
+                nivel: "INFO",
+                modulo: "TESORERIA",
+                accion: "REGISTRAR_PAGO_MANUAL",
+                mensaje: $"Se registró un pago manual de S/. {request.MontoAbonado:F2} ({request.FormaPago}) para la cuota detalle #{request.CuotaDetalleId}."
+            );
 
             return true;
         }

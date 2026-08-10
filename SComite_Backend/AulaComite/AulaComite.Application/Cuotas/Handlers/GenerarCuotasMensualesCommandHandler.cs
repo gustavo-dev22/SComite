@@ -53,15 +53,15 @@ namespace AulaComite.Application.Cuotas.Handlers
                     request.AnioLectivo,
                     transaction
                 );
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "INFO",
-                    modulo: "TESORERIA",
-                    accion: "PROGRAMAR_CUOTAS_MENSUALES",
-                    mensaje: $"Se generó la programación mensual de '{request.ConceptoBase.ToUpper()}' (S/. {request.MontoMensual:F2}/mes, vence el día {request.DiaVencimiento}) para el Aula {aulaDisplay} en el Periodo {request.AnioLectivo}.",
-                    transaction: transaction
-                );
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            await _logRepository.RegistrarAsync(
+                nivel: "INFO",
+                modulo: "TESORERIA",
+                accion: "PROGRAMAR_CUOTAS_MENSUALES",
+                mensaje: $"Se generó la programación mensual de '{request.ConceptoBase.ToUpper()}' (S/. {request.MontoMensual:F2}/mes, vence el día {request.DiaVencimiento}) para el Aula {aulaDisplay} en el Periodo {request.AnioLectivo}."
+            );
 
             return true;
         }

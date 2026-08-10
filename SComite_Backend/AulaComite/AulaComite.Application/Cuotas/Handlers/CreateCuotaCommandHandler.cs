@@ -55,18 +55,16 @@ namespace AulaComite.Application.Cuotas.Handlers
 
             int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                int cuotaId = await _cuotaRepository.CrearCuotaMasivaAsync(cuota, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "INFO",
-                    modulo: "TESORERIA",
-                    accion: "CREAR_CUOTA",
-                    mensaje: $"Se aperturó la cuota '{request.Concepto.ToUpper()}' por S/. {request.MontoIndividual:F2} para el Aula {aulaDisplay} (Vence: {request.FechaVencimiento:dd/MM/yyyy}).",
-                    transaction: transaction
-                );
-
-                return cuotaId;
+                return await _cuotaRepository.CrearCuotaMasivaAsync(cuota, transaction);
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            await _logRepository.RegistrarAsync(
+                nivel: "INFO",
+                modulo: "TESORERIA",
+                accion: "CREAR_CUOTA",
+                mensaje: $"Se aperturó la cuota '{request.Concepto.ToUpper()}' por S/. {request.MontoIndividual:F2} para el Aula {aulaDisplay} (Vence: {request.FechaVencimiento:dd/MM/yyyy})."
+            );
 
             return id;
         }

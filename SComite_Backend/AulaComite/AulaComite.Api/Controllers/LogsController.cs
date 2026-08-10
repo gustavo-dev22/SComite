@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using AulaComite.Application.Logss.Queries;
-using AulaComite.Application.Logss.Commands;
+using AulaComite.Application.Logs.Queries;
+using AulaComite.Application.Logs.Commands;
 using AulaComite.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;

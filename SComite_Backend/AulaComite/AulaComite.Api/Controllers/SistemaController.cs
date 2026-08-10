@@ -51,7 +51,7 @@ namespace AulaComite.Api.Controllers
             }
 
             var fileBytes = await _mediator.Send(new GenerarBackupManualCommand());
-            var fileName = $"Backup_AulaComite_{DateTime.Now:yyyyMMdd_HHmmss}.sql";
+            var fileName = $"Backup_AulaComite_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql";
             return File(fileBytes, "application/sql", fileName);
         }
     }

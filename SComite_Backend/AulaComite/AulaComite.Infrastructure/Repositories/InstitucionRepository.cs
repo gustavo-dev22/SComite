@@ -46,7 +46,11 @@ namespace AulaComite.Infrastructure.Repositories
                 entidad.FechaActualizacion = fechaActualizada.Value;
             }
 
-            return true;
+            // 🛡️ M11: NO devolver 'true' incondicionalmente. El SP devuelve la fecha de
+            // actualización efectiva tras INSERT/UPDATE; solo se considera exitoso si el
+            // resultado refleja un efecto real confirmado en la base de datos. Si el SP
+            // falla, Dapper propaga la excepción y nunca se llega a esta línea.
+            return fechaActualizada.HasValue;
         }
     }
 }

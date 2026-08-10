@@ -56,18 +56,16 @@ namespace AulaComite.Application.Comite.Handlers
 
             int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                int integranteId = await _repository.AsignarIntegranteAsync(integrante, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "INFO",
-                    modulo: "COMITE",
-                    accion: "ASIGNAR_CARGO",
-                    mensaje: mensajeLegible,
-                    transaction: transaction
-                );
-
-                return integranteId;
+                return await _repository.AsignarIntegranteAsync(integrante, transaction);
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            await _logRepository.RegistrarAsync(
+                nivel: "INFO",
+                modulo: "COMITE",
+                accion: "ASIGNAR_CARGO",
+                mensaje: mensajeLegible
+            );
 
             return id;
         }

@@ -11,8 +11,13 @@ namespace AulaComite.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-                -- Deshabilitar temporalmente la verificación de llaves foráneas
-                EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
+                -- Deshabilitar temporalmente la verificación de llaves foráneas de forma PORTABLE
+                -- (equivalente a sp_MSforeachtable, que no está disponible en todas las ediciones SQL).
+                DECLARE @CmdDeshabilitar NVARCHAR(MAX) = N'';
+                SELECT @CmdDeshabilitar = @CmdDeshabilitar + N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(t.object_id)) + N'.' + QUOTENAME(t.name) + N' NOCHECK CONSTRAINT ALL;' + CHAR(13) + CHAR(10)
+                FROM sys.tables t
+                WHERE t.is_ms_shipped = 0;
+                EXEC sp_executesql @CmdDeshabilitar;
 
                 -- 1. Vaciar todas las tablas dependientes primero
                 DELETE FROM CuotaDetalleEstudiante;
@@ -36,8 +41,13 @@ namespace AulaComite.Infrastructure.Migrations
                 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Aulas') DBCC CHECKIDENT ('Aulas', RESEED, 0);
                 IF EXISTS (SELECT * FROM sys.tables WHERE name = 'PeriodosLectivos') DBCC CHECKIDENT ('PeriodosLectivos', RESEED, 0);
 
-                -- 4. Volver a habilitar y validar todas las llaves foráneas
-                EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';
+                -- 4. Volver a habilitar y validar todas las llaves foráneas de forma PORTABLE
+                DECLARE @CmdHabilitar NVARCHAR(MAX) = N'';
+                SELECT @CmdHabilitar = @CmdHabilitar + N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(t.object_id)) + N'.' + QUOTENAME(t.name) + N' WITH CHECK CHECK CONSTRAINT ALL;' + CHAR(13) + CHAR(10)
+                FROM sys.tables t
+                WHERE t.is_ms_shipped = 0
+                  AND EXISTS (SELECT 1 FROM sys.foreign_keys fk WHERE fk.parent_object_id = t.object_id OR fk.referenced_object_id = t.object_id);
+                EXEC sp_executesql @CmdHabilitar;
             ");
         }
 

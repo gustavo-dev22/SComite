@@ -39,19 +39,19 @@ namespace AulaComite.Application.Gastos.Handlers
 
             var urlComprobante = gasto.UrlComprobante;
 
-            // 2. Eliminar el registro en base de datos e insertar log dentro de la transacción
+            // 2. Eliminar el registro en base de datos dentro de una transacción atómica.
             await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 await _repository.EliminarAsync(request.GastoId, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "WARN",
-                    modulo: "TESORERIA",
-                    accion: "ELIMINAR_GASTO",
-                    mensaje: $"Se eliminó el registro de gasto #{request.GastoId} por un monto de S/. {gasto.Monto:N2} de la caja del aula.",
-                    transaction: transaction
-                );
             });
+
+            // 🛡️ M13: El log de auditoría se registra de forma independiente, FUERA de la transacción.
+            await _logRepository.RegistrarAsync(
+                nivel: "WARN",
+                modulo: "TESORERIA",
+                accion: "ELIMINAR_GASTO",
+                mensaje: $"Se eliminó el registro de gasto #{request.GastoId} por un monto de S/. {gasto.Monto:N2} de la caja del aula."
+            );
 
             // 3. Una vez confirmada la eliminación en BD, borrar el comprobante del disco si existía
             if (!string.IsNullOrEmpty(urlComprobante))

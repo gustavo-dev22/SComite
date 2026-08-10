@@ -24,21 +24,19 @@ namespace AulaComite.Application.Estudiantes.Handlers
         {
             bool resultado = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                bool eliminado = await _repository.EliminarEstudianteLogicoAsync(request.Id, transaction);
-
-                if (eliminado)
-                {
-                    await _logRepository.RegistrarAsync(
-                        nivel: "WARNING",
-                        modulo: "ESTUDIANTES",
-                        accion: "DESACTIVAR_ESTUDIANTE",
-                        mensaje: $"El estudiante con ID #{request.Id} fue cambiado a estado Inactivo/Retirado.",
-                        transaction: transaction
-                    );
-                }
-
-                return eliminado;
+                return await _repository.EliminarEstudianteLogicoAsync(request.Id, transaction);
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            if (resultado)
+            {
+                await _logRepository.RegistrarAsync(
+                    nivel: "WARNING",
+                    modulo: "ESTUDIANTES",
+                    accion: "DESACTIVAR_ESTUDIANTE",
+                    mensaje: $"El estudiante con ID #{request.Id} fue cambiado a estado Inactivo/Retirado."
+                );
+            }
 
             return resultado;
         }

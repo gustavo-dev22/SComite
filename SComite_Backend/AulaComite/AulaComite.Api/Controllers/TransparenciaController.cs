@@ -21,7 +21,7 @@ namespace AulaComite.Api.Controllers
         [HttpGet("aula/{aulaId:int}/balance")]
         public async Task<IActionResult> ObtenerBalanceAula(int aulaId, [FromQuery] int anio)
         {
-            var anioConsulta = anio > 0 ? anio : DateTime.Now.Year;
+            var anioConsulta = anio > 0 ? anio : DateTime.UtcNow.Year;
             var result = await _mediator.Send(new GetBalanceAulaQuery(aulaId, anioConsulta));
             return Ok(result);
         }

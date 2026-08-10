@@ -23,9 +23,12 @@ namespace AulaComite.Infrastructure.Persistence
             // 2. Obtener la cadena de conexión
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            // 3. Configurar DbContextOptions
+            // 3. Configurar DbContextOptions. EnableRetryOnFailure habilita resiliencia
+            // ante caídas temporales de conexión durante la aplicación de migraciones en arranque.
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseSqlServer(connectionString);
+            optionsBuilder.UseSqlServer(
+                connectionString,
+                sqlOptions => sqlOptions.EnableRetryOnFailure());
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }

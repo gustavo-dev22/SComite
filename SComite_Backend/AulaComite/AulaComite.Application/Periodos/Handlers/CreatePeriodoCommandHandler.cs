@@ -33,18 +33,16 @@ namespace AulaComite.Application.Periodos.Handlers
 
             int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                int periodoId = await _repository.CrearAsync(p, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "INFO",
-                    modulo: "PERIODOS",
-                    accion: "CREAR_PERIODO",
-                    mensaje: $"Se creó el Año Lectivo {request.Anio} (Vigente: {request.EsActivo}) con rango de fechas {request.FechaInicio:dd/MM/yyyy} - {request.FechaFin:dd/MM/yyyy}.",
-                    transaction: transaction
-                );
-
-                return periodoId;
+                return await _repository.CrearAsync(p, transaction);
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            await _logRepository.RegistrarAsync(
+                nivel: "INFO",
+                modulo: "PERIODOS",
+                accion: "CREAR_PERIODO",
+                mensaje: $"Se creó el Año Lectivo {request.Anio} (Vigente: {request.EsActivo}) con rango de fechas {request.FechaInicio:dd/MM/yyyy} - {request.FechaFin:dd/MM/yyyy}."
+            );
 
             return id;
         }

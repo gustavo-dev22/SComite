@@ -18,7 +18,14 @@ namespace AulaComite.Infrastructure
             // migraciones (design-time y arranque en Desarrollo). Toda la lectura/escritura
             // de datos en tiempo de ejecución se realiza con Dapper vía IDbConnectionFactory.
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
+                options.UseSqlServer(
+                    connectionString,
+                    sqlOptions =>
+                    {
+                        // 🛡️ Resiliencia: reintenta operaciones ante caídas temporales de conexión
+                        // (enmascaradas por el proveedor de SQL Server) en lugar de fallar de inmediato.
+                        sqlOptions.EnableRetryOnFailure();
+                    }));
 
             // 🚀 Registrar DbConnectionFactory para Dapper
             services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();

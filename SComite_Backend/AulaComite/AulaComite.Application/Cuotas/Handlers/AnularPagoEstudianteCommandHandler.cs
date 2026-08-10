@@ -37,15 +37,15 @@ namespace AulaComite.Application.Cuotas.Handlers
             await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 await _cuotaRepository.AnularPagoEstudianteAsync(request.CuotaDetalleId, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "WARN",
-                    modulo: "TESORERIA",
-                    accion: "ANULAR_PAGO",
-                    mensaje: $"Se anuló el estado de pago de la cuota detalle #{request.CuotaDetalleId} devolviéndola a PENDIENTE.",
-                    transaction: transaction
-                );
             });
+
+            // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
+            await _logRepository.RegistrarAsync(
+                nivel: "WARN",
+                modulo: "TESORERIA",
+                accion: "ANULAR_PAGO",
+                mensaje: $"Se anuló el estado de pago de la cuota detalle #{request.CuotaDetalleId} devolviéndola a PENDIENTE."
+            );
 
             return true;
         }

@@ -10,7 +10,7 @@ namespace AulaComite.Domain.Entities
         public string NombreInstitucion { get; set; } = string.Empty;
         public string? Direccion { get; set; }
         public string? UrlLogo { get; set; }
-        public DateTime FechaActualizacion { get; set; } = DateTime.Now;
+        public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
         public string UsuarioActualizacion { get; set; } = string.Empty;
     }
 }

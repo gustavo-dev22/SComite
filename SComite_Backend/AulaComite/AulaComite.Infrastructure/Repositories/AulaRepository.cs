@@ -14,7 +14,7 @@ namespace AulaComite.Infrastructure.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<IEnumerable<Aula>> ObtenertodasAsync(int? periodoId)
+        public async Task<IEnumerable<Aula>> ObtenerTodasAsync(int? periodoId)
         {
             using var connection = _connectionFactory.CreateConnection();
 

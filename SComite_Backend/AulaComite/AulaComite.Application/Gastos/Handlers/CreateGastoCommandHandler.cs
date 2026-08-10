@@ -61,18 +61,17 @@ namespace AulaComite.Application.Gastos.Handlers
 
             int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                int gastoId = await _gastoRepository.RegistrarAsync(gasto, transaction);
-
-                await _logRepository.RegistrarAsync(
-                    nivel: "INFO",
-                    modulo: "TESORERIA",
-                    accion: "REGISTRAR_GASTO",
-                    mensaje: $"Se registró el egreso '{request.Concepto.ToUpper()}' por S/. {request.Monto:F2} ({request.Categoria}) en el Aula {aulaDisplay}.",
-                    transaction: transaction
-                );
-
-                return gastoId;
+                return await _gastoRepository.RegistrarAsync(gasto, transaction);
             });
+
+            // 🛡️ M13: El log de auditoría se registra FUERA de la transacción de negocio,
+            // de manera independiente, para que no se revierta al fallar la transacción.
+            await _logRepository.RegistrarAsync(
+                nivel: "INFO",
+                modulo: "TESORERIA",
+                accion: "REGISTRAR_GASTO",
+                mensaje: $"Se registró el egreso '{request.Concepto.ToUpper()}' por S/. {request.Monto:F2} ({request.Categoria}) en el Aula {aulaDisplay}."
+            );
 
             return id;
         }

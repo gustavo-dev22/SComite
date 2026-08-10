@@ -16,7 +16,7 @@ namespace AulaComite.Application.Aulas.Handlers
 
         public async Task<IEnumerable<AulaDto>> Handle(GetAulasQuery request, CancellationToken cancellationToken)
         {
-            var aulas = await _aulaRepository.ObtenertodasAsync(request.PeriodoId);
+            var aulas = await _aulaRepository.ObtenerTodasAsync(request.PeriodoId);
 
             return aulas.Select(a => new AulaDto
             {

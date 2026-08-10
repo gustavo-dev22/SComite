@@ -37,7 +37,7 @@ namespace AulaComite.Infrastructure.Repositories
             using var connection = _connectionFactory.CreateConnection();
 
             var sql = new StringBuilder();
-            var fechaHora = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+            var fechaHora = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss");
 
             sql.AppendLine("-- ===========================================================");
             sql.AppendLine($"-- BACKUP MANUAL COMPLETO - SISTEMA DE COMITÉ DE AULA");
@@ -46,7 +46,11 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("USE [db_ComiteAula];");
             sql.AppendLine("GO\n");
             sql.AppendLine("SET NOCOUNT ON;");
-            sql.AppendLine("EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';");
+            // M18: Deshabilitar FK de forma PORTABLE (sin sp_MSforeachtable, no disponible en todas las ediciones).
+            sql.AppendLine("DECLARE @CmdDeshabilitar NVARCHAR(MAX) = N'';");
+            sql.AppendLine("SELECT @CmdDeshabilitar = @CmdDeshabilitar + N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(t.object_id)) + N'.' + QUOTENAME(t.name) + N' NOCHECK CONSTRAINT ALL;' + CHAR(13) + CHAR(10)");
+            sql.AppendLine("FROM sys.tables t WHERE t.is_ms_shipped = 0;");
+            sql.AppendLine("EXEC sp_executesql @CmdDeshabilitar;");
             sql.AppendLine("GO\n");
 
             // 2. PeriodosLectivos
@@ -169,7 +173,12 @@ namespace AulaComite.Infrastructure.Repositories
                 sql.AppendLine($"INSERT INTO LogsSistema (Nivel, Modulo, Accion, Detalle, Usuario, FechaHora) VALUES ('{EscaparSql(l.Nivel)}', '{EscaparSql(l.Modulo)}', '{EscaparSql(l.Accion)}', '{EscaparSql(l.Detalle)}', {usr}, '{l.FechaHora:yyyy-MM-dd HH:mm:ss}');");
             }
 
-            sql.AppendLine("\nEXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';");
+            sql.AppendLine("\n-- Re-habilitar FK de forma PORTABLE (sin sp_MSforeachtable):");
+            sql.AppendLine("DECLARE @CmdHabilitar NVARCHAR(MAX) = N'';");
+            sql.AppendLine("SELECT @CmdHabilitar = @CmdHabilitar + N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(t.object_id)) + N'.' + QUOTENAME(t.name) + N' WITH CHECK CHECK CONSTRAINT ALL;' + CHAR(13) + CHAR(10)");
+            sql.AppendLine("FROM sys.tables t WHERE t.is_ms_shipped = 0");
+            sql.AppendLine("  AND EXISTS (SELECT 1 FROM sys.foreign_keys fk WHERE fk.parent_object_id = t.object_id OR fk.referenced_object_id = t.object_id);");
+            sql.AppendLine("EXEC sp_executesql @CmdHabilitar;");
             sql.AppendLine("GO");
 
             return Encoding.UTF8.GetBytes(sql.ToString());
