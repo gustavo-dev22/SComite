@@ -16,5 +16,6 @@ namespace AulaComite.Application.Common.Interfaces
         Task RegistrarPagoManualAsync(int cuotaDetalleId, decimal montoAbonado, string formaPago, IDbTransaction? transaction = null);
         Task AnularPagoEstudianteAsync(int cuotaDetalleId, IDbTransaction? transaction = null);
         Task<IEnumerable<EstudiantePendienteCuotaDto>> ObtenerEstudiantesPendientesAsync(int cuotaId);
+        Task<int?> ObtenerAulaIdPorCuotaDetalleAsync(int cuotaDetalleId);
     }
 }

@@ -41,6 +41,21 @@ namespace AulaComite.Api.Middlewares
                     return;
                 }
 
+                if (ex is UnauthorizedAccessException)
+                {
+                    context.Response.ContentType = "application/json";
+                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+
+                    var forbiddenResponse = new
+                    {
+                        statusCode = context.Response.StatusCode,
+                        mensaje = ex.Message ?? "No tiene permisos para realizar esta operación."
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(forbiddenResponse));
+                    return;
+                }
+
                 _logger.LogError(ex, "Excepción capturada en {Path}: {Message}", context.Request.Path, ex.Message);
 
                 // 1. Persistir el log de error en SQL Server vía Stored Procedure

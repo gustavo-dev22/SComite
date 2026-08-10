@@ -37,12 +37,8 @@ namespace AulaComite.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> RegistrarLog([FromBody] CreateLogCommand command)
         {
-            // Si no viene IP, intentamos obtenerla de la solicitud HTTP
-            string clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
-
-            var commandConIp = command with { IP = command.IP ?? clientIp };
-
-            await _mediator.Send(commandConIp);
+            // El usuario e IP se derivan del token JWT y de la petición HTTP (nunca del cuerpo JSON).
+            await _mediator.Send(command);
             return Ok(new { mensaje = "Log de auditoría registrado correctamente." });
         }
     }

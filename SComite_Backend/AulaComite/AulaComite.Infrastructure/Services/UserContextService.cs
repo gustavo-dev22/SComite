@@ -34,6 +34,30 @@ namespace AulaComite.Infrastructure.Services
             return string.IsNullOrEmpty(value) ? "Anónimo" : value;
         }
 
+        public string? ObtenerUsuarioId()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null) return null;
+
+            var user = httpContext.User;
+            if (user?.Identity?.IsAuthenticated != true) return null;
+
+            return user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? user.FindFirst("sub")?.Value
+                ?? user.FindFirst(ClaimTypes.Name)?.Value;
+        }
+
+        public bool EsAdministradorGlobal()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null) return false;
+
+            var user = httpContext.User;
+            if (user?.Identity?.IsAuthenticated != true) return false;
+
+            return user.IsInRole("Administrador") || user.IsInRole("Administrador Global");
+        }
+
         public string ObtenerIpCliente()
         {
             var httpContext = _httpContextAccessor.HttpContext;

@@ -11,6 +11,7 @@ using AulaComite.Infrastructure.Persistence;
 using AulaComite.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -110,15 +111,29 @@ try
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
-    // Limitar intentos de inicio de sesión por IP para mitigar ataques de fuerza bruta.
+    // 🛡️ Trustar cabeceras de proxy inverso (Cloudflare/IIS/MonsterASP/NGINX) para
+    // resolver la dirección IP real del cliente y el esquema HTTP original.
+    // Se debe ejecutar antes de autenticación y del Rate Limiter.
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // Los proxies de Cloudflare/IIS rotan direcciones, por lo que se aceptan
+        // cabeceras de cualquier origen. La validación final de la IP de auditoría
+        // la realiza UserContextService (no confía en X-Forwarded-For de orígenes privados).
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+        options.ForwardLimit = null;
+    });
+
+    // Limitar intentos de inicio de sesión por IP real para mitigar ataques de fuerza bruta.
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
         options.AddPolicy("LoginLimiter", httpContext =>
         {
-            var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+            var partitionKey = ObtenerPartitionKey(httpContext, incluirUsuario: false);
+            return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(1),
@@ -126,7 +141,51 @@ try
                 AutoReplenishment = true
             });
         });
+
+        // Rate Limiter Global: combina la IP real del cliente (detrás de proxies)
+        // con la identidad del usuario autenticado cuando existe sesión activa.
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        {
+            var partitionKey = ObtenerPartitionKey(httpContext, incluirUsuario: true);
+            return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+        });
     });
+
+    static string ObtenerIpRealCliente(HttpContext httpContext)
+    {
+        // Tras UseForwardedHeaders, RemoteIpAddress ya es la IP real. Aun así, se
+        // prefiere X-Forwarded-For (primer valor) como capa adicional de compatibilidad.
+        var forwarded = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(forwarded))
+        {
+            return forwarded.Split(',')[0].Trim();
+        }
+
+        return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+
+    static string ObtenerPartitionKey(HttpContext httpContext, bool incluirUsuario)
+    {
+        var ip = ObtenerIpRealCliente(httpContext);
+        string identidad = "anonimo";
+
+        if (incluirUsuario
+            && httpContext.User?.Identity?.IsAuthenticated == true)
+        {
+            identidad = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? httpContext.User.FindFirst("sub")?.Value
+                ?? httpContext.User.Identity?.Name
+                ?? "anonimo";
+        }
+
+        return $"{ip}|{identidad}";
+    }
 
     var allowedOrigins = builder.Configuration
         .GetSection("Cors:AllowedOrigins")
@@ -176,14 +235,21 @@ try
     // Middleware Global para captura de errores
     app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+    // 🛡️ Procesar cabeceras de proxy ANTES de autenticación y del Rate Limiter
+    // para resolver la IP real del cliente detrás de Cloudflare/IIS/MonsterASP.
+    app.UseForwardedHeaders();
+
     // Auditoría automática de peticiones HTTP en consola y logs
     app.UseSerilogRequestLogging();
 
     app.UseHttpsRedirection();
     app.UseCors("CorsAngularPolicy");
     app.UseStaticFiles();
-    app.UseRateLimiter();
     app.UseAuthentication();
+
+    // El Rate Limiter se ejecuta DESPUÉS de la autenticación para poder combinar
+    // la IP real del cliente con la identidad del usuario autenticado.
+    app.UseRateLimiter();
     app.UseAuthorization();
     app.MapControllers();
 

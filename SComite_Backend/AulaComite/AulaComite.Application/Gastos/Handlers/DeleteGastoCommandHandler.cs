@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Gastos.Commands;
 using MediatR;
 using AulaComite.Domain.Entities;
@@ -11,13 +12,17 @@ namespace AulaComite.Application.Gastos.Handlers
     public class DeleteGastoCommandHandler : IRequestHandler<DeleteGastoCommand, bool>
     {
         private readonly IGastoRepository _repository;
+        private readonly IComiteRepository _comiteRepository;
+        private readonly IUserContextService _userContextService;
         private readonly IFileStorageService _fileStorageService;
         private readonly ILogRepository _logRepository;
         private readonly IDbConnectionFactory _connectionFactory;
 
-        public DeleteGastoCommandHandler(IGastoRepository repository, IFileStorageService fileStorageService, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
+        public DeleteGastoCommandHandler(IGastoRepository repository, IComiteRepository comiteRepository, IUserContextService userContextService, IFileStorageService fileStorageService, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
         {
             _repository = repository;
+            _comiteRepository = comiteRepository;
+            _userContextService = userContextService;
             _fileStorageService = fileStorageService;
             _logRepository = logRepository;
             _connectionFactory = connectionFactory;
@@ -28,6 +33,9 @@ namespace AulaComite.Application.Gastos.Handlers
             // 1. Obtener los datos del gasto antes de eliminarlo
             var gasto = await _repository.ObtenerPorIdAsync(request.GastoId);
             if (gasto == null) return false;
+
+            // 🛡️ Validar pertenencia: el gasto debe pertenecer a un Aula asignada al usuario.
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, gasto.AulaId);
 
             var urlComprobante = gasto.UrlComprobante;
 

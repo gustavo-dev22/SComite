@@ -11,21 +11,25 @@ namespace AulaComite.Application.Logss.Handlers
     public class CreateLogCommandHandler : IRequestHandler<CreateLogCommand, bool>
     {
         private readonly ILogRepository _logRepository;
+        private readonly IUserContextService _userContextService;
 
-        public CreateLogCommandHandler(ILogRepository logRepository)
+        public CreateLogCommandHandler(ILogRepository logRepository, IUserContextService userContextService)
         {
             _logRepository = logRepository;
+            _userContextService = userContextService;
         }
 
         public async Task<bool> Handle(CreateLogCommand request, CancellationToken cancellationToken)
         {
+            // Auditoría derivada exclusivamente del token JWT autenticado y de la petición HTTP,
+            // nunca de datos enviados por el cliente en el cuerpo JSON.
             await _logRepository.RegistrarAsync(
                 nivel: request.Nivel,
                 modulo: request.Modulo,
                 accion: request.Accion,
                 mensaje: request.Mensaje,
-                usuario: request.Usuario,
-                ip: request.IP,
+                usuario: _userContextService.ObtenerUsuarioActual(),
+                ip: _userContextService.ObtenerIpCliente(),
                 exception: request.DetalleException
             );
 

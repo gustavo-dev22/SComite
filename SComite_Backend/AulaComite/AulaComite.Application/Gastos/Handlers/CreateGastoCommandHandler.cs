@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Gastos.Commands;
 using MediatR;
 using AulaComite.Domain.Entities;
@@ -11,6 +12,7 @@ namespace AulaComite.Application.Gastos.Handlers
     public class CreateGastoCommandHandler : IRequestHandler<CreateGastoCommand, int>
     {
         private readonly IGastoRepository _gastoRepository;
+        private readonly IComiteRepository _comiteRepository;
         private readonly IAulaRepository _aulaRepository;
         private readonly IUserContextService _userContextService;
         private readonly ILogRepository _logRepository;
@@ -18,12 +20,14 @@ namespace AulaComite.Application.Gastos.Handlers
 
         public CreateGastoCommandHandler(
             IGastoRepository gastoRepository,
+            IComiteRepository comiteRepository,
             IAulaRepository aulaRepository,
             IUserContextService userContextService,
             ILogRepository logRepository,
             IDbConnectionFactory connectionFactory)
         {
             _gastoRepository = gastoRepository;
+            _comiteRepository = comiteRepository;
             _aulaRepository = aulaRepository;
             _userContextService = userContextService;
             _logRepository = logRepository;
@@ -32,6 +36,9 @@ namespace AulaComite.Application.Gastos.Handlers
 
         public async Task<int> Handle(CreateGastoCommand request, CancellationToken cancellationToken)
         {
+            // 🛡️ Validar pertenencia: el gasto debe registrarse en un Aula asignada al usuario.
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
+
             string usuario = _userContextService.ObtenerUsuarioActual();
 
             var gasto = new GastoComite

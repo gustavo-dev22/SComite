@@ -13,7 +13,6 @@ namespace AulaComite.Application.ActasAsamblea.Commands
         DateTime FechaReunion,
         string AgendaAcuerdos,
         string EstadoActa,
-        string? UrlDocumentoPdf,
-        string UsuarioRegistro
+        string? UrlDocumentoPdf
     ) : IRequest<int>;
 }

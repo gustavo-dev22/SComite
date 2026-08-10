@@ -9,6 +9,8 @@ namespace AulaComite.Application.Common.Interfaces
     public interface IComiteRepository
     {
         Task<IEnumerable<ComiteIntegrante>> ObtenerPorAulaAsync(int aulaId);
+        Task<ComiteIntegrante?> ObtenerIntegrantePorIdAsync(int id);
+        Task<IEnumerable<int>> ObtenerAulaIdsPorUsuarioAsync(string usuarioIdSasi);
         Task<int> AsignarIntegranteAsync(ComiteIntegrante integrante, IDbTransaction? transaction = null);
         Task<bool> EliminarIntegranteAsync(int id);
     }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Cuotas.Commands;
 using MediatR;
 using AulaComite.Domain.Entities;
@@ -11,24 +12,33 @@ namespace AulaComite.Application.Cuotas.Handlers
     public class CreateCuotaCommandHandler : IRequestHandler<CreateCuotaCommand, int>
     {
         private readonly ICuotaRepository _cuotaRepository;
+        private readonly IComiteRepository _comiteRepository;
         private readonly IAulaRepository _aulaRepository;
         private readonly ILogRepository _logRepository;
         private readonly IDbConnectionFactory _connectionFactory;
+        private readonly IUserContextService _userContextService;
 
         public CreateCuotaCommandHandler(
             ICuotaRepository cuotaRepository,
+            IComiteRepository comiteRepository,
             IAulaRepository aulaRepository,
             ILogRepository logRepository,
-            IDbConnectionFactory connectionFactory)
+            IDbConnectionFactory connectionFactory,
+            IUserContextService userContextService)
         {
             _cuotaRepository = cuotaRepository;
+            _comiteRepository = comiteRepository;
             _aulaRepository = aulaRepository;
             _logRepository = logRepository;
             _connectionFactory = connectionFactory;
+            _userContextService = userContextService;
         }
 
         public async Task<int> Handle(CreateCuotaCommand request, CancellationToken cancellationToken)
         {
+            // 🛡️ Validar pertenencia: la cuota debe crearse en un Aula asignada al usuario.
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
+
             var cuota = new Cuota
             {
                 AulaId = request.AulaId,

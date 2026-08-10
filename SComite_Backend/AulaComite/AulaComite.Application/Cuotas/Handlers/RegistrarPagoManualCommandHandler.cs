@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Cuotas.Commands;
 using MediatR;
 using AulaComite.Domain.Entities;
@@ -11,18 +12,28 @@ namespace AulaComite.Application.Cuotas.Handlers
     public class RegistrarPagoManualCommandHandler : IRequestHandler<RegistrarPagoManualCommand, bool>
     {
         private readonly ICuotaRepository _cuotaRepository;
+        private readonly IComiteRepository _comiteRepository;
         private readonly ILogRepository _logRepository;
         private readonly IDbConnectionFactory _connectionFactory;
+        private readonly IUserContextService _userContextService;
 
-        public RegistrarPagoManualCommandHandler(ICuotaRepository cuotaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
+        public RegistrarPagoManualCommandHandler(ICuotaRepository cuotaRepository, IComiteRepository comiteRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory, IUserContextService userContextService)
         {
             _cuotaRepository = cuotaRepository;
+            _comiteRepository = comiteRepository;
             _logRepository = logRepository;
             _connectionFactory = connectionFactory;
+            _userContextService = userContextService;
         }
 
         public async Task<bool> Handle(RegistrarPagoManualCommand request, CancellationToken cancellationToken)
         {
+            // 🛡️ Validar pertenencia: el detalle de cuota debe pertenecer a un Aula asignada al usuario.
+            var aulaId = await _cuotaRepository.ObtenerAulaIdPorCuotaDetalleAsync(request.CuotaDetalleId);
+            if (!aulaId.HasValue) return false;
+
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
+
             await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 await _cuotaRepository.RegistrarPagoManualAsync(request.CuotaDetalleId, request.MontoAbonado, request.FormaPago, transaction);

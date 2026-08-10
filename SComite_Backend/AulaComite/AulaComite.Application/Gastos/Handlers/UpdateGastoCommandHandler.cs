@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Gastos.Commands;
 using AulaComite.Domain.Entities;
 using MediatR;
@@ -11,12 +12,14 @@ namespace AulaComite.Application.Gastos.Handlers
     public class UpdateGastoCommandHandler : IRequestHandler<UpdateGastoCommand, bool>
     {
         private readonly IGastoRepository _gastoRepository;
+        private readonly IComiteRepository _comiteRepository;
         private readonly IFileStorageService _fileStorageService;
         private readonly IUserContextService _currentUserService;
 
-        public UpdateGastoCommandHandler(IGastoRepository gastoRepository, IFileStorageService fileStorageService, IUserContextService currentUserService)
+        public UpdateGastoCommandHandler(IGastoRepository gastoRepository, IComiteRepository comiteRepository, IFileStorageService fileStorageService, IUserContextService currentUserService)
         {
             _gastoRepository = gastoRepository;
+            _comiteRepository = comiteRepository;
             _fileStorageService = fileStorageService;
             _currentUserService = currentUserService;
         }
@@ -28,6 +31,9 @@ namespace AulaComite.Application.Gastos.Handlers
             // 1. Obtener la información actual del gasto en BD
             var gastoExistente = await _gastoRepository.ObtenerPorIdAsync(request.Id);
             if (gastoExistente == null) return false;
+
+            // 🛡️ Validar pertenencia: el gasto debe pertenecer a un Aula asignada al usuario.
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _currentUserService, gastoExistente.AulaId);
 
             // 2. Si se adjuntó un nuevo comprobante distinto al previo, eliminar el archivo antiguo
             if (!string.IsNullOrEmpty(gastoExistente.UrlComprobante) &&

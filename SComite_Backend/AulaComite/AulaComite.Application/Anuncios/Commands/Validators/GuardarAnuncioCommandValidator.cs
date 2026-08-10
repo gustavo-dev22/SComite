@@ -13,8 +13,6 @@ namespace AulaComite.Application.Anuncios.Commands
                 .WithMessage("El Contenido es obligatorio.");
             RuleFor(x => x.Categoria).NotEmpty().MaximumLength(100)
                 .WithMessage("La Categoria es obligatoria.");
-            RuleFor(x => x.UsuarioRegistro).NotEmpty().MaximumLength(100)
-                .WithMessage("El UsuarioRegistro es obligatorio.");
         }
     }
 }

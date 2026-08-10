@@ -135,5 +135,16 @@ namespace AulaComite.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure
             );
         }
+
+        public async Task<int?> ObtenerAulaIdPorCuotaDetalleAsync(int cuotaDetalleId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            const string sql = @"
+                SELECT c.AulaId
+                FROM CuotaDetalleEstudiante cd
+                INNER JOIN Cuotas c ON c.Id = cd.CuotaId
+                WHERE cd.Id = @CuotaDetalleId";
+            return await connection.QueryFirstOrDefaultAsync<int?>(sql, new { CuotaDetalleId = cuotaDetalleId });
+        }
     }
 }

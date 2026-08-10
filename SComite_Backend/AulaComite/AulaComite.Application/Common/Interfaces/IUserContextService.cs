@@ -8,5 +8,7 @@ namespace AulaComite.Application.Common.Interfaces
     {
         string ObtenerUsuarioActual();
         string ObtenerIpCliente();
+        string? ObtenerUsuarioId();
+        bool EsAdministradorGlobal();
     }
 }

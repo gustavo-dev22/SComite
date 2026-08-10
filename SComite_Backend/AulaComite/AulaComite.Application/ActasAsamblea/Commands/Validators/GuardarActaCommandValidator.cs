@@ -16,8 +16,6 @@ namespace AulaComite.Application.ActasAsamblea.Commands
                 .WithMessage("La AgendaAcuerdos es obligatoria.");
             RuleFor(x => x.EstadoActa).NotEmpty().MaximumLength(30)
                 .WithMessage("El EstadoActa es obligatorio.");
-            RuleFor(x => x.UsuarioRegistro).NotEmpty().MaximumLength(100)
-                .WithMessage("El UsuarioRegistro es obligatorio.");
         }
     }
 }

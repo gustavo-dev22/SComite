@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
 using Dapper;
@@ -25,6 +26,29 @@ namespace AulaComite.Infrastructure.Repositories
                 new { AulaId = aulaId },
                 commandType: CommandType.StoredProcedure
             );
+        }
+
+        public async Task<ComiteIntegrante?> ObtenerIntegrantePorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            const string sql = @"
+                SELECT Id, AulaId, UsuarioIdSasi, NombreCompleto, Email, Cargo, Estado, FechaAsignacion
+                FROM ComiteIntegrantes
+                WHERE Id = @Id";
+            return await connection.QueryFirstOrDefaultAsync<ComiteIntegrante>(sql, new { Id = id });
+        }
+
+        public async Task<IEnumerable<int>> ObtenerAulaIdsPorUsuarioAsync(string usuarioIdSasi)
+        {
+            if (string.IsNullOrWhiteSpace(usuarioIdSasi))
+                return Enumerable.Empty<int>();
+
+            using var connection = _connectionFactory.CreateConnection();
+            const string sql = @"
+                SELECT DISTINCT AulaId
+                FROM ComiteIntegrantes
+                WHERE UsuarioIdSasi = @UsuarioIdSasi AND Estado = 1";
+            return await connection.QueryAsync<int>(sql, new { UsuarioIdSasi = usuarioIdSasi });
         }
 
         public async Task<int> AsignarIntegranteAsync(ComiteIntegrante integrante, IDbTransaction? transaction = null)

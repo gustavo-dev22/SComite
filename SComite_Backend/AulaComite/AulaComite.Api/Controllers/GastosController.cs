@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Gastos.Commands;
 using AulaComite.Application.Gastos.Queries;
+using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
@@ -12,11 +14,13 @@ namespace AulaComite.Api.Controllers
     public class GastosController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IFileStorageService _fileStorageService;
         private readonly ILogger<GastosController> _logger;
 
-        public GastosController(IMediator mediator, ILogger<GastosController> logger)
+        public GastosController(IMediator mediator, IFileStorageService fileStorageService, ILogger<GastosController> logger)
         {
             _mediator = mediator;
+            _fileStorageService = fileStorageService;
             _logger = logger;
         }
 
@@ -86,12 +90,14 @@ namespace AulaComite.Api.Controllers
 
             try
             {
-                // 🚀 Leemos el archivo a un memory stream y obtenemos el arreglo de bytes
-                using var memoryStream = new MemoryStream();
-                await archivo.CopyToAsync(memoryStream);
-                var bytesArchivo = memoryStream.ToArray();
+                // 🛡️ Validación de tamaño máximo (5 MB) y tipo MIME permitido.
+                ComprobanteFileValidator.Validar(archivo.ContentType, archivo.FileName, archivo.Length);
 
-                var command = new SubirComprobanteGastoCommand(bytesArchivo, archivo.FileName);
+                // 🚀 Streaming directo: se transmite el IFormFile hacia el servicio de
+                // almacenamiento sin cargar el buffer completo en arreglos byte[].
+                using var stream = archivo.OpenReadStream();
+
+                var command = new SubirComprobanteGastoCommand(stream, archivo.FileName);
                 var urlComprobante = await _mediator.Send(command);
 
                 return Ok(new { urlComprobante });
@@ -101,6 +107,22 @@ namespace AulaComite.Api.Controllers
                 _logger.LogWarning("Comprobante rechazado: {Message}", ex.Message);
                 return BadRequest(new { mensaje = ex.Message });
             }
+        }
+
+        // 🛡️ Endpoint protegido (hereda [Authorize(Policy="ManejoFinanciero")]) para la
+        // descarga/visualización de comprobantes financieros. Los archivos locales viven
+        // fuera de wwwroot y los de Cloudinary se suben con acceso authenticated.
+        [HttpGet("comprobante")]
+        public async Task<IActionResult> VerComprobante([FromQuery] string archivo)
+        {
+            if (string.IsNullOrWhiteSpace(archivo))
+                return BadRequest(new { mensaje = "No se especificó el comprobante a mostrar." });
+
+            var descriptor = await _fileStorageService.ObtenerComprobanteAsync(archivo, HttpContext.RequestAborted);
+            if (descriptor == null)
+                return NotFound(new { mensaje = "No se encontró el comprobante solicitado." });
+
+            return File(descriptor.Contenido, descriptor.TipoContenido ?? "application/octet-stream");
         }
     }
 }

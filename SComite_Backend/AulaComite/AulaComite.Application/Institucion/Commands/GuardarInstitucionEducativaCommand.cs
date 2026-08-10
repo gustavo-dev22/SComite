@@ -13,7 +13,6 @@ namespace AulaComite.Application.Institucion.Commands
         string? Direccion,
         string? Telefono,
         string? CorreoContacto,
-        string? UrlLogo,
-        string UsuarioActualizacion
+        string? UrlLogo
     ) : IRequest<bool>;
 }

@@ -12,7 +12,6 @@ namespace AulaComite.Application.Anuncios.Commands
         string Contenido,
         string Categoria,
         bool EsFijado,
-        string? UrlAdjunto,
-        string UsuarioRegistro
+        string? UrlAdjunto
     ) : IRequest<int>;
 }

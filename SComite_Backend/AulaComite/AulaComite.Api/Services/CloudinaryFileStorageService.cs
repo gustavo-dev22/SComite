@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Configuration;
@@ -12,8 +13,9 @@ namespace AulaComite.Api.Services;
 public class CloudinaryFileStorageService : IFileStorageService
 {
     private readonly Cloudinary _cloudinary;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public CloudinaryFileStorageService(IConfiguration config)
+    public CloudinaryFileStorageService(IConfiguration config, IHttpClientFactory httpClientFactory)
     {
         var cloudName = config["Cloudinary:CloudName"]
             ?? throw new InvalidOperationException("Cloudinary:CloudName no está configurado.");
@@ -25,14 +27,16 @@ public class CloudinaryFileStorageService : IFileStorageService
         var account = new Account(cloudName, apiKey, apiSecret);
         _cloudinary = new Cloudinary(account);
         _cloudinary.Api.Secure = true; // Forzar siempre conexiones HTTPS seguras
+        _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<string> GuardarComprobanteAsync(byte[] contenido, string nombreOriginal, CancellationToken cancellationToken = default)
+    public async Task<string> GuardarComprobanteAsync(Stream contenido, string nombreOriginal, CancellationToken cancellationToken = default)
     {
-        if (contenido == null || contenido.Length == 0)
+        if (contenido == null)
             throw new ArgumentException("No se ha proporcionado un archivo válido.");
 
-        using var stream = new MemoryStream(contenido);
+        ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null);
+
         var extension = Path.GetExtension(nombreOriginal).ToLowerInvariant();
         var publicId = $"Comprobante_{Guid.NewGuid()}";
 
@@ -43,13 +47,14 @@ public class CloudinaryFileStorageService : IFileStorageService
         {
             var uploadParams = new RawUploadParams
             {
-                File = new FileDescription(nombreOriginal, stream),
+                File = new FileDescription(nombreOriginal, contenido),
                 Folder = "comprobantes_comite",
                 PublicId = publicId,
-                AccessMode = "public"
+                // 🛡️ Acceso AUTHENTICATED: el comprobante NO queda público irrestrictamente.
+                // Solo se sirve mediante URLs firmadas a través del endpoint [Authorize].
+                AccessMode = "authenticated"
             };
 
-            // 🚀 Para archivos PDF/RAW se invoca UploadAsync enviando la sobrecarga con RawUploadParams
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
             urlResultado = uploadResult.SecureUrl?.ToString() ?? string.Empty;
         }
@@ -58,10 +63,10 @@ public class CloudinaryFileStorageService : IFileStorageService
         {
             var uploadParams = new ImageUploadParams
             {
-                File = new FileDescription(nombreOriginal, stream),
+                File = new FileDescription(nombreOriginal, contenido),
                 Folder = "comprobantes_comite",
                 PublicId = publicId,
-                AccessMode = "public",
+                AccessMode = "authenticated",
                 Transformation = new Transformation().Quality("auto").FetchFormat("auto")
             };
 
@@ -75,18 +80,54 @@ public class CloudinaryFileStorageService : IFileStorageService
         return urlResultado;
     }
 
+    public async Task<ComprobanteArchivoDescriptor?> ObtenerComprobanteAsync(string urlOIdentificador, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(urlOIdentificador)) return null;
+
+        var (publicId, esPdf) = ExtraerPublicId(urlOIdentificador);
+        if (string.IsNullOrEmpty(publicId)) return null;
+
+        // 🛡️ Se genera una URL FIRMADA (autenticada) para poder descargar el recurso,
+        // ya que los comprobantes ya no se exponen de forma pública.
+        string urlFirmada;
+        if (esPdf)
+        {
+            urlFirmada = _cloudinary.Api.Url
+                .Secure()
+                .Signed(true)
+                .ResourceType("raw")
+                .BuildUrl(publicId);
+        }
+        else
+        {
+            urlFirmada = _cloudinary.Api.UrlImgUp
+                .Secure()
+                .Signed(true)
+                .BuildUrl(publicId);
+        }
+
+        var httpClient = _httpClientFactory.CreateClient();
+        using var response = await httpClient.GetAsync(urlFirmada, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var tipoContenido = response.Content.Headers.ContentType?.MediaType
+            ?? (esPdf ? "application/pdf" : "image/jpeg");
+
+        return new ComprobanteArchivoDescriptor(stream, tipoContenido);
+    }
+
     public void EliminarComprobante(string? urlRelativaOrAbsoluta)
     {
         if (string.IsNullOrWhiteSpace(urlRelativaOrAbsoluta)) return;
 
         try
         {
-            var isPdf = urlRelativaOrAbsoluta.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
-            var publicId = ExtraerPublicId(urlRelativaOrAbsoluta, isPdf);
+            var (publicId, esPdf) = ExtraerPublicId(urlRelativaOrAbsoluta);
 
             if (!string.IsNullOrEmpty(publicId))
             {
-                if (isPdf)
+                if (esPdf)
                 {
                     // Para PDFs en Cloudinary, el ResourceType DEBE SER Raw y el publicId DEBE incluir la extensión .pdf
                     var deletionParams = new DeletionParams(publicId)
@@ -114,31 +155,34 @@ public class CloudinaryFileStorageService : IFileStorageService
         }
     }
 
-    private static string ExtraerPublicId(string url, bool mantenerExtension)
+    private static (string PublicId, bool EsPdf) ExtraerPublicId(string url)
     {
         try
         {
             var uri = new Uri(url);
             var path = uri.AbsolutePath; // ej: /aerof1gd/raw/upload/v1786021379/comprobantes_comite/Comprobante_abc.pdf
 
+            var esPdf = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+
             var indexFolder = path.IndexOf("comprobantes_comite/", StringComparison.OrdinalIgnoreCase);
-            if (indexFolder < 0) return string.Empty;
+            if (indexFolder < 0) return (string.Empty, esPdf);
 
             var pathFromFolder = path.Substring(indexFolder); // comprobantes_comite/Comprobante_abc.pdf
 
-            if (mantenerExtension)
+            if (esPdf)
             {
                 // Los archivos RAW (PDF) requieren mantener el ".pdf" en su PublicID
-                return pathFromFolder;
+                return (pathFromFolder, esPdf);
             }
 
             // Las imágenes NO llevan la extensión en el PublicID
             var extensionIndex = pathFromFolder.LastIndexOf('.');
-            return extensionIndex > 0 ? pathFromFolder.Substring(0, extensionIndex) : pathFromFolder;
+            var publicId = extensionIndex > 0 ? pathFromFolder.Substring(0, extensionIndex) : pathFromFolder;
+            return (publicId, esPdf);
         }
         catch
         {
-            return string.Empty;
+            return (string.Empty, false);
         }
     }
 }

@@ -26,16 +26,10 @@ namespace AulaComite.Api.Controllers
         [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Guardar([FromBody] GuardarInstitucionEducativaCommand command)
         {
-            var usuarioNombre = !string.IsNullOrWhiteSpace(command.UsuarioActualizacion)
-                ? command.UsuarioActualizacion
-                : (User.Identity?.Name ?? "ADMIN_SASI");
-
-            var commandFinal = command with { UsuarioActualizacion = usuarioNombre };
-
-            var ok = await _mediator.Send(commandFinal);
+            var ok = await _mediator.Send(command);
             var configuracionActual = await _mediator.Send(new GetInstitucionEducativaQuery());
 
-            return Ok(new { exito = ok, mensaje = "Datos de la Institución Educativa guardados correctamente.", fechaActualizacion = configuracionActual?.FechaActualizacion, usuarioActualizacion = usuarioNombre });
+            return Ok(new { exito = ok, mensaje = "Datos de la Institución Educativa guardados correctamente.", fechaActualizacion = configuracionActual?.FechaActualizacion, usuarioActualizacion = configuracionActual?.UsuarioActualizacion });
         }
     }
 }

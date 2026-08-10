@@ -10,8 +10,6 @@ namespace AulaComite.Application.Logss.Commands
         string Modulo,
         string Accion,
         string Mensaje,
-        string? Usuario = null,
-        string? IP = null,
         string? DetalleException = null
     ) : IRequest<bool>;
 }

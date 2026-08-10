@@ -1,15 +1,18 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using Microsoft.AspNetCore.Hosting;
 
 namespace AulaComite.Api.Services;
 
 public class LocalFileStorageService : IFileStorageService
 {
+    // Carpeta privada FUERA de wwwroot para que NUNCA sea servida por UseStaticFiles.
+    private const string CarpetaComprobantes = "private_uploads/comprobantes";
+
     private readonly IWebHostEnvironment _environment;
 
     public LocalFileStorageService(IWebHostEnvironment environment)
@@ -17,42 +20,59 @@ public class LocalFileStorageService : IFileStorageService
         _environment = environment;
     }
 
-    public async Task<string> GuardarComprobanteAsync(byte[] contenido, string nombreOriginal, CancellationToken cancellationToken = default)
+    public async Task<string> GuardarComprobanteAsync(Stream contenido, string nombreOriginal, CancellationToken cancellationToken = default)
     {
-        if (contenido == null || contenido.Length == 0)
+        if (contenido == null)
             throw new ArgumentException("No se ha proporcionado un archivo válido.");
 
-        var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".pdf", ".webp" };
-        var extension = Path.GetExtension(nombreOriginal).ToLowerInvariant();
+        ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null);
 
-        if (!extensionesPermitidas.Contains(extension))
-            throw new ArgumentException("Formato no permitido. Solo se aceptan imágenes (JPG, PNG, WEBP) o PDF.");
-
-        var webRoot = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
-        var folderPath = Path.Combine(webRoot, "uploads", "comprobantes");
+        var folderPath = ObtenerRutaCarpeta();
 
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
         }
 
+        var extension = Path.GetExtension(nombreOriginal).ToLowerInvariant();
         var fileName = $"Comprobante_{Guid.NewGuid()}{extension}";
         var filePath = Path.Combine(folderPath, fileName);
 
-        await File.WriteAllBytesAsync(filePath, contenido, cancellationToken);
+        // 🚀 Streaming directo: nunca se carga el buffer completo del archivo en memoria.
+        await using (var fileStream = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
+        {
+            await contenido.CopyToAsync(fileStream, cancellationToken);
+        }
 
-        return $"/uploads/comprobantes/{fileName}";
+        // Identificador servido exclusivamente por el endpoint protegido [Authorize].
+        return $"/api/gastos/comprobante?archivo={Uri.EscapeDataString(fileName)}";
     }
 
-    public void EliminarComprobante(string? urlRelativa)
+    public async Task<ComprobanteArchivoDescriptor?> ObtenerComprobanteAsync(string urlOIdentificador, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(urlRelativa)) return;
+        var fileName = ExtraerNombreArchivo(urlOIdentificador);
+        if (string.IsNullOrWhiteSpace(fileName))
+            return null;
+
+        var filePath = Path.Combine(ObtenerRutaCarpeta(), fileName);
+
+        if (!File.Exists(filePath))
+            return null;
+
+        var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 81920, useAsync: true);
+        return new ComprobanteArchivoDescriptor(stream, ObtenerTipoContenido(fileName));
+    }
+
+    public void EliminarComprobante(string? urlOIdentificador)
+    {
+        if (string.IsNullOrWhiteSpace(urlOIdentificador)) return;
 
         try
         {
-            var rutaLimpia = urlRelativa.TrimStart('/', '\\');
-            var webRoot = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
-            var filePath = Path.Combine(webRoot, rutaLimpia);
+            var fileName = ExtraerNombreArchivo(urlOIdentificador);
+            if (string.IsNullOrWhiteSpace(fileName)) return;
+
+            var filePath = Path.Combine(ObtenerRutaCarpeta(), fileName);
 
             if (File.Exists(filePath))
             {
@@ -63,5 +83,50 @@ public class LocalFileStorageService : IFileStorageService
         {
             // Se ignora para no romper transacciones en caso de error de lectura de disco
         }
+    }
+
+    private string ObtenerRutaCarpeta()
+    {
+        return Path.Combine(_environment.ContentRootPath, CarpetaComprobantes.Replace('/', Path.DirectorySeparatorChar));
+    }
+
+    private static string? ExtraerNombreArchivo(string urlOIdentificador)
+    {
+        if (string.IsNullOrWhiteSpace(urlOIdentificador)) return null;
+
+        var valor = urlOIdentificador.Trim().Replace('\\', '/');
+
+        // 1. Preferir el parámetro "archivo=" cuando la URL proviene del endpoint de API:
+        //    "/api/gastos/comprobante?archivo=Comprobante_x.jpg"
+        var indexQuery = valor.IndexOf("archivo=", StringComparison.OrdinalIgnoreCase);
+        if (indexQuery >= 0)
+        {
+            valor = valor.Substring(indexQuery + "archivo=".Length);
+            var indexAmp = valor.IndexOf('&');
+            if (indexAmp >= 0) valor = valor.Substring(0, indexAmp);
+            return string.IsNullOrWhiteSpace(valor) ? null : Uri.UnescapeDataString(valor);
+        }
+
+        // 2. Descartar cualquier otro query string.
+        indexQuery = valor.IndexOf('?');
+        if (indexQuery >= 0) valor = valor.Substring(0, indexQuery);
+
+        // 3. Tomar el último segmento de la ruta (también admite rutas con slash).
+        var index = valor.LastIndexOf('/');
+        if (index >= 0) valor = valor.Substring(index + 1);
+
+        return string.IsNullOrWhiteSpace(valor) ? null : valor;
+    }
+
+    private static string ObtenerTipoContenido(string fileName)
+    {
+        return Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+            ".pdf" => "application/pdf",
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => "application/octet-stream"
+        };
     }
 }

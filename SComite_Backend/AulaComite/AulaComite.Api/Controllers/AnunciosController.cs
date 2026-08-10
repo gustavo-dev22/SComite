@@ -26,13 +26,7 @@ namespace AulaComite.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Guardar([FromBody] GuardarAnuncioCommand command)
         {
-            var usuarioNombre = !string.IsNullOrWhiteSpace(command.UsuarioRegistro)
-                ? command.UsuarioRegistro
-                : (User.Identity?.Name ?? "Comité de Aula");
-
-            var commandFinal = command with { UsuarioRegistro = usuarioNombre };
-
-            var id = await _mediator.Send(commandFinal);
+            var id = await _mediator.Send(command);
             return Ok(new { id, mensaje = "Comunicado publicado correctamente." });
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Comite.Commands;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using MediatR;
 using AulaComite.Domain.Entities;
 
@@ -14,17 +15,22 @@ namespace AulaComite.Application.Comite.Handlers
         private readonly IAulaRepository _aulaRepository;
         private readonly ILogRepository _logRepository;
         private readonly IDbConnectionFactory _connectionFactory;
+        private readonly IUserContextService _userContextService;
 
-        public AsignarComiteCommandHandler(IComiteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
+        public AsignarComiteCommandHandler(IComiteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory, IUserContextService userContextService)
         {
             _repository = repository;
             _aulaRepository = aulaRepository;
             _logRepository = logRepository;
             _connectionFactory = connectionFactory;
+            _userContextService = userContextService;
         }
 
         public async Task<int> Handle(AsignarComiteCommand request, CancellationToken cancellationToken)
         {
+            // 🛡️ Validar pertenencia: solo se puede asignar integrantes al Aula del usuario.
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_repository, _userContextService, request.AulaId);
+
             var integrante = new ComiteIntegrante
             {
                 AulaId = request.AulaId,
