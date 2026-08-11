@@ -27,7 +27,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Guardar([FromBody] GuardarAnuncioCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Comunicado publicado correctamente." });
+            return Created($"/api/Anuncios/{id}", new { id, mensaje = "Comunicado publicado correctamente." });
         }
 
         [HttpDelete("{id:int}/aula/{aulaId:int}")]

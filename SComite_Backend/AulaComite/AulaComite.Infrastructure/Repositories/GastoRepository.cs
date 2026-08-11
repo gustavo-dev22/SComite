@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Gastos.Dtos;
 using AulaComite.Domain.Entities;
 using Dapper;
 
@@ -58,16 +59,16 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
-        public async Task<ResumenCajaAula> ObtenerResumenCajaAsync(int aulaId)
+        public async Task<ResumenCajaAulaDto> ObtenerResumenCajaAsync(int aulaId)
         {
             using var connection = _connectionFactory.CreateConnection();
-            var resumen = await connection.QueryFirstOrDefaultAsync<ResumenCajaAula>(
+            var resumen = await connection.QueryFirstOrDefaultAsync<ResumenCajaAulaDto>(
                 "sp_Gastos_ObtenerResumenCaja",
                 new { AulaId = aulaId },
                 commandType: CommandType.StoredProcedure
             );
 
-            return resumen ?? new ResumenCajaAula();
+            return resumen ?? new ResumenCajaAulaDto();
         }
 
         public async Task<bool> ActualizarAsync(GastoComite gasto, IDbTransaction? transaction = null)
@@ -122,16 +123,16 @@ namespace AulaComite.Infrastructure.Repositories
             }
         }
 
-        public async Task<ResumenCajaAula> ObtenerBalanceMensualCajaAsync(int aulaId, int anioLectivo, int? mes)
+        public async Task<ResumenCajaAulaDto> ObtenerBalanceMensualCajaAsync(int aulaId, int anioLectivo, int? mes)
         {
             using var connection = _connectionFactory.CreateConnection();
-            var resumen = await connection.QueryFirstOrDefaultAsync<ResumenCajaAula>(
+            var resumen = await connection.QueryFirstOrDefaultAsync<ResumenCajaAulaDto>(
                 "sp_Gastos_ObtenerBalanceMensualCaja",
                 new { AulaId = aulaId, AnioLectivo = anioLectivo, Mes = mes },
                 commandType: CommandType.StoredProcedure
             );
 
-            return resumen ?? new ResumenCajaAula();
+            return resumen ?? new ResumenCajaAulaDto();
         }
 
         public async Task<GastoComite?> ObtenerPorIdAsync(int id)

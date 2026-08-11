@@ -41,7 +41,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> AsignarIntegrante([FromBody] AsignarComiteCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Integrante asignado al comité con éxito." });
+            return Created($"/api/Comite/{id}", new { id, mensaje = "Integrante asignado al comité con éxito." });
         }
 
         [HttpDelete("{id}")]

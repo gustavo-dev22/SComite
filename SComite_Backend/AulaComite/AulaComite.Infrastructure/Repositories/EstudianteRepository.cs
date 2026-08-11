@@ -28,6 +28,21 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
+        public async Task<Estudiante?> ObtenerPorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.QueryFirstOrDefaultAsync<Estudiante>(
+                @"SELECT TOP 1 e.Id, e.AulaId, e.TipoDocumento, e.NumeroDocumento,
+                         e.Nombres, e.ApellidoPaterno, e.ApellidoMaterno,
+                         (e.ApellidoPaterno + ' ' + e.ApellidoMaterno + ', ' + e.Nombres) AS NombreCompleto,
+                         e.UsuarioIdApoderadoSasi, e.NombreApoderado, e.TelefonoApoderado,
+                         e.Estado, e.FechaRegistro
+                  FROM Estudiantes e
+                  WHERE e.Id = @Id;",
+                new { Id = id }
+            );
+        }
+
         public async Task<int> CrearEstudianteAsync(Estudiante e, IDbTransaction? transaction = null)
         {
             var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();

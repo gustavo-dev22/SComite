@@ -29,7 +29,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Guardar([FromBody] GuardarDonacionCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Donación registrada correctamente." });
+            return Created($"/api/Donaciones/{id}", new { id, mensaje = "Donación registrada correctamente." });
         }
 
         [HttpDelete("{id}/aula/{aulaId}")]

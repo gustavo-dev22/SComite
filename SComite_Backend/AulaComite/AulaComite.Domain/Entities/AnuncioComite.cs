@@ -18,5 +18,17 @@ namespace AulaComite.Domain.Entities
         public DateTime FechaPublicacion { get; set; } = DateTimeHelper.ObtenerHoraPeru();
         public int CantidadVistas { get; set; }
         public bool Estado { get; set; }
+
+        /// <summary>
+        /// Registra una visualización adicional del anuncio en el muro del aula.
+        /// </summary>
+        public void RegistrarVista()
+        {
+            CantidadVistas++;
+        }
+
+        public void FijarEnMuro(bool fijado) => EsFijado = fijado;
+
+        public bool EstaPublicado() => Estado;
     }
 }

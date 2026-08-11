@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AulaComite.Application.Actividades.Dtos
 {
-    public record ActividadComiteDTO(
+    public record ActividadComiteDto(
         int Id,
         int AulaId,
         string NombreActividad,

@@ -91,17 +91,19 @@ try
             .RequireAuthenticatedUser()
             .Build();
 
+        // Roles con acceso a la gestión del aula. ManejoFinanciero y GestionEscolar
+        // comparten la misma regla funcional, por lo que se definen desde un único
+        // origen para evitar duplicación/deriva entre políticas.
+        var rolesGestionAula = new[] { "Administrador", "Comité de Aula" };
+
         options.AddPolicy("Administrador", policy =>
             policy.RequireAuthenticatedUser().RequireRole("Administrador"));
 
-        options.AddPolicy("ComiteAula", policy =>
-            policy.RequireAuthenticatedUser().RequireRole("Comité de Aula"));
-
         options.AddPolicy("ManejoFinanciero", policy =>
-            policy.RequireAuthenticatedUser().RequireRole("Administrador", "Comité de Aula"));
+            policy.RequireAuthenticatedUser().RequireRole(rolesGestionAula));
 
         options.AddPolicy("GestionEscolar", policy =>
-            policy.RequireAuthenticatedUser().RequireRole("Administrador", "Comité de Aula"));
+            policy.RequireAuthenticatedUser().RequireRole(rolesGestionAula));
 
         options.AddPolicy("AccesoApoderado", policy =>
             policy.RequireAuthenticatedUser().RequireRole("Administrador", "Apoderado"));

@@ -6,5 +6,5 @@ using MediatR;
 
 namespace AulaComite.Application.Actividades.Queries
 {
-    public record GetActividadesPorAulaQuery(int AulaId, int AnioLectivo) : IRequest<IEnumerable<ActividadComiteDTO>>;
+    public record GetActividadesPorAulaQuery(int AulaId, int AnioLectivo) : IRequest<IEnumerable<ActividadComiteDto>>;
 }

@@ -26,7 +26,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Guardar([FromBody] GuardarActaCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Acta de asamblea registrada correctamente." });
+            return Created($"/api/ActasAsamblea/{id}", new { id, mensaje = "Acta de asamblea registrada correctamente." });
         }
 
         [HttpDelete("{id:int}/aula/{aulaId:int}")]

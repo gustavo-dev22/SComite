@@ -12,5 +12,15 @@ namespace AulaComite.Domain.Entities
         public bool EsActivo { get; set; }
         public DateTime FechaInicio { get; set; }
         public DateTime FechaFin { get; set; }
+
+        /// <summary>
+        /// Indica si la fecha dada se encuentra dentro del rango del periodo lectivo.
+        /// </summary>
+        public bool EstaVigente(DateTime fecha)
+        {
+            return fecha >= FechaInicio && fecha <= FechaFin;
+        }
+
+        public bool EstaActivoEn(DateTime fecha) => EsActivo && EstaVigente(fecha);
     }
 }

@@ -19,14 +19,7 @@ namespace AulaComite.Domain.Entities
         public string? UrlComprobante { get; set; }
         public string UsuarioRegistro { get; set; } = string.Empty;
         public DateTime FechaRegistro { get; set; }
-    }
 
-    public class ResumenCajaAula
-    {
-        public decimal SaldoAnteriorArrastrado { get; set; }
-        public decimal IngresosDelMes { get; set; }
-        public decimal MontoDonacionesMes { get; set; }
-        public decimal EgresosDelMes { get; set; }
-        public decimal SaldoDisponibleReal { get; set; }
+        public bool PerteneceAAula(int aulaId) => AulaId == aulaId;
     }
 }

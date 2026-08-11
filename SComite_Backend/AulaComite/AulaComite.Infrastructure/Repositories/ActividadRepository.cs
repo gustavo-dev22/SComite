@@ -17,10 +17,10 @@ namespace AulaComite.Infrastructure.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<IEnumerable<ActividadComiteDTO>> ObtenerPorAulaAsync(int aulaId, int anioLectivo)
+        public async Task<IEnumerable<ActividadComiteDto>> ObtenerPorAulaAsync(int aulaId, int anioLectivo)
         {
             using var connection = _connectionFactory.CreateConnection();
-            return await connection.QueryAsync<ActividadComiteDTO>(
+            return await connection.QueryAsync<ActividadComiteDto>(
                 "sp_Actividades_ListarPorAula",
                 new { AulaId = aulaId, AnioLectivo = anioLectivo },
                 commandType: CommandType.StoredProcedure

@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Estudiantes.Commands;
-using MediatR;
 using AulaComite.Domain.Entities;
+using FluentValidation;
+using FluentValidation.Results;
+using MediatR;
 
 namespace AulaComite.Application.Estudiantes.Handlers
 {
@@ -25,6 +29,8 @@ namespace AulaComite.Application.Estudiantes.Handlers
 
         public async Task<int> Handle(CreateEstudianteCommand request, CancellationToken cancellationToken)
         {
+            RechazarDatosEnmascarados(request.NumeroDocumento, request.TelefonoApoderado);
+
             var e = new Estudiante
             {
                 AulaId = request.AulaId,
@@ -61,6 +67,25 @@ namespace AulaComite.Application.Estudiantes.Handlers
             );
 
             return id;
+        }
+
+        /// <summary>
+        /// 🛡️ M7: Si el cliente envió datos previamente enmascarados (ej. DNI "12****45",
+        /// teléfono "987****21") el registro se rechaza con 400, evitando persistir el
+        /// formato enmascarado como valor real.
+        /// </summary>
+        private static void RechazarDatosEnmascarados(params string?[] valores)
+        {
+            var camposEnmascarados = new List<string>();
+
+            if (PiiMasker.EsDatoEnmascarado(valores[0])) camposEnmascarados.Add("NumeroDocumento");
+            if (PiiMasker.EsDatoEnmascarado(valores[1])) camposEnmascarados.Add("TelefonoApoderado");
+
+            if (camposEnmascarados.Count > 0)
+            {
+                throw new ValidationException(camposEnmascarados.Select(campo =>
+                    new ValidationFailure(campo, "Los datos enviados contienen formato enmascarado inválido.")));
+            }
         }
     }
 }

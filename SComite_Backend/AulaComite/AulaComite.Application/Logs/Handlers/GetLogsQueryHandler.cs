@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using AulaComite.Application.Common.Dto;
 using AulaComite.Application.Common.Interfaces;
 using AulaComite.Application.Logs.Queries;
 using AulaComite.Domain.Entities;

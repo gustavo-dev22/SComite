@@ -16,5 +16,23 @@ namespace AulaComite.Domain.Entities
         public decimal CuotaSugeridaPorAlumno { get; set; }
         public string Estado { get; set; } = "PLANIFICADA"; // PLANIFICADA, EN_PROCESO, FINALIZADA, CANCELADA
         public DateTime FechaRegistro { get; set; } = DateTimeHelper.ObtenerHoraPeru();
+
+        private static readonly string[] EstadosValidos =
+        {
+            "PLANIFICADA", "EN_PROCESO", "FINALIZADA", "CANCELADA"
+        };
+
+        /// <summary>
+        /// Cambia el estado de la actividad validando que sea uno permitido.
+        /// </summary>
+        public void CambiarEstado(string nuevoEstado)
+        {
+            if (!EstadosValidos.Contains(nuevoEstado))
+                throw new ArgumentException($"El estado '{nuevoEstado}' no es válido para una actividad.");
+
+            Estado = nuevoEstado;
+        }
+
+        public bool EstaCancelada() => string.Equals(Estado, "CANCELADA", StringComparison.OrdinalIgnoreCase);
     }
 }

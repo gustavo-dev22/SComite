@@ -8,7 +8,7 @@ using MediatR;
 
 namespace AulaComite.Application.Actividades.Handlers
 {
-    public class GetActividadesPorAulaQueryHandler : IRequestHandler<GetActividadesPorAulaQuery, IEnumerable<ActividadComiteDTO>>
+    public class GetActividadesPorAulaQueryHandler : IRequestHandler<GetActividadesPorAulaQuery, IEnumerable<ActividadComiteDto>>
     {
         private readonly IActividadRepository _repository;
 
@@ -17,7 +17,7 @@ namespace AulaComite.Application.Actividades.Handlers
             _repository = repository;
         }
 
-        public async Task<IEnumerable<ActividadComiteDTO>> Handle(GetActividadesPorAulaQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<ActividadComiteDto>> Handle(GetActividadesPorAulaQuery request, CancellationToken cancellationToken)
         {
             return await _repository.ObtenerPorAulaAsync(request.AulaId, request.AnioLectivo);
         }

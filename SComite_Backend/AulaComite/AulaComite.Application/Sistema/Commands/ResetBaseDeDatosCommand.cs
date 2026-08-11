@@ -5,5 +5,5 @@ using MediatR;
 
 namespace AulaComite.Application.Sistema.Commands
 {
-    public record ResetBaseDeDatosCommand(string ConfirmacionTexto) : IRequest<bool>;
+    public record ResetBaseDeDatosCommand(string ConfirmacionTexto) : IRequest<ResetBaseDeDatosResult>;
 }

@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using AulaComite.Application.Common.Dto;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Estudiantes.Commands;
 using AulaComite.Application.Estudiantes.Dtos;
 using MediatR;
@@ -27,8 +30,31 @@ namespace AulaComite.Application.Estudiantes.Handlers
                 RegistrosProcesados = request.Estudiantes.Count
             };
 
-            // 1. Catálogo completo de apoderados SASI en memoria
+            // 1. Catálogo completo de apoderados SASI precargado en índices en memoria
+            //    (O(n)): búsqueda instantánea por nombre completo (Diccionario) y por token
+            //    (primera palabra) para la coincidencia parcial, evitando el escaneo O(n·m).
             var apoderadosSasi = (await _sasiAuthService.ObtenerApoderadosAsync()).ToList();
+
+            var apoderadosPorNombre = new Dictionary<string, UsuarioSasiDto>(StringComparer.OrdinalIgnoreCase);
+            var apoderadosPorToken = new Dictionary<string, List<UsuarioSasiDto>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var apoderado in apoderadosSasi)
+            {
+                var nombre = apoderado.NombreCompleto?.Trim();
+                if (string.IsNullOrWhiteSpace(nombre)) continue;
+
+                apoderadosPorNombre.TryAdd(nombre, apoderado);
+
+                foreach (var token in nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (!apoderadosPorToken.TryGetValue(token, out var lista))
+                    {
+                        lista = new List<UsuarioSasiDto>();
+                        apoderadosPorToken[token] = lista;
+                    }
+                    lista.Add(apoderado);
+                }
+            }
 
             // 2. Estudiantes ya matriculados en esta aula
             var estudiantesExistentes = (await _estudianteRepository.ObtenerPorAulaAsync(request.AulaId))
@@ -51,6 +77,14 @@ namespace AulaComite.Application.Estudiantes.Handlers
                     continue;
                 }
 
+                // 🛡️ M7: Rechazo de filas con datos previamente enmascarados (asteriscos)
+                if (PiiMasker.EsDatoEnmascarado(item.NumeroDocumento) ||
+                    PiiMasker.EsDatoEnmascarado(item.TelefonoApoderado))
+                {
+                    resultado.DetallesObservaciones.Add($"Fila {index}: Omitido porque los datos enviados contienen formato enmascarado inválido.");
+                    continue;
+                }
+
                 // Validación B: Duplicidad de DNI en la misma aula
                 if (estudiantesExistentes.Contains(item.NumeroDocumento.Trim()))
                 {
@@ -63,11 +97,22 @@ namespace AulaComite.Application.Estudiantes.Handlers
                 {
                     var nombreBuscado = item.NombreApoderado.Trim();
 
-                    // Búsqueda por Nombre Completo
-                    var apoderadoEncontrado = apoderadosSasi.FirstOrDefault(a =>
-                        a.NombreCompleto.Equals(nombreBuscado, StringComparison.OrdinalIgnoreCase) ||
-                        a.NombreCompleto.Contains(nombreBuscado, StringComparison.OrdinalIgnoreCase)
-                    );
+                    // Búsqueda O(1) por Nombre Completo normalizado
+                    var apoderadoEncontrado = apoderadosPorNombre.GetValueOrDefault(nombreBuscado);
+
+                    // Fallback de coincidencia parcial usando el índice por token (O(1) al
+                    // listado de candidatos) en lugar de recorrer todo el catálogo.
+                    if (apoderadoEncontrado == null)
+                    {
+                        var primerToken = nombreBuscado.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+                        if (primerToken is not null &&
+                            apoderadosPorToken.TryGetValue(primerToken, out var candidatos))
+                        {
+                            apoderadoEncontrado = candidatos.FirstOrDefault(a =>
+                                a.NombreCompleto.Contains(nombreBuscado, StringComparison.OrdinalIgnoreCase));
+                        }
+                    }
 
                     if (apoderadoEncontrado != null)
                     {

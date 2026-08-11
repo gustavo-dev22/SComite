@@ -9,7 +9,7 @@ using MediatR;
 
 namespace AulaComite.Application.Balance.Handlers
 {
-    public class GetBalanceConsolidadoQueryHandler : IRequestHandler<GetBalanceConsolidadoQuery, BalanceGeneralDTO>
+    public class GetBalanceConsolidadoQueryHandler : IRequestHandler<GetBalanceConsolidadoQuery, BalanceGeneralDto>
     {
         private readonly IBalanceRepository _repository;
 
@@ -18,13 +18,13 @@ namespace AulaComite.Application.Balance.Handlers
             _repository = repository;
         }
 
-        public async Task<BalanceGeneralDTO> Handle(GetBalanceConsolidadoQuery request, CancellationToken cancellationToken)
+        public async Task<BalanceGeneralDto> Handle(GetBalanceConsolidadoQuery request, CancellationToken cancellationToken)
         {
             var consolidado = await _repository.ObtenerConsolidadoAsync(request.AulaId, request.AnioLectivo, request.Mes);
             var categorias = await _repository.ObtenerGastosPorCategoriaAsync(request.AulaId, request.AnioLectivo, request.Mes);
             var gastosDetalle = await _repository.ObtenerGastosDetalleAsync(request.AulaId, request.AnioLectivo, request.Mes);
 
-            return new BalanceGeneralDTO(
+            return new BalanceGeneralDto(
                 new BalanceConsolidadoDto
                 {
                     SaldoAnteriorArrastrado = consolidado.SaldoAnteriorArrastrado,
@@ -37,12 +37,7 @@ namespace AulaComite.Application.Balance.Handlers
                     TotalPorCobrar = consolidado.TotalPorCobrar,
                     PorcentajeCumplimiento = consolidado.PorcentajeCumplimiento
                 },
-                categorias.Select(c => new GastoCategoriaResumenDto
-                {
-                    Categoria = c.Categoria,
-                    TotalMonto = c.TotalMonto,
-                    CantidadRegistros = c.CantidadRegistros
-                }),
+                categorias,
                 gastosDetalle
             );
         }

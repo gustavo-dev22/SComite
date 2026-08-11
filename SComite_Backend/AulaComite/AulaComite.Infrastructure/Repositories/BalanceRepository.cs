@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Balance.Dtos;
+using AulaComite.Application.Gastos.Dtos;
 using AulaComite.Domain.Entities;
 using Dapper;
-using AulaComite.Application.Balance.Dtos;
 
 namespace AulaComite.Infrastructure.Repositories
 {
@@ -30,17 +31,17 @@ namespace AulaComite.Infrastructure.Repositories
             return result ?? new BalanceConsolidado();
         }
 
-        public async Task<IEnumerable<GastoCategoriaResumen>> ObtenerGastosPorCategoriaAsync(int aulaId, int anioLectivo, int? mes)
+        public async Task<IEnumerable<GastoCategoriaResumenDto>> ObtenerGastosPorCategoriaAsync(int aulaId, int anioLectivo, int? mes)
         {
             using var connection = _connectionFactory.CreateConnection();
-            return await connection.QueryAsync<GastoCategoriaResumen>(
+            return await connection.QueryAsync<GastoCategoriaResumenDto>(
                 "sp_Balance_ObtenerGastosPorCategoria",
                 new { AulaId = aulaId, AnioLectivo = anioLectivo, Mes = mes },
                 commandType: CommandType.StoredProcedure
             );
         }
 
-        public async Task<IEnumerable<GastoComiteDTO>> ObtenerGastosDetalleAsync(int aulaId, int anioLectivo, int? mes)
+        public async Task<IEnumerable<GastoComiteDto>> ObtenerGastosDetalleAsync(int aulaId, int anioLectivo, int? mes)
         {
             using var connection = _connectionFactory.CreateConnection();
 
@@ -60,7 +61,7 @@ namespace AulaComite.Infrastructure.Repositories
                   AND (@Mes IS NULL OR @Mes = 0 OR (MONTH(FechaGasto) = @Mes AND YEAR(FechaGasto) = @AnioLectivo))
                 ORDER BY FechaGasto DESC;";
 
-            return await connection.QueryAsync<GastoComiteDTO>(sql, new { AulaId = aulaId, AnioLectivo = anioLectivo, Mes = mes });
+            return await connection.QueryAsync<GastoComiteDto>(sql, new { AulaId = aulaId, AnioLectivo = anioLectivo, Mes = mes });
         }
     }
 }

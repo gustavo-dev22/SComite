@@ -25,12 +25,24 @@ namespace AulaComite.Api.Controllers
             return Ok(result);
         }
 
+        // 🛡️ M7: Detalle por ID. Devuelve los datos reales SIN enmascarar para que la
+        // ficha de edición del estudiante pueda mostrarse correctamente.
+        [HttpGet("{id:int}")]
+        [Authorize(Policy = "GestionEscolar")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var result = await _mediator.Send(new GetEstudianteByIdQuery(id));
+            if (result == null) return NotFound(new { mensaje = "No se encontró el estudiante." });
+
+            return Ok(result);
+        }
+
         [HttpPost]
         [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Crear([FromBody] CreateEstudianteCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Estudiante registrado con éxito." });
+            return CreatedAtAction(nameof(GetById), new { id }, new { id, mensaje = "Estudiante registrado con éxito." });
         }
 
         [HttpPut("{id}")]

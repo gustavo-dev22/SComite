@@ -22,7 +22,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Create([FromBody] CreatePeriodoCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Periodo lectivo creado exitosamente." });
+            return Created($"/api/Periodos/{id}", new { id, mensaje = "Periodo lectivo creado exitosamente." });
         }
 
         [HttpPut("{id}")]

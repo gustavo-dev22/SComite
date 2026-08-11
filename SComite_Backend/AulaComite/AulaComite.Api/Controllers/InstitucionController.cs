@@ -15,7 +15,6 @@ namespace AulaComite.Api.Controllers
         public InstitucionController(IMediator mediator) => _mediator = mediator;
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetConfiguracion()
         {
             var result = await _mediator.Send(new GetInstitucionEducativaQuery());

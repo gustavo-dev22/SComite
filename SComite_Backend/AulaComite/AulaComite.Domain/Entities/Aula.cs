@@ -14,5 +14,16 @@ namespace AulaComite.Domain.Entities
         public string? NombreDisplay { get; set; }
         public bool Estado { get; set; }
         public string AnioPeriodo { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Nombre legible del aula: "Primaria - 5° \"B\"". Usa NombreDisplay si existe.
+        /// </summary>
+        public string ObtenerNombreDisplay()
+        {
+            if (!string.IsNullOrWhiteSpace(NombreDisplay)) return NombreDisplay;
+            return $"{Nivel} - {Grado}° \"{Seccion}\"".Trim();
+        }
+
+        public bool EstaActiva() => Estado;
     }
 }

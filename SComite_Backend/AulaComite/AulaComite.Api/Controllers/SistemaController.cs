@@ -12,17 +12,15 @@ namespace AulaComite.Api.Controllers
     {
         private readonly IMediator _mediator;
         private readonly IWebHostEnvironment _env;
-        private readonly ILogger<SistemaController> _logger;
 
-        public SistemaController(IMediator mediator, IWebHostEnvironment env, ILogger<SistemaController> logger)
+        public SistemaController(IMediator mediator, IWebHostEnvironment env)
         {
             _mediator = mediator;
             _env = env;
-            _logger = logger;
         }
 
         [HttpPost("reset-database")]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> ResetBaseDeDatos([FromBody] ResetBaseDeDatosCommand command)
         {
             if (!_env.IsDevelopment())
@@ -30,20 +28,19 @@ namespace AulaComite.Api.Controllers
                 return NotFound();
             }
 
-            try
+            var resultado = await _mediator.Send(command);
+            if (!resultado.Exito)
             {
-                var ok = await _mediator.Send(command);
-                return Ok(new { exito = ok, mensaje = "Se ha generado el backup pre-purga y la base de datos se ha limpiado por completo." });
+                return resultado.EsErrorDeAutorizacion
+                    ? StatusCode(StatusCodes.Status403Forbidden, new { mensaje = resultado.Mensaje })
+                    : BadRequest(new { mensaje = resultado.Mensaje });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al resetear la base de datos: {Message}", ex.Message);
-                return BadRequest(new { mensaje = "No se pudo completar la operación de reseteo. Verifique los logs internos." });
-            }
+
+            return Ok(new { exito = true, mensaje = resultado.Mensaje });
         }
 
         [HttpGet("descargar-backup")]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> DescargarBackup()
         {
             if (!_env.IsDevelopment())

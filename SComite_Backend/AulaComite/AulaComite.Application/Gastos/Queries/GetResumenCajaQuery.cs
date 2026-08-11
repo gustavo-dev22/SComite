@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using AulaComite.Domain.Entities;
+using AulaComite.Application.Gastos.Dtos;
 using MediatR;
 
 namespace AulaComite.Application.Gastos.Queries
 {
-    public record GetResumenCajaQuery(int AulaId) : IRequest<ResumenCajaAula>;
+    public record GetResumenCajaQuery(int AulaId) : IRequest<ResumenCajaAulaDto>;
 }

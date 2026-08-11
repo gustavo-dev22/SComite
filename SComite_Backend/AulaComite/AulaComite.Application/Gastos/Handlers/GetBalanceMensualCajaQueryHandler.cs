@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Gastos.Dtos;
 using AulaComite.Application.Gastos.Queries;
-using AulaComite.Domain.Entities;
 using MediatR;
 
 namespace AulaComite.Application.Gastos.Handlers
 {
-    public class GetBalanceMensualCajaQueryHandler : IRequestHandler<GetBalanceMensualCajaQuery, ResumenCajaAula>
+    public class GetBalanceMensualCajaQueryHandler : IRequestHandler<GetBalanceMensualCajaQuery, ResumenCajaAulaDto>
     {
         private readonly IGastoRepository _repository;
 
@@ -17,7 +17,7 @@ namespace AulaComite.Application.Gastos.Handlers
             _repository = repository;
         }
 
-        public async Task<ResumenCajaAula> Handle(GetBalanceMensualCajaQuery request, CancellationToken cancellationToken)
+        public async Task<ResumenCajaAulaDto> Handle(GetBalanceMensualCajaQuery request, CancellationToken cancellationToken)
         {
             return await _repository.ObtenerBalanceMensualCajaAsync(request.AulaId, request.AnioLectivo, request.Mes);
         }

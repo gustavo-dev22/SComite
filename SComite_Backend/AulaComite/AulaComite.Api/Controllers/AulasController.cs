@@ -53,7 +53,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> CrearAula([FromBody] CreateAulaCommand command)
         {
             var id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Aula registrada correctamente." });
+            return Created($"/api/Aulas/{id}", new { id, mensaje = "Aula registrada correctamente." });
         }
 
         [HttpPut("{id}")]

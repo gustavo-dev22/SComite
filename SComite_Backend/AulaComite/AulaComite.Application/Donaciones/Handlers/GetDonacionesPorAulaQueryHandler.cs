@@ -8,7 +8,7 @@ using MediatR;
 
 namespace AulaComite.Application.Donaciones.Handlers
 {
-    public class GetDonacionesPorAulaQueryHandler : IRequestHandler<GetDonacionesPorAulaQuery, IEnumerable<DonacionDTO>>
+    public class GetDonacionesPorAulaQueryHandler : IRequestHandler<GetDonacionesPorAulaQuery, IEnumerable<DonacionDto>>
     {
         private readonly IDonacionRepository _repository;
 
@@ -17,7 +17,7 @@ namespace AulaComite.Application.Donaciones.Handlers
             _repository = repository;
         }
 
-        public async Task<IEnumerable<DonacionDTO>> Handle(GetDonacionesPorAulaQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<DonacionDto>> Handle(GetDonacionesPorAulaQuery request, CancellationToken cancellationToken)
         {
             return await _repository.ObtenerPorAulaAsync(request.AulaId, request.AnioLectivo, request.Mes);
         }

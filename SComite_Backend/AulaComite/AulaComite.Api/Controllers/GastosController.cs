@@ -42,7 +42,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Crear([FromBody] CreateGastoCommand command)
         {
             int id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Gasto registrado correctamente." });
+            return Created($"/api/Gastos/{id}", new { id, mensaje = "Gasto registrado correctamente." });
         }
 
         [HttpPut("{id:int}")]
@@ -51,19 +51,14 @@ namespace AulaComite.Api.Controllers
             if (id != command.Id)
                 return BadRequest(new { mensaje = "El ID enviado en la ruta no coincide con el cuerpo de la solicitud." });
 
-            try
-            {
-                var exito = await _mediator.Send(command);
-                if (!exito)
-                    return NotFound(new { mensaje = "El gasto especificado no existe o no se pudo actualizar." });
+            // 🛡️ El handler distingue: recurso inexistente -> false (404 aquí) y recurso de un
+            // Aula no asignada -> UnauthorizedAccessException (403 vía middleware). La excepción
+            // NO se convierte a 400: se deja propagar para que el middleware responda 403.
+            var exito = await _mediator.Send(command);
+            if (!exito)
+                return NotFound(new { mensaje = "El gasto especificado no existe o no se pudo actualizar." });
 
-                return Ok(new { exito = true, mensaje = "Gasto modificado correctamente." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar el gasto {GastoId}.", id);
-                return BadRequest(new { mensaje = "Ocurrió un error al procesar la solicitud de gastos. Inténtalo de nuevo." });
-            }
+            return Ok(new { exito = true, mensaje = "Gasto modificado correctamente." });
         }
 
         [HttpDelete("{id:int}")]

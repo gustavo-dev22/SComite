@@ -29,7 +29,7 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> Crear([FromBody] CreateCuotaCommand command)
         {
             int id = await _mediator.Send(command);
-            return Ok(new { id, mensaje = "Cuota aperturada y asignada masivamente con éxito." });
+            return Created($"/api/Cuotas/{id}", new { id, mensaje = "Cuota aperturada y asignada masivamente con éxito." });
         }
 
         [HttpPost("programacion-mensual")]

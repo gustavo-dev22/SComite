@@ -55,5 +55,14 @@ namespace AulaComite.Application.Common.Security
 
             return parteLocal.Substring(0, visibles) + new string('*', Math.Max(1, parteLocal.Length - visibles)) + dominio;
         }
+
+        /// <summary>
+        /// Detecta si un valor contiene caracteres de enmascarado ('*'), lo que indica que
+        /// llegó previamente enmascarado (p. ej. desde un listado) y no debe persistirse.
+        /// </summary>
+        public static bool EsDatoEnmascarado(string? valor)
+        {
+            return !string.IsNullOrWhiteSpace(valor) && valor.Contains('*');
+        }
     }
 }

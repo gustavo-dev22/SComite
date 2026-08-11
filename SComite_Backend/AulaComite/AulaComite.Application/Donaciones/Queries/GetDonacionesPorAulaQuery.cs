@@ -10,5 +10,5 @@ namespace AulaComite.Application.Donaciones.Queries
         int AulaId,
         int AnioLectivo,
         int? Mes = null
-    ) : IRequest<IEnumerable<DonacionDTO>>;
+    ) : IRequest<IEnumerable<DonacionDto>>;
 }

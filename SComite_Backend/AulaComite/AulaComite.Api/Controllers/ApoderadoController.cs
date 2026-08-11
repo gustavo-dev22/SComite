@@ -51,7 +51,13 @@ namespace AulaComite.Api.Controllers
         [HttpPost("marcar-lectura-anuncio")]
         public async Task<IActionResult> RegistrarLecturaAnuncio([FromBody] RegistrarLecturaAnuncioCommand command)
         {
-            await _mediator.Send(command);
+            var registrado = await _mediator.Send(command);
+            if (!registrado)
+            {
+                // 🛡️ El estudiante no es hijo del apoderado autenticado: 403 Forbidden.
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensaje = "No tiene permisos para registrar la lectura sobre este estudiante." });
+            }
+
             return Ok(new { exito = true, mensaje = "Lectura del anuncio registrada correctamente." });
         }
 

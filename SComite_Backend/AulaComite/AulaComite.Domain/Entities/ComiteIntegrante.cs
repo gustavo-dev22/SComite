@@ -14,5 +14,9 @@ namespace AulaComite.Domain.Entities
         public string Cargo { get; set; } = string.Empty;
         public bool Estado { get; set; }
         public DateTime FechaAsignacion { get; set; }
+
+        public void Desactivar() => Estado = false;
+
+        public bool EstaActivo() => Estado;
     }
 }

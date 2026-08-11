@@ -19,5 +19,49 @@ namespace AulaComite.Domain.Entities
         public string? TelefonoApoderado { get; set; }
         public bool Estado { get; set; }
         public DateTime FechaRegistro { get; set; }
+
+        /// <summary>
+        /// Construye el nombre completo en el formato estándar del padrón:
+        /// "ApellidoPaterno ApellidoMaterno, Nombres".
+        /// </summary>
+        public string CalcularNombreCompleto()
+        {
+            var apellidos = $"{ApellidoPaterno} {ApellidoMaterno}".Trim();
+            return string.IsNullOrWhiteSpace(apellidos)
+                ? Nombres.Trim()
+                : $"{apellidos}, {Nombres.Trim()}".Trim();
+        }
+
+        /// <summary>
+        /// Actualiza los datos editables de la ficha del estudiante.
+        /// </summary>
+        public void ActualizarDatos(
+            int aulaId,
+            string tipoDocumento,
+            string numeroDocumento,
+            string nombres,
+            string apellidoPaterno,
+            string apellidoMaterno,
+            string? usuarioIdApoderadoSasi,
+            string? nombreApoderado,
+            string? telefonoApoderado)
+        {
+            AulaId = aulaId;
+            TipoDocumento = tipoDocumento;
+            NumeroDocumento = numeroDocumento;
+            Nombres = nombres;
+            ApellidoPaterno = apellidoPaterno;
+            ApellidoMaterno = apellidoMaterno;
+            UsuarioIdApoderadoSasi = usuarioIdApoderadoSasi;
+            NombreApoderado = nombreApoderado;
+            TelefonoApoderado = telefonoApoderado;
+            NombreCompleto = CalcularNombreCompleto();
+        }
+
+        public void Desactivar() => Estado = false;
+
+        public void Activar() => Estado = true;
+
+        public bool EstaActivo() => Estado;
     }
 }

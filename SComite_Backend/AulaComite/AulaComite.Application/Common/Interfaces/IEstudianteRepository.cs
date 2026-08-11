@@ -10,6 +10,7 @@ namespace AulaComite.Application.Common.Interfaces
     public interface IEstudianteRepository
     {
         Task<IEnumerable<Estudiante>> ObtenerPorAulaAsync(int aulaId);
+        Task<Estudiante?> ObtenerPorIdAsync(int id);
         Task<int> CrearEstudianteAsync(Estudiante estudiante, IDbTransaction? transaction = null);
         Task<bool> ActualizarEstudianteAsync(Estudiante estudiante);
         Task<bool> EliminarEstudianteLogicoAsync(int id, IDbTransaction? transaction = null);

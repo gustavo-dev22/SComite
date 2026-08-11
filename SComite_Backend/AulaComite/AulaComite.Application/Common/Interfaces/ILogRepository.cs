@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using AulaComite.Application.Common.Dto;
 using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Common.Interfaces

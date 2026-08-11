@@ -6,5 +6,5 @@ using MediatR;
 
 namespace AulaComite.Application.Balance.Queries
 {
-    public record GetBalanceConsolidadoQuery(int AulaId, int AnioLectivo, int? Mes) : IRequest<BalanceGeneralDTO>;
+    public record GetBalanceConsolidadoQuery(int AulaId, int AnioLectivo, int? Mes) : IRequest<BalanceGeneralDto>;
 }

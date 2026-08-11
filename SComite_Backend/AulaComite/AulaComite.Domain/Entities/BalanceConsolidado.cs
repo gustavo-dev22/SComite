@@ -16,11 +16,4 @@ namespace AulaComite.Domain.Entities
         public decimal TotalPorCobrar { get; set; }
         public decimal PorcentajeCumplimiento { get; set; }
     }
-
-    public class GastoCategoriaResumen
-    {
-        public string Categoria { get; set; } = string.Empty;
-        public decimal TotalMonto { get; set; }
-        public int CantidadRegistros { get; set; }
-    }
 }

@@ -13,5 +13,17 @@ namespace AulaComite.Domain.Entities
         public string? UrlLogo { get; set; }
         public DateTime FechaActualizacion { get; set; } = DateTimeHelper.ObtenerHoraPeru();
         public string UsuarioActualizacion { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Actualiza los datos de la institución registrando fecha y usuario de auditoría.
+        /// </summary>
+        public void ActualizarDatos(string nombreInstitucion, string? direccion, string? urlLogo, string usuario)
+        {
+            NombreInstitucion = nombreInstitucion;
+            Direccion = direccion;
+            UrlLogo = urlLogo;
+            UsuarioActualizacion = usuario;
+            FechaActualizacion = DateTimeHelper.ObtenerHoraPeru();
+        }
     }
 }

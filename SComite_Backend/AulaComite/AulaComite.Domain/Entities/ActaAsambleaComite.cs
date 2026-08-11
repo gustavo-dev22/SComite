@@ -20,5 +20,23 @@ namespace AulaComite.Domain.Entities
         public string? UsuarioActualizacion { get; set; }
         public DateTime? FechaActualizacion { get; set; }
         public bool Estado { get; set; } = true;
+
+        /// <summary>
+        /// Marca el acta como aprobada registrando quién y cuándo se aprobó.
+        /// </summary>
+        public void MarcarAprobada(string usuario)
+        {
+            if (!string.IsNullOrWhiteSpace(usuario))
+            {
+                UsuarioActualizacion = usuario;
+                FechaActualizacion = DateTimeHelper.ObtenerHoraPeru();
+            }
+
+            EstadoActa = "APROBADA";
+        }
+
+        public bool EstaAprobada() => string.Equals(EstadoActa, "APROBADA", StringComparison.OrdinalIgnoreCase);
+
+        public bool EsBorrador() => string.Equals(EstadoActa, "BORRADOR", StringComparison.OrdinalIgnoreCase);
     }
 }

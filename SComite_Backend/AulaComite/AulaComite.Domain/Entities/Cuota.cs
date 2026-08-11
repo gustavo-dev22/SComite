@@ -18,11 +18,14 @@ namespace AulaComite.Domain.Entities
         public string TipoCuota { get; set; } = "EXTRAORDINARIA"; // EXTRAORDINARIA, RECURRENTE_MENSUAL
         public int? MesCorrespondiente { get; set; }
 
-        // DTOs agregados para resúmenes
-        public int TotalEstudiantesAsignados { get; set; }
-        public decimal TotalMontoEsperado { get; set; }
-        public decimal TotalMontoRecaudado { get; set; }
-        public int EstudiantesAlDia { get; set; }
-        public int EstudiantesPendientes { get; set; }
+        /// <summary>
+        /// Indica si la cuota ya venció a la fecha de referencia indicada.
+        /// </summary>
+        public bool EstaVencida(DateTime fechaReferencia)
+        {
+            return FechaVencimiento < fechaReferencia;
+        }
+
+        public bool EstaEnCobro() => string.Equals(Estado, "EN COBRO", StringComparison.OrdinalIgnoreCase);
     }
 }

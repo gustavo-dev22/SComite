@@ -44,10 +44,10 @@ namespace AulaComite.Infrastructure.Repositories
             }
         }
 
-        public async Task<IEnumerable<Cuota>> ObtenerPorAulaAsync(int aulaId)
+        public async Task<IEnumerable<CuotaDto>> ObtenerPorAulaAsync(int aulaId)
         {
             using var connection = _connectionFactory.CreateConnection();
-            return await connection.QueryAsync<Cuota>(
+            return await connection.QueryAsync<CuotaDto>(
                 "sp_Cuotas_ObtenerPorAula",
                 new { AulaId = aulaId },
                 commandType: CommandType.StoredProcedure

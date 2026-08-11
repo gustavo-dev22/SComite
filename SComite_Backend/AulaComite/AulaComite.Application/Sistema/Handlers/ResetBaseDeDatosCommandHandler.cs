@@ -7,7 +7,7 @@ using MediatR;
 
 namespace AulaComite.Application.Sistema.Handlers
 {
-    public class ResetBaseDeDatosCommandHandler : IRequestHandler<ResetBaseDeDatosCommand, bool>
+    public class ResetBaseDeDatosCommandHandler : IRequestHandler<ResetBaseDeDatosCommand, ResetBaseDeDatosResult>
     {
         private readonly ISistemaRepository _repository;
         private readonly IUserContextService _userContextService;
@@ -18,29 +18,30 @@ namespace AulaComite.Application.Sistema.Handlers
             _userContextService = userContextService;
         }
 
-        public async Task<bool> Handle(ResetBaseDeDatosCommand request, CancellationToken cancellationToken)
+        public async Task<ResetBaseDeDatosResult> Handle(ResetBaseDeDatosCommand request, CancellationToken cancellationToken)
         {
             // 🛡️ Protección reforzada: la operación de reseteo queda DESHABILITADA en entornos
             // de producción (defensa en profundidad, además del guard del controlador).
             var ambiente = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
             if (ambiente.Equals("Production", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("La operación de reseteo de la base de datos está deshabilitada en producción.");
+                return new ResetBaseDeDatosResult(false, "La operación de reseteo de la base de datos está deshabilitada en producción.");
             }
 
             // 🛡️ Solo un Administrador Global (validado desde el Token JWT) puede resetear la BD.
             if (!_userContextService.EsAdministradorGlobal())
             {
-                throw new UnauthorizedAccessException("Solo un Administrador Global puede ejecutar el reseteo de la base de datos.");
+                return new ResetBaseDeDatosResult(false, "Solo un Administrador Global puede ejecutar el reseteo de la base de datos.", EsErrorDeAutorizacion: true);
             }
 
             // Validación de seguridad adicional en el servidor
             if (request.ConfirmacionTexto != "ELIMINAR TODO")
             {
-                throw new InvalidOperationException("El texto de confirmación es incorrecto.");
+                return new ResetBaseDeDatosResult(false, "El texto de confirmación es incorrecto.");
             }
 
-            return await _repository.ResetBaseDeDatosAsync();
+            await _repository.ResetBaseDeDatosAsync();
+            return new ResetBaseDeDatosResult(true, "Se ha generado el backup pre-purga y la base de datos se ha limpiado por completo.");
         }
     }
 }
