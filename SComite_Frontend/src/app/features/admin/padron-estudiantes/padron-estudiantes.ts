@@ -16,6 +16,11 @@ import * as XLSX from 'xlsx';
 const MAX_ARCHIVO_MB = 5;
 const MAX_FILAS_CARGA = 1000;
 const FILAS_POR_PAGINA_PREVIEW = 20;
+const EXTENSIONES_EXCEL_PERMITIDAS = ['xls', 'xlsx'];
+const TIPOS_MIME_EXCEL_PERMITIDOS = [
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+];
 
 interface FilaEstudianteExcel {
   TipoDocumento?: string;
@@ -385,6 +390,20 @@ export class PadronEstudiantesComponent implements OnInit {
 
     const file = input.files[0];
     this.nombreArchivoCargado.set(file.name);
+
+    // 🚀 Validar tipo MIME / extensión permitida (Excel .xls / .xlsx)
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    const esExcelValido =
+      TIPOS_MIME_EXCEL_PERMITIDOS.includes(file.type) ||
+      EXTENSIONES_EXCEL_PERMITIDAS.includes(extension);
+
+    if (!esExcelValido) {
+      input.value = '';
+      this.nombreArchivoCargado.set('');
+      this.registrosPrevios.set([]);
+      Swal.fire('Formato no válido', 'Solo se permiten archivos Excel (.xls o .xlsx).', 'warning');
+      return;
+    }
 
     // 🚀 Validar tamaño máximo del archivo (evita strings/base64 gigantes y congelamientos)
     const maxBytes = MAX_ARCHIVO_MB * 1024 * 1024;

@@ -10,6 +10,10 @@ import { GastoComite, ResumenCajaAula } from '../../../core/models/gasto.model';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 
+const MAX_COMPROBANTE_MB = 5;
+const TIPOS_COMPROBANTE_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const EXTENSIONES_COMPROBANTE_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+
 @Component({
   selector: 'app-registro-gastos',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -277,6 +281,29 @@ export class RegistroGastosComponent implements OnInit {
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
+
+    // 🚀 Validar tipo MIME / extensión permitida (JPG, PNG, WEBP, PDF)
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    const esFormatoValido =
+      TIPOS_COMPROBANTE_MIME_PERMITIDOS.includes(file.type) ||
+      EXTENSIONES_COMPROBANTE_PERMITIDAS.includes(extension);
+
+    if (!esFormatoValido) {
+      input.value = '';
+      this.archivoSeleccionadoNombre.set('');
+      Swal.fire('Formato no válido', 'Solo se permiten archivos JPG, PNG, WEBP o PDF.', 'warning');
+      return;
+    }
+
+    // 🚀 Validar tamaño máximo (evita archivos gigantes y errores HTTP 413)
+    const maxBytes = MAX_COMPROBANTE_MB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      input.value = '';
+      this.archivoSeleccionadoNombre.set('');
+      Swal.fire('Archivo demasiado grande', `El comprobante no puede superar ${MAX_COMPROBANTE_MB} MB.`, 'warning');
+      return;
+    }
+
     this.archivoSeleccionadoNombre.set(file.name);
     this.subiendoArchivo.set(true);
 

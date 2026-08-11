@@ -14,7 +14,23 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot): boolean
   }
 
   const rolActivo = authService.rolActivoObj();
-  if (!rolActivo) return true;
+  if (!rolActivo) {
+    if (!alertaEnCurso) {
+      alertaEnCurso = true;
+      void Swal.fire({
+        icon: 'error',
+        title: 'Acceso denegado',
+        text: 'Tu sesión no tiene un rol válido asignado.',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Entendido'
+      }).then(() => {
+        alertaEnCurso = false;
+      });
+    }
+
+    authService.limpiarSesion();
+    return router.createUrlTree(['/login']);
+  }
 
   const rolesPermitidos = (route.data?.['roles'] as string[] | undefined) ?? [];
 

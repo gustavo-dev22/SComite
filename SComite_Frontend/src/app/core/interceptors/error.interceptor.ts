@@ -7,6 +7,8 @@ import { AuthService } from '../services/auth.service';
 
 let sesionExpiradaEnCurso = false;
 let permisosAlertaEnCurso = false;
+let demasiadasPeticionesAlertaEnCurso = false;
+let servicioNoDisponibleAlertaEnCurso = false;
 let suscripcionNavegacionRegistrada = false;
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
@@ -22,6 +24,8 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       .subscribe(() => {
         sesionExpiradaEnCurso = false;
         permisosAlertaEnCurso = false;
+        demasiadasPeticionesAlertaEnCurso = false;
+        servicioNoDisponibleAlertaEnCurso = false;
       });
   }
 
@@ -38,6 +42,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         manejarSesionExpirada(authService, router);
       } else if (!esSolicitudLogin && httpError.status === 403) {
         manejarPermisosInsuficientes();
+      } else if (!esSolicitudLogin && httpError.status === 429) {
+        manejarDemasiadasPeticiones();
+      } else if (!esSolicitudLogin && httpError.status >= 500 && httpError.status <= 504) {
+        manejarServicioNoDisponible();
       }
 
       return throwError(() => error);
@@ -77,5 +85,35 @@ function manejarPermisosInsuficientes(): void {
     confirmButtonText: 'Entendido'
   }).then(() => {
     permisosAlertaEnCurso = false;
+  });
+}
+
+function manejarDemasiadasPeticiones(): void {
+  if (demasiadasPeticionesAlertaEnCurso) return;
+  demasiadasPeticionesAlertaEnCurso = true;
+
+  void Swal.fire({
+    icon: 'warning',
+    title: 'Demasiadas peticiones',
+    text: 'Demasiadas peticiones. Intente nuevamente en unos segundos.',
+    confirmButtonColor: '#2563eb',
+    confirmButtonText: 'Entendido'
+  }).then(() => {
+    demasiadasPeticionesAlertaEnCurso = false;
+  });
+}
+
+function manejarServicioNoDisponible(): void {
+  if (servicioNoDisponibleAlertaEnCurso) return;
+  servicioNoDisponibleAlertaEnCurso = true;
+
+  void Swal.fire({
+    icon: 'error',
+    title: 'Servicio no disponible',
+    text: 'Servicio no disponible temporalmente. Intente nuevamente en unos minutos.',
+    confirmButtonColor: '#2563eb',
+    confirmButtonText: 'Entendido'
+  }).then(() => {
+    servicioNoDisponibleAlertaEnCurso = false;
   });
 }
