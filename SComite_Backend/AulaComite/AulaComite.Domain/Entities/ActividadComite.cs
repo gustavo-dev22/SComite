@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using AulaComite.Domain.Common;
 
 namespace AulaComite.Domain.Entities
 {
@@ -14,6 +15,6 @@ namespace AulaComite.Domain.Entities
         public decimal MontoPresupuestado { get; set; }
         public decimal CuotaSugeridaPorAlumno { get; set; }
         public string Estado { get; set; } = "PLANIFICADA"; // PLANIFICADA, EN_PROCESO, FINALIZADA, CANCELADA
-        public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
+        public DateTime FechaRegistro { get; set; } = DateTimeHelper.ObtenerHoraPeru();
     }
 }

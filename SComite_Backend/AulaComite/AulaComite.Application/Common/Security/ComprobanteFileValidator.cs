@@ -36,6 +36,9 @@ namespace AulaComite.Application.Common.Security
             if (string.IsNullOrWhiteSpace(nombreOriginal))
                 throw new ArgumentException("No se ha seleccionado ningún archivo.");
 
+            // 🛡️ M5: rechaza nombres con navegación de directorios ("../") o separadores de ruta.
+            ObtenerNombreArchivoSeguro(nombreOriginal);
+
             if (longitud.HasValue)
             {
                 if (longitud.Value <= 0)
@@ -51,6 +54,38 @@ namespace AulaComite.Application.Common.Security
 
             if (!string.IsNullOrWhiteSpace(contentType) && !TiposMimePermitidos.Contains(contentType))
                 throw new ArgumentException("Tipo de archivo no permitido. Solo se aceptan imágenes (JPG, PNG, WEBP) o PDF.");
+        }
+
+        /// <summary>
+        /// 🛡️ M5: Sanea un nombre de archivo para forzar que sea SOLO el nombre base
+        /// (sin directorios, rutas raíz ni secuencias de navegación) y que no contenga
+        /// caracteres no válidos. Lanza <see cref="ArgumentException"/> si no es seguro.
+        /// </summary>
+        public static string ObtenerNombreArchivoSeguro(string? valor)
+        {
+            if (string.IsNullOrWhiteSpace(valor))
+                throw new ArgumentException("Nombre de archivo no válido.");
+
+            var nombre = valor.Trim();
+
+            // Rechazar secuencias de navegación de directorios ("..", "../", "..\")
+            if (nombre.Contains("..", StringComparison.Ordinal))
+                throw new ArgumentException("Nombre de archivo no válido.");
+
+            // Rechazar separadores de ruta (evita subcarpetas y rutas absolutas/UNC)
+            if (nombre.IndexOfAny(new[] { '/', '\\' }) >= 0)
+                throw new ArgumentException("Nombre de archivo no válido.");
+
+            // Forzar que el valor sea únicamente el nombre de un archivo (sin carpeta ni drive).
+            var nombreBase = Path.GetFileName(nombre);
+            if (string.IsNullOrEmpty(nombreBase) || !string.Equals(nombreBase, nombre, StringComparison.Ordinal))
+                throw new ArgumentException("Nombre de archivo no válido.");
+
+            // Rechazar caracteres no permitidos en nombres de archivo del sistema operativo.
+            if (nombre.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                throw new ArgumentException("Nombre de archivo no válido.");
+
+            return nombreBase;
         }
     }
 }

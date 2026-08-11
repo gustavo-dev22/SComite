@@ -54,7 +54,19 @@ public class LocalFileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(fileName))
             return null;
 
-        var filePath = Path.Combine(ObtenerRutaCarpeta(), fileName);
+        // 🛡️ M5: sanitizar el nombre (rechaza "../", "..\", separadores y caracteres no válidos).
+        try
+        {
+            fileName = ComprobanteFileValidator.ObtenerNombreArchivoSeguro(fileName);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+
+        var filePath = ObtenerRutaArchivoSegura(fileName);
+        if (filePath == null)
+            return null;
 
         if (!File.Exists(filePath))
             return null;
@@ -72,7 +84,11 @@ public class LocalFileStorageService : IFileStorageService
             var fileName = ExtraerNombreArchivo(urlOIdentificador);
             if (string.IsNullOrWhiteSpace(fileName)) return;
 
-            var filePath = Path.Combine(ObtenerRutaCarpeta(), fileName);
+            // 🛡️ M5: sanitizar el nombre antes de acceder al disco.
+            fileName = ComprobanteFileValidator.ObtenerNombreArchivoSeguro(fileName);
+
+            var filePath = ObtenerRutaArchivoSegura(fileName);
+            if (filePath == null) return;
 
             if (File.Exists(filePath))
             {
@@ -88,6 +104,21 @@ public class LocalFileStorageService : IFileStorageService
     private string ObtenerRutaCarpeta()
     {
         return Path.Combine(_environment.ContentRootPath, CarpetaComprobantes.Replace('/', Path.DirectorySeparatorChar));
+    }
+
+    /// <summary>
+    /// 🛡️ M5: Devuelve la ruta completa, garantizando que el archivo esté SIEMPRE
+    /// contenido dentro de la carpeta base permitida (anti Path Traversal).
+    /// </summary>
+    private string? ObtenerRutaArchivoSegura(string fileName)
+    {
+        var carpetaBase = Path.GetFullPath(ObtenerRutaCarpeta()).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var rutaCompleta = Path.GetFullPath(Path.Combine(carpetaBase, fileName));
+
+        if (!rutaCompleta.StartsWith(carpetaBase, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return rutaCompleta;
     }
 
     private static string? ExtraerNombreArchivo(string urlOIdentificador)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Sistema.Commands;
+using AulaComite.Domain.Common;
 using MediatR;
 
 namespace AulaComite.Api.Controllers
@@ -51,7 +52,7 @@ namespace AulaComite.Api.Controllers
             }
 
             var fileBytes = await _mediator.Send(new GenerarBackupManualCommand());
-            var fileName = $"Backup_AulaComite_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql";
+            var fileName = $"Backup_AulaComite_{DateTimeHelper.ObtenerHoraPeru():yyyyMMdd_HHmmss}.sql";
             return File(fileBytes, "application/sql", fileName);
         }
     }

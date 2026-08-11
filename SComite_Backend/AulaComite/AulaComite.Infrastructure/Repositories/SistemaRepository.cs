@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Domain.Common;
 using Dapper;
 
 namespace AulaComite.Infrastructure.Repositories
@@ -37,7 +38,7 @@ namespace AulaComite.Infrastructure.Repositories
             using var connection = _connectionFactory.CreateConnection();
 
             var sql = new StringBuilder();
-            var fechaHora = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss");
+            var fechaHora = DateTimeHelper.ObtenerHoraPeru().ToString("dd/MM/yyyy HH:mm:ss");
 
             sql.AppendLine("-- ===========================================================");
             sql.AppendLine($"-- BACKUP MANUAL COMPLETO - SISTEMA DE COMITÉ DE AULA");

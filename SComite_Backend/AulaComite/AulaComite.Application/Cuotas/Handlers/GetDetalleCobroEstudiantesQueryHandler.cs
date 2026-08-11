@@ -1,4 +1,5 @@
 ﻿using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Cuotas.Dtos;
 using AulaComite.Application.Cuotas.Queries;
 using MediatR;
@@ -18,15 +19,16 @@ namespace AulaComite.Application.Cuotas.Handlers
         {
             var cobros = await _repository.ObtenerDetalleCobroEstudiantesAsync(request.CuotaId);
 
+            // 🛡️ M7: En el listado de cobros se enmascaran documento del estudiante y teléfono del apoderado.
             return cobros.Select(c => new CuotaEstudianteCobroDto
             {
                 CuotaDetalleId = c.CuotaDetalleId,
                 CuotaId = c.CuotaId,
                 EstudianteId = c.EstudianteId,
                 EstudianteNombreCompleto = c.EstudianteNombreCompleto,
-                EstudianteDocumento = c.EstudianteDocumento,
+                EstudianteDocumento = PiiMasker.EnmascararDocumento(c.EstudianteDocumento),
                 NombreApoderado = c.NombreApoderado,
-                TelefonoApoderado = c.TelefonoApoderado,
+                TelefonoApoderado = PiiMasker.EnmascararTelefono(c.TelefonoApoderado),
                 MontoAsignado = c.MontoAsignado,
                 MontoPagado = c.MontoPagado,
                 EstadoPago = c.EstadoPago,

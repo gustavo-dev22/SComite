@@ -1,6 +1,7 @@
 ﻿using AulaComite.Application.Apoderado.Dtos;
 using AulaComite.Application.Apoderado.Queries;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -29,6 +30,13 @@ namespace AulaComite.Application.Apoderado.Handlers
             }
 
             var result = await _repository.ObtenerHijosApoderadoAsync(usuarioApoderado, request.AnioLectivo);
+
+            // 🛡️ M7: En el listado de hijos se enmascara el teléfono del tesorero del Aula.
+            foreach (var hijo in result)
+            {
+                hijo.TesoreroTelefono = PiiMasker.EnmascararTelefono(hijo.TesoreroTelefono);
+            }
+
             return result.ToList();
         }
     }

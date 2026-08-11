@@ -5,6 +5,13 @@
 **/logs/
 *.log
 
+# ── EXCEPCIÓN (M11) ─────────────────────────────────────────────────────────
+# La carpeta de CÓDIGO FUENTE del módulo de Logs/Auditoría del backend NO es un
+# log de runtime: debe permanecer versionada. Sin estas excepciones las reglas
+# **/Logs/ y **/logs/ anteriores ignorarían los archivos .cs de AulaComite.../Logs/.
+!**/AulaComite.Application/Logs/
+!**/AulaComite.Application/Logs/**
+
 # ==========================================
 # .NET / C# (Visual Studio / VS Code)
 # ==========================================

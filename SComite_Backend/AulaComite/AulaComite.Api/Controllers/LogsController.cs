@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Logs.Queries;
-using AulaComite.Application.Logs.Commands;
-using AulaComite.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
 
@@ -34,12 +32,9 @@ namespace AulaComite.Api.Controllers
             return Ok(result);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> RegistrarLog([FromBody] CreateLogCommand command)
-        {
-            // El usuario e IP se derivan del token JWT y de la petición HTTP (nunca del cuerpo JSON).
-            await _mediator.Send(command);
-            return Ok(new { mensaje = "Log de auditoría registrado correctamente." });
-        }
+        // NOTA M16: La escritura de logs (POST /api/logs) se retiró del API pública.
+        // El frontend (log.service.ts) solo realiza consultas GET. Los logs de auditoría
+        // se registran de forma interna por los handlers de negocio y el middleware de
+        // excepciones (a través de ILogRepository), evitando la inundación de logs falsos.
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using AulaComite.Domain.Common;
 
 namespace AulaComite.Domain.Entities
 {
@@ -14,7 +15,7 @@ namespace AulaComite.Domain.Entities
         public bool EsFijado { get; set; } = false;
         public string? UrlAdjunto { get; set; }
         public string UsuarioRegistro { get; set; } = string.Empty;
-        public DateTime FechaPublicacion { get; set; } = DateTime.UtcNow;
+        public DateTime FechaPublicacion { get; set; } = DateTimeHelper.ObtenerHoraPeru();
         public int CantidadVistas { get; set; }
         public bool Estado { get; set; }
     }

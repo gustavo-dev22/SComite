@@ -32,14 +32,33 @@ namespace AulaComite.Infrastructure.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return new AuthResultDto { Exito = false, Mensaje = "Credenciales inválidas en SASI." };
+                    // 🛡️ M3: Respuesta GENÉRICA para no revelar si la cuenta existe o no.
+                    return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Usuario o contraseña incorrectos." };
                 }
 
                 var sasiResult = await response.Content.ReadFromJsonAsync<SasiLoginResponse>();
 
-                if (sasiResult == null || !sasiResult.Success)
+                if (sasiResult == null)
                 {
-                    return new AuthResultDto { Exito = false, Mensaje = "Usuario o contraseña incorrectos." };
+                    return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "No se pudo procesar la respuesta de autenticación. Inténtelo de nuevo." };
+                }
+
+                // 🛡️ M4: Reflejar el estado de BLOQUEO de la cuenta de forma explícita,
+                // sin ignorarlo en el flujo de login.
+                if (sasiResult.Bloqueado)
+                {
+                    return new AuthResultDto
+                    {
+                        Exito = false,
+                        Bloqueado = true,
+                        Mensaje = "Su cuenta se encuentra bloqueada en el sistema. Contacte al administrador."
+                    };
+                }
+
+                if (!sasiResult.Success)
+                {
+                    // 🛡️ M3: Respuesta GENÉRICA ante credenciales incorrectas.
+                    return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Usuario o contraseña incorrectos." };
                 }
 
                 // 🚀 VALIDACIÓN CRÍTICA: Verificar si tiene acceso al Sistema de Comité de Aula
@@ -51,13 +70,14 @@ namespace AulaComite.Infrastructure.Services
                     return new AuthResultDto
                     {
                         Exito = false,
+                        Bloqueado = false,
                         Mensaje = "Acceso denegado: Tu usuario no tiene asignado el rol/sistema 'Comité de Aula' en SASI."
                     };
                 }
 
                 if (sasiResult.Usuario == null)
                 {
-                    return new AuthResultDto { Exito = false, Mensaje = "Respuesta inválida de SASI." };
+                    return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Respuesta inválida de SASI." };
                 }
 
                 // Emitir un JWT propio de la aplicación, firmado con la clave local
@@ -67,7 +87,11 @@ namespace AulaComite.Infrastructure.Services
                 return new AuthResultDto
                 {
                     Exito = true,
+                    Bloqueado = sasiResult.Bloqueado,
                     Token = tokenLocal,
+                    // 🛡️ M4: Propagar el token original de SASI para consumo interno
+                    // backend-a-backend cuando sea necesario.
+                    TokenSasi = sasiResult.Token ?? string.Empty,
                     NombreUsuario = sasiResult.Usuario?.NombreCompleto ?? string.Empty,
                     Email = sasiResult.Usuario?.Email ?? string.Empty,
                     SistemaComite = sistemaComite
@@ -76,7 +100,7 @@ namespace AulaComite.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al conectar con el servidor de autenticación SASI: {Message}", ex.Message);
-                return new AuthResultDto { Exito = false, Mensaje = "Error al conectar con el servidor de autenticación. Inténtelo de nuevo." };
+                return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Error al conectar con el servidor de autenticación. Inténtelo de nuevo." };
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using AulaComite.Domain.Common;
 
 namespace AulaComite.Domain.Entities
 {
@@ -15,7 +16,7 @@ namespace AulaComite.Domain.Entities
         public string EstadoActa { get; set; } = "BORRADOR";
         public string? UrlDocumentoPdf { get; set; }
         public string UsuarioRegistro { get; set; } = string.Empty;
-        public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
+        public DateTime FechaRegistro { get; set; } = DateTimeHelper.ObtenerHoraPeru();
         public string? UsuarioActualizacion { get; set; }
         public DateTime? FechaActualizacion { get; set; }
         public bool Estado { get; set; } = true;
