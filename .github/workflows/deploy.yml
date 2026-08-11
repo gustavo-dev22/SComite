@@ -1,55 +1,64 @@
-name: Deploy Backend and Angular Frontend to MonsterASP
+name: Deploy Backend and Frontend to Separate Sites
 
 on:
   push:
     branches:
-      - main # Cambia a 'master' si tu rama principal se llama así
+      - main
 
 jobs:
-  build-and-deploy:
+  # ==========================================
+  # JOB 1: COMPILAR Y DESPLEGAR EL BACKEND (.NET)
+  # ==========================================
+  deploy-backend:
     runs-on: ubuntu-latest
-
     steps:
-    # 1. Obtener el código fuente de GitHub
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. Configurar .NET para el Backend
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x' # Ajusta la versión de .NET si usas otra (ej. 6.0.x, 9.0.x)
+        dotnet-version: '8.0.x'
 
-    # 3. Compilar el Backend .NET
     - name: Publish .NET Backend
-      run: dotnet publish ./SComite_Backend/AulaComite -c Release -o ./publish
+      run: dotnet publish ./SComite_Backend/AulaComite -c Release -o ./publish-backend
 
-    # 4. Configurar Node.js para Angular
+    - name: FTP Deploy Backend
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_BACKEND_SERVER }}
+        username: ${{ secrets.FTP_BACKEND_USERNAME }}
+        password: ${{ secrets.FTP_BACKEND_PASSWORD }}
+        local-dir: ./publish-backend/
+        server-dir: /wwwroot/
+
+  # ==========================================
+  # JOB 2: COMPILAR Y DESPLEGAR EL FRONTEND (ANGULAR)
+  # ==========================================
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # Versión estable de Node.js
+        node-version: '20'
 
-    # 5. Instalar dependencias y compilar el Frontend en Angular
     - name: Build Angular Frontend
       run: |
         cd SComite_Frontend
         npm ci
         npx ng build --configuration production
 
-    # 6. Copiar los archivos compilados de Angular al wwwroot de la salida de .NET
-    # NOTA: Ajusta 'SComite_Frontend/dist/tu-nombre-proyecto/browser' según el output exacto que genera tu Angular
-    - name: Copy Angular dist to .NET publish/wwwroot
-      run: |
-        mkdir -p ./publish/wwwroot
-        cp -r ./SComite_Frontend/dist/* ./publish/wwwroot/
-
-    # 7. Desplegar todo mediante FTP a MonsterASP
-    - name: FTP Deploy to MonsterASP
+    # Publica los archivos estáticos de Angular directamente en la web del Frontend
+    # Nota: Verifica la ruta exacta del dist generado en SComite_Frontend/dist/
+    - name: FTP Deploy Frontend
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        local-dir: ./publish/
+        server: ${{ secrets.FTP_FRONTEND_SERVER }}
+        username: ${{ secrets.FTP_FRONTEND_USERNAME }}
+        password: ${{ secrets.FTP_FRONTEND_PASSWORD }}
+        local-dir: ./SComite_Frontend/dist/
         server-dir: /wwwroot/
