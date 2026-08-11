@@ -80,6 +80,7 @@ export class PadronEstudiantesComponent implements OnInit {
   aulaSeleccionada = signal<number | null>(null);
 
   cargando = signal<boolean>(false);
+  cargandoDetalle = signal<boolean>(false);
   modalAbierto = signal<boolean>(false);
   esEdicion = signal<boolean>(false);
 
@@ -240,6 +241,8 @@ export class PadronEstudiantesComponent implements OnInit {
 
   abrirModalEditar(e: Estudiante): void {
     this.esEdicion.set(true);
+    this.cargandoDetalle.set(true);
+
     this.estudianteForm.patchValue({
       id: e.id,
       aulaId: e.aulaId,
@@ -253,6 +256,23 @@ export class PadronEstudiantesComponent implements OnInit {
       telefonoApoderado: e.telefonoApoderado || ''
     });
     this.modalAbierto.set(true);
+
+    // 🛡️ La fila de la tabla trae el documento/teléfono ENMASCARADOS (***).
+    // Consultamos el detalle para traer los datos reales y recién ahí
+    // rellenamos el formulario de edición.
+    this.estudianteService.getEstudiante(e.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (detalle) => {
+        this.estudianteForm.patchValue({
+          numeroDocumento: detalle.numeroDocumento,
+          telefonoApoderado: detalle.telefonoApoderado || ''
+        });
+        this.cargandoDetalle.set(false);
+      },
+      error: (err) => {
+        this.cargandoDetalle.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos reales del estudiante.', 'error');
+      }
+    });
   }
 
   cerrarModal(): void {
