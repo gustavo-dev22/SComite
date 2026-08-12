@@ -52,13 +52,14 @@ jobs:
         npm ci
         npx ng build --configuration production
 
-    # Publica los archivos estáticos de Angular directamente en la web del Frontend
-    # Nota: Verifica la ruta exacta del dist generado en SComite_Frontend/dist/
+    # Se apunta la propiedad 'local-dir' directamente a la carpeta 'browser' 
+    # donde vive index.html para que suba solo su contenido a la raíz de wwwroot
     - name: FTP Deploy Frontend
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: ${{ secrets.FTP_FRONTEND_SERVER }}
         username: ${{ secrets.FTP_FRONTEND_USERNAME }}
         password: ${{ secrets.FTP_FRONTEND_PASSWORD }}
-        local-dir: ./SComite_Frontend/dist/
+        local-dir: ./SComite_Frontend/dist/SComite_Frontend/browser/
         server-dir: /wwwroot/
+        dangerous-clean-slate: true # Limpia carpetas antiguas en wwwroot para no dejar carpetas sobrantes
