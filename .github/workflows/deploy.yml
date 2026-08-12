@@ -1,4 +1,4 @@
-name: Deploy Backend and Frontend to Separate Sites 
+name: Deploy Backend and Frontend to Separate Sites
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   # ==========================================
-  # JOB 1: COMPILAR Y DESPLEGAR EL BACKEND (.NET)
+  # JOB 1: BACKEND (Solo si hay cambios en SComite_Backend)
   # ==========================================
   deploy-backend:
     runs-on: ubuntu-latest
@@ -15,15 +15,28 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # Verifica si hubo cambios en la carpeta del backend
+    - name: Check for Backend changes
+      id: backend-changes
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          src:
+            - 'SComite_Backend/**'
+
     - name: Setup .NET
+      if: steps.backend-changes.outputs.src == 'true'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
 
+    # Apuntamos directamente al archivo .csproj para evitar el Warning
     - name: Publish .NET Backend
-      run: dotnet publish ./SComite_Backend/AulaComite -c Release -o ./publish-backend
+      if: steps.backend-changes.outputs.src == 'true'
+      run: dotnet publish ./SComite_Backend/AulaComite/*.csproj -c Release -o ./publish-backend
 
     - name: FTP Deploy Backend
+      if: steps.backend-changes.outputs.src == 'true'
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: ${{ secrets.FTP_BACKEND_SERVER }}
@@ -33,7 +46,7 @@ jobs:
         server-dir: /wwwroot/
 
   # ==========================================
-  # JOB 2: COMPILAR Y DESPLEGAR EL FRONTEND (ANGULAR)
+  # JOB 2: FRONTEND (Solo si hay cambios en SComite_Frontend)
   # ==========================================
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -41,20 +54,30 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # Verifica si hubo cambios en la carpeta del frontend
+    - name: Check for Frontend changes
+      id: frontend-changes
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          src:
+            - 'SComite_Frontend/**'
+
     - name: Setup Node.js
+      if: steps.frontend-changes.outputs.src == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: '20'
 
     - name: Build Angular Frontend
+      if: steps.frontend-changes.outputs.src == 'true'
       run: |
         cd SComite_Frontend
         npm ci
         npx ng build --configuration production
 
-    # Se apunta la propiedad 'local-dir' directamente a la carpeta 'browser' 
-    # donde vive index.html para que suba solo su contenido a la raíz de wwwroot
     - name: FTP Deploy Frontend
+      if: steps.frontend-changes.outputs.src == 'true'
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
       with:
         server: ${{ secrets.FTP_FRONTEND_SERVER }}
@@ -62,4 +85,3 @@ jobs:
         password: ${{ secrets.FTP_FRONTEND_PASSWORD }}
         local-dir: ./SComite_Frontend/dist/SComite_Frontend/browser/
         server-dir: /wwwroot/
-        dangerous-clean-slate: true # Limpia carpetas antiguas en wwwroot para no dejar carpetas sobrantes
