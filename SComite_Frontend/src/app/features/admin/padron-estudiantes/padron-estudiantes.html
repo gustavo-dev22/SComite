@@ -355,7 +355,7 @@
           @if (registrosPrevios().length > 0) {
             <div>
               <div class="flex justify-between items-center mb-2">
-                <span class="text-xs font-bold text-slate-700 uppercase">Vista Previa de Verificación SASI ({{ registrosPrevios().length }} filas):</span>
+                <span class="text-xs font-bold text-slate-700 uppercase">Vista Previa de Verificación ({{ registrosPrevios().length }} filas):</span>
               </div>
               
               <div class="max-h-52 overflow-y-auto border border-slate-200 rounded-xl">
@@ -364,7 +364,7 @@
                     <tr>
                       <th class="p-3">Documento</th>
                       <th class="p-3">Estudiante</th>
-                      <th class="p-3">Apoderado (SASI)</th>
+                      <th class="p-3">Apoderado</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
@@ -382,7 +382,7 @@
                           } @else {
                             <!-- ALERTA: EL APODERADO NO EXISTE EN SASI -->
                             <span class="inline-flex items-center gap-1 text-rose-700 bg-rose-50 border border-rose-200 font-bold px-2 py-0.5 rounded-full text-[11px]" title="El apoderado escrito en Excel no existe en SASI. Este alumno será omitido.">
-                              ⚠️ {{ r.nombreApoderado }} (No existe en SASI)
+                              ⚠️ {{ r.nombreApoderado }} (No se encuentra registrado)
                             </span>
                           }
                         </td>
