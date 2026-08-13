@@ -11,23 +11,16 @@ namespace AulaComite.Api.Controllers
     public class SistemaController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IWebHostEnvironment _env;
 
-        public SistemaController(IMediator mediator, IWebHostEnvironment env)
+        public SistemaController(IMediator mediator)
         {
             _mediator = mediator;
-            _env = env;
         }
 
         [HttpPost("reset-database")]
         [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> ResetBaseDeDatos([FromBody] ResetBaseDeDatosCommand command)
         {
-            if (!_env.IsDevelopment())
-            {
-                return NotFound();
-            }
-
             var resultado = await _mediator.Send(command);
             if (!resultado.Exito)
             {
@@ -43,11 +36,6 @@ namespace AulaComite.Api.Controllers
         [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> DescargarBackup()
         {
-            if (!_env.IsDevelopment())
-            {
-                return NotFound();
-            }
-
             var fileBytes = await _mediator.Send(new GenerarBackupManualCommand());
             var fileName = $"Backup_AulaComite_{DateTimeHelper.ObtenerHoraPeru():yyyyMMdd_HHmmss}.sql";
             return File(fileBytes, "application/sql", fileName);

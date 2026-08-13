@@ -21,8 +21,9 @@ namespace AulaComite.Infrastructure.Repositories
         {
             using var connection = _connectionFactory.CreateConnection();
 
-            // Ruta donde SQL Server guardará el respaldo pre-purga
-            var rutaFolder = @"C:\Backups_AulaComite\";
+            // Ruta dinámica donde SQL Server guardará el respaldo pre-purga
+            // (dentro de la carpeta del servidor para garantizar permisos de escritura).
+            var rutaFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
             Directory.CreateDirectory(rutaFolder);
 
             var result = await connection.ExecuteScalarAsync<int>(

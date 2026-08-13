@@ -20,14 +20,6 @@ namespace AulaComite.Application.Sistema.Handlers
 
         public async Task<ResetBaseDeDatosResult> Handle(ResetBaseDeDatosCommand request, CancellationToken cancellationToken)
         {
-            // 🛡️ Protección reforzada: la operación de reseteo queda DESHABILITADA en entornos
-            // de producción (defensa en profundidad, además del guard del controlador).
-            var ambiente = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-            if (ambiente.Equals("Production", StringComparison.OrdinalIgnoreCase))
-            {
-                return new ResetBaseDeDatosResult(false, "La operación de reseteo de la base de datos está deshabilitada en producción.");
-            }
-
             // 🛡️ Solo un Administrador Global (validado desde el Token JWT) puede resetear la BD.
             if (!_userContextService.EsAdministradorGlobal())
             {
