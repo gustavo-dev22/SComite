@@ -13,6 +13,8 @@
 -- =============================================================================
 -- v2: sp_Comite_AsignarIntegrante sin la columna Celular (revertida del esquema).
 -- v3: deploy auto self-contained win-x64 (publicar con el runtime incluido).
+-- v4: revertir a framework-dependent (el hosting ya tiene el runtime; el
+--     web.config usa processPath="dotnet"). Evita el HTTP 500.32.
 SET NOCOUNT ON;
 GO
 

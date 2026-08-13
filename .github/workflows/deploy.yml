@@ -31,11 +31,11 @@ jobs:
         dotnet-version: '10.0.x'
 
     # Apuntamos directamente al archivo .csproj para evitar el Warning
-    # Publicación self-contained (win-x64): incluye el runtime .NET, no depende
-    # de que el hosting tenga instalado .NET. Coincide con el deploy previo.
+    # Publicación framework-dependent (modo que ya corría en el hosting: runasp
+    # tiene el runtime .NET instalado y el web.config usa processPath="dotnet").
     - name: Publish .NET Backend
       if: steps.backend-changes.outputs.src == 'true'
-      run: dotnet publish ./SComite_Backend/AulaComite/AulaComite.Api/AulaComite.Api.csproj -c Release -r win-x64 --self-contained true -o ./publish-backend
+      run: dotnet publish ./SComite_Backend/AulaComite/AulaComite.Api/AulaComite.Api.csproj -c Release -o ./publish-backend
 
     - name: FTP Deploy Backend
       if: steps.backend-changes.outputs.src == 'true'
