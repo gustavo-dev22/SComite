@@ -162,42 +162,17 @@ BEGIN
 END
 GO
 
--- 5. sp_Sistema_ResetBaseDeDatos (1 parámetro: @RutaBackupFolder, inyectada por la API)
+-- 5. sp_Sistema_ResetBaseDeDatos (sin parámetros): SOLO purga.
+--    El respaldo pre-purga lo genera la API (script SQL lógico) y se guarda en la
+--    carpeta Backups de la app. El BACKUP DATABASE físico no está disponible en el
+--    hosting (la BD corre en otro servidor y no puede escribir en la carpeta web),
+--    por eso se eliminó del SP.
 CREATE OR ALTER PROCEDURE [dbo].[sp_Sistema_ResetBaseDeDatos]
-    @RutaBackupFolder VARCHAR(500) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF @RutaBackupFolder IS NULL OR LTRIM(RTRIM(@RutaBackupFolder)) = ''
-    BEGIN
-        THROW 50002, 'La ruta de la carpeta de backup no fue proporcionada.', 1;
-        RETURN;
-    END
-
-    -- 1. CREAR RUTA Y ARCHIVO DE BACKUP PRE-PURGA AUTOMÁTICO
-    DECLARE @NombreBaseDatos sysname;
-    DECLARE @NombreBackup VARCHAR(255);
-    DECLARE @RutaCompletaBackup VARCHAR(750);
-    DECLARE @FechaHoraStr VARCHAR(50);
-
-    SET @NombreBaseDatos = DB_NAME();
-    SET @FechaHoraStr = REPLACE(REPLACE(REPLACE(CONVERT(VARCHAR, DATEADD(HOUR, -5, GETUTCDATE()), 120), '-', ''), ':', ''), ' ', '_');
-    SET @NombreBackup = 'PrePurga_' + @NombreBaseDatos + '_' + @FechaHoraStr + '.bak';
-    SET @RutaCompletaBackup = @RutaBackupFolder + '\' + @NombreBackup;
-
-    BEGIN TRY
-        -- Backup físico automático antes de vaciar las tablas
-        BACKUP DATABASE @NombreBaseDatos
-        TO DISK = @RutaCompletaBackup
-        WITH FORMAT, INIT, NAME = 'Backup Pre Purga Automático', SKIP, NOUNLOAD, STATS = 10;
-    END TRY
-    BEGIN CATCH
-        THROW 50001, 'No se pudo generar el backup de seguridad previo. La purga ha sido cancelada.', 1;
-        RETURN;
-    END CATCH
-
-    -- 2. EJECUTAR PURGA DE TABLAS REALES (EXCEPTUANDO InstitucionEducativa)
+    -- 1. EJECUTAR PURGA DE TABLAS REALES (EXCEPTUANDO InstitucionEducativa)
     BEGIN TRANSACTION;
     BEGIN TRY
         -- Deshabilitar temporalmente todas las Foreign Keys (PORTABLE, sin sp_MSforeachtable)
@@ -246,7 +221,7 @@ BEGIN
         EXEC sp_executesql @CmdHabilitar;
 
         COMMIT TRANSACTION;
-        SELECT 1 AS Exitoso, @RutaCompletaBackup AS RutaBackup;
+        SELECT 1 AS Exitoso;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;

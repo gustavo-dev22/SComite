@@ -19,16 +19,20 @@ namespace AulaComite.Infrastructure.Repositories
 
         public async Task<bool> ResetBaseDeDatosAsync()
         {
-            using var connection = _connectionFactory.CreateConnection();
-
-            // Ruta dinámica donde SQL Server guardará el respaldo pre-purga
-            // (dentro de la carpeta del servidor para garantizar permisos de escritura).
+            // Ruta donde la API guarda el respaldo pre-purga (script SQL lógico).
+            // En el hosting la BD corre en un servidor separado y NO puede ejecutar
+            // BACKUP DATABASE hacia esta carpeta, por lo que el respaldo se genera
+            // aquí (script INSERT) antes de invocar la purga.
             var rutaFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
             Directory.CreateDirectory(rutaFolder);
 
+            var backupBytes = await GenerarBackupScriptSqlAsync();
+            var archivoBackup = Path.Combine(rutaFolder, $"Backup_PrePurga_{DateTimeHelper.ObtenerHoraPeru():yyyyMMdd_HHmmss}.sql");
+            await File.WriteAllBytesAsync(archivoBackup, backupBytes);
+
+            using var connection = _connectionFactory.CreateConnection();
             var result = await connection.ExecuteScalarAsync<int>(
                 "sp_Sistema_ResetBaseDeDatos",
-                new { RutaBackupFolder = rutaFolder },
                 commandType: CommandType.StoredProcedure
             );
             return result == 1;
