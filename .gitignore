@@ -22,6 +22,9 @@
 *.userosscache
 *.sln.docstates
 
+# Salida local de `dotnet publish` (artefacto de build; el deploy lo regenera)
+publish-backend/
+
 # Archivos de configuración local o secretos
 **/appsettings.Local.json
 **/appsettings.Development.json
