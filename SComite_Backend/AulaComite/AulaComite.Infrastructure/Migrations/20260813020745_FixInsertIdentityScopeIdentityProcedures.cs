@@ -133,7 +133,6 @@ namespace AulaComite.Infrastructure.Migrations
                     @UsuarioIdSasi VARCHAR(100),
                     @NombreCompleto VARCHAR(150),
                     @Email VARCHAR(100),
-                    @Celular VARCHAR(20) = NULL,
                     @Cargo VARCHAR(30)
                 AS
                 BEGIN
@@ -144,13 +143,12 @@ namespace AulaComite.Infrastructure.Migrations
                     SET Estado = 0
                     WHERE AulaId = @AulaId AND Cargo = @Cargo AND Estado = 1;
 
-                    -- Insertar incluyendo el Celular y ajustando hora a Perú (UTC-5)
+                    -- Insertar la nueva asignación (hora ajustada a Perú, UTC-5)
                     INSERT INTO ComiteIntegrantes (
                         AulaId,
                         UsuarioIdSasi,
                         NombreCompleto,
                         Email,
-                        Celular,
                         Cargo,
                         Estado,
                         FechaAsignacion
@@ -160,7 +158,6 @@ namespace AulaComite.Infrastructure.Migrations
                         @UsuarioIdSasi,
                         @NombreCompleto,
                         @Email,
-                        @Celular,
                         @Cargo,
                         1,
                         DATEADD(HOUR, -5, GETUTCDATE())
@@ -358,7 +355,6 @@ namespace AulaComite.Infrastructure.Migrations
                     @UsuarioIdSasi VARCHAR(100),
                     @NombreCompleto VARCHAR(150),
                     @Email VARCHAR(100),
-                    @Celular VARCHAR(20) = NULL,
                     @Cargo VARCHAR(30)
                 AS
                 BEGIN
@@ -367,11 +363,11 @@ namespace AulaComite.Infrastructure.Migrations
                     SET Estado = 0
                     WHERE AulaId = @AulaId AND Cargo = @Cargo AND Estado = 1;
                     INSERT INTO ComiteIntegrantes (
-                        AulaId, UsuarioIdSasi, NombreCompleto, Email, Celular,
+                        AulaId, UsuarioIdSasi, NombreCompleto, Email,
                         Cargo, Estado, FechaAsignacion
                     )
                     VALUES (
-                        @AulaId, @UsuarioIdSasi, @NombreCompleto, @Email, @Celular,
+                        @AulaId, @UsuarioIdSasi, @NombreCompleto, @Email,
                         @Cargo, 1, DATEADD(HOUR, -5, GETUTCDATE())
                     );
                     SELECT CAST(SCOPE_IDENTITY() AS INT);
