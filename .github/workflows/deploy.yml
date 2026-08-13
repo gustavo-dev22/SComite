@@ -33,7 +33,7 @@ jobs:
     # Apuntamos directamente al archivo .csproj para evitar el Warning
     - name: Publish .NET Backend
       if: steps.backend-changes.outputs.src == 'true'
-      run: dotnet publish ./SComite_Backend/AulaComite/*.csproj -c Release -o ./publish-backend
+      run: dotnet publish ./SComite_Backend/AulaComite/AulaComite.Api.csproj -c Release -o ./publish-backend
 
     - name: FTP Deploy Backend
       if: steps.backend-changes.outputs.src == 'true'
