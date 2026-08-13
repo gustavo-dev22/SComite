@@ -11,6 +11,7 @@
 -- NO ejecutar en el entorno local/migraciones: esto corregiría el SP local
 -- haciendo que NO coincida con el estado de la migración registrada.
 -- =============================================================================
+-- v2: sp_Comite_AsignarIntegrante sin la columna Celular (revertida del esquema).
 SET NOCOUNT ON;
 GO
 
