@@ -12,6 +12,7 @@
 -- haciendo que NO coincida con el estado de la migración registrada.
 -- =============================================================================
 -- v2: sp_Comite_AsignarIntegrante sin la columna Celular (revertida del esquema).
+-- v3: deploy auto self-contained win-x64 (publicar con el runtime incluido).
 SET NOCOUNT ON;
 GO
 
