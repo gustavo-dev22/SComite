@@ -28,7 +28,7 @@ jobs:
       if: steps.backend-changes.outputs.src == 'true'
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     # Apuntamos directamente al archivo .csproj para evitar el Warning
     - name: Publish .NET Backend
