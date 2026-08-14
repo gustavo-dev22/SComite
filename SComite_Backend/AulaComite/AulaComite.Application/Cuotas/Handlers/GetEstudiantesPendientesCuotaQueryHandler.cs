@@ -26,7 +26,9 @@ namespace AulaComite.Application.Cuotas.Handlers
         {
             var result = await _repository.ObtenerEstudiantesPendientesAsync(request.CuotaId);
 
-            // 🛡️ M7: En el listado se enmascaran documento y teléfono del apoderado.
+            // 🛡️ M7: En el listado se enmascara el documento del apoderado. El teléfono
+            // se expone completo porque el comité/tesorería lo usa para contactar por
+            // WhatsApp a los apoderados morosos.
             return result.Select(e => new EstudiantePendienteCuotaDto
             {
                 EstudianteId = e.EstudianteId,
@@ -34,7 +36,7 @@ namespace AulaComite.Application.Cuotas.Handlers
                 NumeroDocumento = PiiMasker.EnmascararDocumento(e.NumeroDocumento),
                 NombreEstudiante = e.NombreEstudiante,
                 NombreApoderado = e.NombreApoderado,
-                TelefonoApoderado = PiiMasker.EnmascararTelefono(e.TelefonoApoderado),
+                TelefonoApoderado = e.TelefonoApoderado,
                 MontoAsignado = e.MontoAsignado,
                 MontoPagado = e.MontoPagado,
                 MontoPendiente = e.MontoPendiente,

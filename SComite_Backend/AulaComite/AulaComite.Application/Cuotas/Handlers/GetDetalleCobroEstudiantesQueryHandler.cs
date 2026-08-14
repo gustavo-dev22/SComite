@@ -19,7 +19,8 @@ namespace AulaComite.Application.Cuotas.Handlers
         {
             var cobros = await _repository.ObtenerDetalleCobroEstudiantesAsync(request.CuotaId);
 
-            // 🛡️ M7: En el listado de cobros se enmascaran documento del estudiante y teléfono del apoderado.
+            // 🛡️ M7: Se enmascara el documento del estudiante. El teléfono del apoderado se
+            // expone completo porque la tesorería lo usa para contactar por WhatsApp.
             return cobros.Select(c => new CuotaEstudianteCobroDto
             {
                 CuotaDetalleId = c.CuotaDetalleId,
@@ -28,7 +29,7 @@ namespace AulaComite.Application.Cuotas.Handlers
                 EstudianteNombreCompleto = c.EstudianteNombreCompleto,
                 EstudianteDocumento = PiiMasker.EnmascararDocumento(c.EstudianteDocumento),
                 NombreApoderado = c.NombreApoderado,
-                TelefonoApoderado = PiiMasker.EnmascararTelefono(c.TelefonoApoderado),
+                TelefonoApoderado = c.TelefonoApoderado,
                 MontoAsignado = c.MontoAsignado,
                 MontoPagado = c.MontoPagado,
                 EstadoPago = c.EstadoPago,

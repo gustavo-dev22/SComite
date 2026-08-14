@@ -28,7 +28,7 @@ namespace AulaComite.Infrastructure.Migrations
                                 FROM CuotaDetalleEstudiante d
                                 INNER JOIN Cuotas c ON d.CuotaId = c.Id
                                 WHERE c.AulaId = @AulaId 
-                                  AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO')
+                                  AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO', 'PARCIAL')
                                   AND d.MontoPagado > 0
                                   AND YEAR(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) = @Anio
                             ), 0)
@@ -58,7 +58,7 @@ namespace AulaComite.Infrastructure.Migrations
                         FROM CuotaDetalleEstudiante d
                         INNER JOIN Cuotas c ON d.CuotaId = c.Id
                         WHERE c.AulaId = @AulaId 
-                          AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO')
+                          AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO', 'PARCIAL')
                           AND d.MontoPagado > 0
                           AND YEAR(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) = @Anio
                         GROUP BY MONTH(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion)))

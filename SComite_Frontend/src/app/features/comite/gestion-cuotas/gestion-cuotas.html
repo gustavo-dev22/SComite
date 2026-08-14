@@ -385,7 +385,7 @@
         } @else {
           <div class="flex justify-between items-center mb-3">
             <span class="text-xs font-bold text-slate-500 uppercase">
-              Total Pendientes: {{ estudiantesMorosos().length }} apoderados
+              Total Pendientes: {{ estudiantesMorosos().length }} {{ estudiantesMorosos().length === 1 ? 'apoderado' : 'apoderados' }}
             </span>
             <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
               Monto Cuota: S/. {{ cuotaSeleccionadaMorosos()?.montoIndividual | number:'1.2-2' }}
