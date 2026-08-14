@@ -29,6 +29,16 @@ namespace AulaComite.Api.Controllers
             return Ok(result);
         }
 
+        // 🛡️ Aulas del usuario logueado: el comité/apoderado solo ve sus aulas;
+        // el administrador ve todas. Lo usa el frontend en los selects de "Aula - Sección".
+        [HttpGet("mis-aulas")]
+        [Authorize]
+        public async Task<IActionResult> GetMisAulas([FromQuery] int? periodoId)
+        {
+            var result = await _mediator.Send(new GetMisAulasQuery(periodoId));
+            return Ok(result);
+        }
+
         [HttpGet("periodos")]
         [Authorize(Policy = "GestionEscolar")]
         public async Task<IActionResult> GetPeriodos()

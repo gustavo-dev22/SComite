@@ -18,6 +18,12 @@ export class AulaService {
     return this.http.get<Aula[]>(url);
   }
 
+  // 🛡️ Aulas del usuario logueado (comité/apoderado solo ven sus aulas; admin ve todas)
+  getMisAulas(periodoId?: number): Observable<Aula[]> {
+    const url = periodoId ? `${this.apiUrl}/mis-aulas?periodoId=${periodoId}` : `${this.apiUrl}/mis-aulas`;
+    return this.http.get<Aula[]>(url);
+  }
+
   getPeriodos(): Observable<PeriodoLectivo[]> {
     return this.http.get<PeriodoLectivo[]>(`${this.apiUrl}/periodos`);
   }

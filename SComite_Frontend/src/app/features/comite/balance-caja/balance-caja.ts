@@ -170,7 +170,7 @@ export class BalanceCajaComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getMisAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);

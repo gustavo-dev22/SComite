@@ -8,6 +8,7 @@ namespace AulaComite.Application.Common.Interfaces
     public interface IAulaRepository
     {
         Task<IEnumerable<Aula>> ObtenerTodasAsync(int? periodoId);
+        Task<IEnumerable<Aula>> ObtenerAulasPorUsuarioAsync(int? periodoId, string? usuarioId, string? nombreCompleto);
         Task<IEnumerable<PeriodoLectivo>> ObtenerPeriodosAsync();
         Task<int> CrearAulaAsync(Aula aula);
         Task<bool> ActualizarEstadoAulaAsync(int id, bool estado);

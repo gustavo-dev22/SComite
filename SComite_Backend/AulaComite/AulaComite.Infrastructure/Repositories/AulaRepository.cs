@@ -25,6 +25,52 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
+        public async Task<IEnumerable<Aula>> ObtenerAulasPorUsuarioAsync(int? periodoId, string? usuarioId, string? nombreCompleto)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+
+            // 🛡️ Devuelve SOLO las aulas a las que pertenece el usuario:
+            //  - Comité de Aula: filas de ComiteIntegrantes (UsuarioIdSasi)
+            //  - Apoderado: aulas de los hijos en Estudiantes (por UsuarioIdApoderadoSasi
+            //    o por el nombre del apoderado, igual que sp_Apoderado_ObtenerHijos)
+            const string sql = @"
+                SELECT DISTINCT a.Id, a.PeriodoId, a.Nivel, a.Grado, a.Seccion,
+                       (a.Nivel + ' - ' + a.Grado + ' ' + a.Seccion) AS NombreDisplay,
+                       a.Estado, p.Anio AS AnioPeriodo
+                FROM Aulas a
+                INNER JOIN PeriodosLectivos p ON a.PeriodoId = p.Id
+                WHERE (@PeriodoId IS NULL OR a.PeriodoId = @PeriodoId)
+                  AND (
+                      EXISTS (
+                          SELECT 1 FROM ComiteIntegrantes ci
+                          WHERE ci.AulaId = a.Id
+                            AND ci.UsuarioIdSasi = @UsuarioId
+                            AND ci.Estado = 1
+                      )
+                      OR EXISTS (
+                          SELECT 1 FROM Estudiantes e
+                          WHERE e.AulaId = a.Id
+                            AND e.Estado = 1
+                            AND (
+                                LTRIM(RTRIM(ISNULL(e.UsuarioIdApoderadoSasi,''))) = @UsuarioId
+                                OR (
+                                    LTRIM(RTRIM(@NombreCompleto)) <> ''
+                                    AND (
+                                        LTRIM(RTRIM(ISNULL(e.NombreApoderado,''))) = @NombreCompleto
+                                        OR LTRIM(RTRIM(ISNULL(e.NombreApoderado,''))) LIKE '%' + @NombreCompleto + '%'
+                                    )
+                                )
+                            )
+                      )
+                  )
+                ORDER BY a.Grado, a.Seccion, a.Id";
+
+            return await connection.QueryAsync<Aula>(
+                sql,
+                new { PeriodoId = periodoId, UsuarioId = usuarioId, NombreCompleto = nombreCompleto }
+            );
+        }
+
         public async Task<IEnumerable<PeriodoLectivo>> ObtenerPeriodosAsync()
         {
             using var connection = _connectionFactory.CreateConnection();
