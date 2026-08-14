@@ -325,17 +325,35 @@ BEGIN
         WHERE g.AulaId = @AulaId
           AND YEAR(g.FechaGasto) = @Anio
         GROUP BY MONTH(g.FechaGasto)
+    ),
+    Mensual AS (
+        SELECT
+            MesNum,
+            SUM(Ingresos) AS IngresosMes,
+            SUM(Egresos) AS EgresosMes
+        FROM MovimientosMensuales
+        GROUP BY MesNum
+    ),
+    Acumulado AS (
+        SELECT
+            MesNum,
+            IngresosMes,
+            EgresosMes,
+            SUM(IngresosMes) OVER (ORDER BY MesNum) AS IngresosAcumulados,
+            SUM(EgresosMes) OVER (ORDER BY MesNum) AS EgresosAcumulados
+        FROM Mensual
     )
     SELECT
         @Anio AS Anio,
         MesNum,
         UPPER(LEFT(DATENAME(MONTH, DATEFROMPARTS(@Anio, MesNum, 1)), 1)) +
         LOWER(SUBSTRING(DATENAME(MONTH, DATEFROMPARTS(@Anio, MesNum, 1)), 2, 20)) AS NombreMes,
-        SUM(Ingresos) AS TotalIngresosMes,
-        SUM(Egresos) AS TotalEgresosMes,
-        (SUM(Ingresos) - SUM(Egresos)) AS SaldoMes
-    FROM MovimientosMensuales
-    GROUP BY MesNum
+        -- 🚀 RECAUDADO (INGRESOS) incluye el arrastre del mes anterior:
+        -- = (ingresos acumulados - egresos acumulados) + egresos del mes
+        (IngresosAcumulados - EgresosAcumulados + EgresosMes) AS TotalIngresosMes,
+        EgresosMes AS TotalEgresosMes,
+        (IngresosAcumulados - EgresosAcumulados) AS SaldoMes
+    FROM Acumulado
     ORDER BY MesNum DESC;
 
     -- 3. Listado Completo de Egresos
