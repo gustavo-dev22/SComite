@@ -30,7 +30,7 @@ namespace AulaComite.Infrastructure.Migrations
                                 WHERE c.AulaId = @AulaId 
                                   AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO', 'PARCIAL')
                                   AND d.MontoPagado > 0
-                                  AND YEAR(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) = @Anio
+                                  AND YEAR(c.FechaVencimiento) = @Anio
                             ), 0)
                             +
                             ISNULL((
@@ -52,7 +52,7 @@ namespace AulaComite.Infrastructure.Migrations
                     WITH MovimientosMensuales AS (
                         -- A) Ingresos por Cuotas
                         SELECT 
-                            MONTH(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) AS MesNum,
+                            MONTH(c.FechaVencimiento) AS MesNum,
                             SUM(d.MontoPagado) AS Ingresos,
                             0.00 AS Egresos
                         FROM CuotaDetalleEstudiante d
@@ -60,8 +60,8 @@ namespace AulaComite.Infrastructure.Migrations
                         WHERE c.AulaId = @AulaId 
                           AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO', 'PARCIAL')
                           AND d.MontoPagado > 0
-                          AND YEAR(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) = @Anio
-                        GROUP BY MONTH(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion)))
+                          AND YEAR(c.FechaVencimiento) = @Anio
+                        GROUP BY MONTH(c.FechaVencimiento)
 
                         UNION ALL
 

@@ -237,11 +237,17 @@ END
 GO
 
 -- =============================================================================
--- 6. sp_Apoderado_ObtenerTransparenciaBalanceAula: corrige el cálculo de ingresos
---    para incluir los ABONOS PARCIALES (EstadoPago 'PARCIAL'), que también son
---    dinero recaudado. Antes se filtraba SOLO por COMPLETO/PAGADO/VALIDADO/APROBADO
---    y los pagos parciales NO aparecían en el RESUMEN DE CAJA MENSUAL del rol
---    apoderado (Transparencia y Balance).
+-- 6. sp_Apoderado_ObtenerTransparenciaBalanceAula: corrige el DESCUADRE del
+--    RESUMEN DE CAJA MENSUAL del rol apoderado.
+--    Causa raíz: el SP atribuía los ingresos por FechaUltimoPago (fecha de
+--    VALIDACIÓN de la tesorera). Si un pago de la cuota de marzo se validó en
+--    agosto, el dinero aparecía en agosto y marzo salía en 0.00. Los SPs del
+--    comité (sp_Balance_ObtenerConsolidado, sp_Gastos_ObtenerBalanceMensualCaja)
+--    atribuyen por el mes de la CUOTA (MONTH(c.FechaVencimiento)) y por eso
+--    mostraban el ingreso en marzo. Este SP ahora usa la MISMA lógica (mes/año
+--    de la cuota) para que ambas pantallas coincidan.
+--    Adicional: se incluyen los ABONOS PARCIALES (EstadoPago 'PARCIAL'), que
+--    también son dinero recaudado y antes quedaban fuera del cálculo.
 -- =============================================================================
 CREATE OR ALTER PROCEDURE [dbo].[sp_Apoderado_ObtenerTransparenciaBalanceAula]
     @AulaId INT,
@@ -262,7 +268,7 @@ BEGIN
                 WHERE c.AulaId = @AulaId
                   AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO', 'PARCIAL')
                   AND d.MontoPagado > 0
-                  AND YEAR(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) = @Anio
+                  AND YEAR(c.FechaVencimiento) = @Anio
             ), 0)
             +
             ISNULL((
@@ -284,7 +290,7 @@ BEGIN
     WITH MovimientosMensuales AS (
         -- A) Ingresos por Cuotas
         SELECT
-            MONTH(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) AS MesNum,
+            MONTH(c.FechaVencimiento) AS MesNum,
             SUM(d.MontoPagado) AS Ingresos,
             0.00 AS Egresos
         FROM CuotaDetalleEstudiante d
@@ -292,8 +298,8 @@ BEGIN
         WHERE c.AulaId = @AulaId
           AND UPPER(TRIM(d.EstadoPago)) IN ('PAGADO', 'VALIDADO', 'COMPLETO', 'APROBADO', 'PARCIAL')
           AND d.MontoPagado > 0
-          AND YEAR(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion))) = @Anio
-        GROUP BY MONTH(ISNULL(d.FechaUltimoPago, ISNULL(c.FechaVencimiento, c.FechaCreacion)))
+          AND YEAR(c.FechaVencimiento) = @Anio
+        GROUP BY MONTH(c.FechaVencimiento)
 
         UNION ALL
 
