@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using AulaComite.Application.Cuotas.Commands;
 using AulaComite.Application.Cuotas.Queries;
 using Microsoft.AspNetCore.Authorization;
@@ -64,6 +65,32 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> GetEstudiantesPendientes(int cuotaId)
         {
             var result = await _mediator.Send(new GetEstudiantesPendientesCuotaQuery(cuotaId));
+            return Ok(result);
+        }
+
+        [HttpPost("exonerar-estudiante")]
+        public async Task<IActionResult> ExonerarEstudiante([FromBody] ExonerarCuotaEstudianteCommand command)
+        {
+            bool exito = await _mediator.Send(command);
+            if (!exito)
+            {
+                return BadRequest(new { exito = false, mensaje = "No se encontró el detalle de cuota especificado o el estado solicitado no es válido." });
+            }
+
+            bool esExoneracion = command.NuevoEstado?.Equals("EXONERADO", StringComparison.OrdinalIgnoreCase) == true;
+            return Ok(new
+            {
+                exito,
+                mensaje = esExoneracion
+                    ? "La cuota del estudiante ha sido exonerada correctamente."
+                    : "La exoneración ha sido revertida correctamente."
+            });
+        }
+
+        [HttpGet("{cuotaId:int}/exonerados")]
+        public async Task<IActionResult> GetEstudiantesExonerados(int cuotaId)
+        {
+            var result = await _mediator.Send(new GetEstudiantesExoneradosCuotaQuery(cuotaId));
             return Ok(result);
         }
     }

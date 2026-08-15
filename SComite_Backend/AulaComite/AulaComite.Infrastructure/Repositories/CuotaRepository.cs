@@ -161,5 +161,36 @@ namespace AulaComite.Infrastructure.Repositories
                 WHERE cd.Id = @CuotaDetalleId";
             return await connection.QueryFirstOrDefaultAsync<CuotaDetalleInfoDto>(sql, new { CuotaDetalleId = cuotaDetalleId });
         }
+
+        public async Task<bool> CambiarEstadoExoneracionAsync(int cuotaDetalleId, string nuevoEstado, string? motivo)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+
+            var sql = @"
+                        UPDATE CuotaDetalleEstudiante
+                        SET EstadoPago = @NuevoEstado,
+                            MotivoExoneracion = @Motivo,
+                            FechaModificacionEstado = GETDATE()
+                        WHERE Id = @Id;";
+
+            var filasAfectadas = await connection.ExecuteAsync(sql, new
+            {
+                Id = cuotaDetalleId,
+                NuevoEstado = nuevoEstado.ToUpper(),
+                Motivo = motivo
+            });
+
+            return filasAfectadas > 0;
+        }
+
+        public async Task<IEnumerable<EstudianteExoneradoCuotaDto>> ObtenerEstudiantesExoneradosAsync(int cuotaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.QueryAsync<EstudianteExoneradoCuotaDto>(
+                "sp_Cuotas_ObtenerEstudiantesExonerados",
+                new { CuotaId = cuotaId },
+                commandType: CommandType.StoredProcedure
+            );
+        }
     }
 }

@@ -18,5 +18,7 @@ namespace AulaComite.Application.Common.Interfaces
         Task<IEnumerable<EstudiantePendienteCuotaDto>> ObtenerEstudiantesPendientesAsync(int cuotaId);
         Task<int?> ObtenerAulaIdPorCuotaDetalleAsync(int cuotaDetalleId);
         Task<CuotaDetalleInfoDto?> ObtenerDetalleCobroInfoAsync(int cuotaDetalleId);
+        Task<bool> CambiarEstadoExoneracionAsync(int cuotaDetalleId, string nuevoEstado, string? motivo);
+        Task<IEnumerable<EstudianteExoneradoCuotaDto>> ObtenerEstudiantesExoneradosAsync(int cuotaId);
     }
 }

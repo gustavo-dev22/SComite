@@ -15,6 +15,7 @@ export interface Cuota {
   totalMontoRecaudado: number;
   estudiantesAlDia: number;
   estudiantesPendientes: number;
+  estudiantesExonerados?: number;
 }
 
 export interface CreateCuotaCommand {
@@ -55,6 +56,7 @@ export interface RegistrarPagoManualCommand {
 }
 
 export interface EstudiantePendienteCuota {
+  cuotaDetalleId: number;
   estudianteId: number;
   tipoDocumento: string;
   numeroDocumento: string;
@@ -65,4 +67,17 @@ export interface EstudiantePendienteCuota {
   montoPagado: number;
   montoPendiente: number;
   estadoPago: EstadoPago;
+}
+
+export interface EstudianteExoneradoCuota {
+  cuotaDetalleId: number;
+  estudianteId: number;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombreEstudiante: string;
+  nombreApoderado: string;
+  telefonoApoderado: string;
+  montoAsignado: number;
+  motivoExoneracion: string;
+  fechaExoneracion?: string;
 }

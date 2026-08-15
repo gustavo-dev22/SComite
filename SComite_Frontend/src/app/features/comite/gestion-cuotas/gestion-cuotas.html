@@ -177,6 +177,21 @@
               <span class="block font-bold text-amber-700 text-sm sm:text-base no-underline leading-none">{{ cuota.estudiantesPendientes }}</span>
               <span class="text-slate-500 block text-[11px] font-medium no-underline">Pendientes</span>
             </button>
+
+            <!-- Indicador Lineal Condicional de Exonerados (Solo si > 0) -->
+            @if ((cuota.estudiantesExonerados ?? 0) > 0) {
+              <div 
+                (click)="abrirModalExonerados(cuota)"
+                class="flex items-center justify-between px-3 py-1.5 mb-3 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl cursor-pointer transition">
+                <div class="flex items-center gap-1.5 text-slate-700">
+                  <span class="text-xs">🛡️</span>
+                  <span class="text-xs font-bold">
+                    {{ cuota.estudiantesExonerados }} {{ cuota.estudiantesExonerados === 1 ? 'Exonerado / No Aplica' : 'Exonerados / No Aplican' }}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-indigo-600 hover:underline">Ver lista →</span>
+              </div>
+            }
           </div>
         </div>
       } @empty {
@@ -394,6 +409,7 @@
                   <th class="p-3">Apoderado Responsable</th>
                   <th class="p-3">Teléfono</th>
                   <th class="p-3 text-right">Pendiente</th>
+                  <th class="p-3 text-center">Acción</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
@@ -424,6 +440,14 @@
                         <span class="block text-[10px] text-amber-700 font-semibold">(Abonado S/. {{ item.montoPagado | number:'1.2-2' }})</span>
                       }
                     </td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                      <button 
+                        (click)="abrirDialogoExonerar(item)"
+                        class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-xs"
+                        title="Exonerar de esta cuota por ingreso tardío o no participación">
+                        🛡️ Exonerar
+                      </button>
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -450,6 +474,90 @@
     <div style="background-color: #ffffff; padding: 1rem 2rem; border-radius: 9999px; display: flex; gap: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
       <div style="width: 1.25rem; height: 1.25rem; border: 3px solid #0f172a; border-top-color: transparent; border-radius: 50%;" class="animate-spin"></div>
       <span style="font-size: 0.875rem; font-weight: 700; color: #1e293b;">Generando PDF de Lista de Pendientes...</span>
+    </div>
+  </div>
+}
+
+<!-- MODAL DE ESTUDIANTES EXONERADOS / NO APLICAN -->
+@if (modalExoneradosAbierto()) {
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 animate-fade-in">
+      
+      <!-- Cabecera del Modal (Color Pizarra / Slate) -->
+      <div class="bg-slate-800 text-white px-5 py-4 flex justify-between items-center">
+        <div>
+          <span class="text-[10px] font-bold text-slate-300 uppercase block tracking-wider">Padrón de Exoneraciones</span>
+          <h3 class="font-bold text-sm sm:text-base leading-snug">{{ cuotaSeleccionadaExonerados()?.concepto }}</h3>
+        </div>
+        <span class="text-xs font-bold bg-slate-700 px-2.5 py-1 rounded-lg text-slate-200 border border-slate-600">
+          🛡️ {{ estudiantesExonerados().length }} {{ estudiantesExonerados().length === 1 ? 'Alumno' : 'Alumnos' }}
+        </span>
+      </div>
+
+      <div class="p-5 sm:p-6">
+        @if (cargandoExonerados()) {
+          <div class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-800 mb-2"></div>
+            <p class="text-slate-500 text-xs font-medium">Cargando alumnos exonerados...</p>
+          </div>
+        } @else if (estudiantesExonerados().length === 0) {
+          <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-200 p-6">
+            <p class="text-xs text-slate-500 font-semibold">No hay estudiantes exonerados en esta cuota.</p>
+          </div>
+        } @else {
+          <!-- Tabla de Exonerados -->
+          <div class="max-h-72 overflow-y-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-bold uppercase sticky top-0 border-b border-slate-200">
+                <tr>
+                  <th class="p-3">Estudiante</th>
+                  <th class="p-3">Apoderado</th>
+                  <th class="p-3">Motivo / Justificación</th>
+                  <th class="p-3 text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                @for (item of estudiantesExonerados(); track item.estudianteId) {
+                  <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3">
+                      <span class="block font-bold text-slate-900">{{ item.nombreEstudiante }}</span>
+                      <span class="text-[11px] font-mono text-slate-400">{{ item.tipoDocumento }}: {{ item.numeroDocumento }}</span>
+                    </td>
+                    <td class="p-3 text-slate-800 font-semibold">
+                      {{ item.nombreApoderado }}
+                    </td>
+                    <td class="p-3">
+                      <span class="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200 mb-0.5">
+                        {{ item.motivoExoneracion }}
+                      </span>
+                      @if (item.fechaExoneracion) {
+                        <span class="block text-[10px] text-slate-400 font-mono">
+                          📅 {{ item.fechaExoneracion | date:'dd/MM/yyyy HH:mm' }}
+                        </span>
+                      }
+                    </td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                      <button 
+                        (click)="revertirExoneracion(item)"
+                        class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-xs"
+                        title="Revertir exoneración y volver a marcar como pendiente">
+                        ↩️ Revertir
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <div class="flex justify-end p-4 bg-slate-50 border-t border-slate-100">
+        <button (click)="cerrarModalExonerados()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black text-white rounded-xl transition cursor-pointer">
+          Cerrar
+        </button>
+      </div>
+
     </div>
   </div>
 }

@@ -3,12 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnIni
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 
-const BADGES_ESTADO_CUOTA: Record<string, string> = {
-  'PAGADO': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  'VENCIDO': 'bg-rose-100 text-rose-800 border-rose-200',
-  'VENCIDA': 'bg-rose-100 text-rose-800 border-rose-200',
-  'PENDIENTE': 'bg-amber-100 text-amber-800 border-amber-200'
-};
 import { FormsModule } from '@angular/forms';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { CuotaApoderado, HijoApoderado, ResumenPagosApoderado } from '../../../core/models/apoderado.model';
@@ -106,9 +100,5 @@ export class MisPagosComponent implements OnInit {
 
     const url = `https://wa.me/51${tesoreroTel}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
-  }
-
-  getBadgeClass(estado: string): string {
-    return BADGES_ESTADO_CUOTA[estado] || 'bg-amber-100 text-amber-800 border-amber-200';
   }
 }

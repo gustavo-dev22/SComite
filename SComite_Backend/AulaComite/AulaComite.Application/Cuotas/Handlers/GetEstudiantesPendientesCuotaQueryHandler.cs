@@ -31,6 +31,7 @@ namespace AulaComite.Application.Cuotas.Handlers
             // WhatsApp a los apoderados morosos.
             return result.Select(e => new EstudiantePendienteCuotaDto
             {
+                CuotaDetalleId = e.CuotaDetalleId,
                 EstudianteId = e.EstudianteId,
                 TipoDocumento = e.TipoDocumento,
                 NumeroDocumento = PiiMasker.EnmascararDocumento(e.NumeroDocumento),

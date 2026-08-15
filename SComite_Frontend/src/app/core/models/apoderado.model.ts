@@ -16,6 +16,7 @@ export interface HijoApoderado {
 
 export interface CuotaApoderado {
   cuotaId: number;
+  cuotaDetalleId?: number;
   concepto: string;
   tipoCuota: string;
   montoTotalCuota: number;
@@ -23,8 +24,10 @@ export interface CuotaApoderado {
   montoPagado: number;
   montoPendiente: number;
   estadoPago: EstadoPago;
-  estadoVisual: 'PAGADO' | 'VENCIDO' | 'PENDIENTE';
+  estadoVisual: 'PAGADO' | 'VENCIDO' | 'PENDIENTE' | 'EXONERADO';
   fechaPago?: string;
+  motivoExoneracion?: string;
+  fechaUltimoPago?: string;
 }
 
 export interface ResumenPagosApoderado {

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnIni
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
-import { Cuota, EstudiantePendienteCuota } from '../../../core/models/cuota.model';
+import { Cuota, EstudianteExoneradoCuota, EstudiantePendienteCuota } from '../../../core/models/cuota.model';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
@@ -84,6 +84,11 @@ export class GestionCuotasComponent implements OnInit {
 
   descargandoPdfMorosos = signal<boolean>(false);
   institucion = signal<InstitucionEducativa | null>(null);
+
+  modalExoneradosAbierto = signal<boolean>(false);
+  cargandoExonerados = signal<boolean>(false);
+  cuotaSeleccionadaExonerados = signal<Cuota | null>(null);
+  estudiantesExonerados = signal<EstudianteExoneradoCuota[]>([]);
 
   ngOnInit(): void {
     this.cargarPeriodos();
@@ -337,5 +342,124 @@ export class GestionCuotasComponent implements OnInit {
     this.modalMorososAbierto.set(false);
     this.cuotaSeleccionadaMorosos.set(null);
     this.estudiantesMorosos.set([]);
+  }
+
+  abrirDialogoExonerar(item: EstudiantePendienteCuota): void {
+    const cuota = this.cuotaSeleccionadaMorosos();
+    const aulaId = this.aulaSeleccionadaId();
+    if (!cuota || !aulaId) return;
+
+    Swal.fire({
+      title: 'Exonerar / Subsanar Cuota',
+      html: `
+        <div class="text-left text-xs space-y-3 pt-2">
+          <p class="text-slate-600">Estudiante: <b class="text-slate-900">${item.nombreEstudiante}</b></p>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Motivo de Exoneración:</label>
+            <select id="swal-motivo-tipo" class="w-full text-xs p-2 border border-slate-300 rounded-lg bg-slate-50 focus:ring-amber-500">
+              <option value="Ingreso Extemporáneo / Tardío">Ingreso Extemporáneo / Tardío</option>
+              <option value="No Participa Voluntariamente">No Participa Voluntariamente en la Actividad</option>
+              <option value="Caso Social / Beca">Caso Social / Beca</option>
+              <option value="Otro">Otro Motivo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Detalle u Observación (Opcional):</label>
+            <input id="swal-motivo-detalle" type="text" placeholder="Ej: Se incorporó al aula en mayo..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-amber-500" />
+          </div>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar Exoneración',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d97706',
+      cancelButtonColor: '#64748b',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      preConfirm: () => {
+        const tipo = (document.getElementById('swal-motivo-tipo') as HTMLSelectElement).value;
+        const detalle = (document.getElementById('swal-motivo-detalle') as HTMLInputElement).value;
+        return detalle ? `${tipo}: ${detalle}` : tipo;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const payload = {
+          cuotaDetalleId: item.cuotaDetalleId,
+          nuevoEstado: 'EXONERADO',
+          motivoExoneracion: result.value
+        };
+
+        this.cuotaService.exonerarEstudiante(payload)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (res) => {
+              Swal.fire('Exonerado', res.mensaje || 'Estudiante exonerado con éxito.', 'success');
+              this.abrirModalMorosos(cuota);
+              this.cargarCuotas(aulaId);
+            },
+            error: (err) => {
+              Swal.fire('Error', err.error?.mensaje || 'No se pudo aplicar la exoneración.', 'error');
+            }
+          });
+      }
+    });
+  }
+
+  abrirModalExonerados(cuota: Cuota): void {
+    this.cuotaSeleccionadaExonerados.set(cuota);
+    this.estudiantesExonerados.set([]);
+    this.cargandoExonerados.set(true);
+    this.modalExoneradosAbierto.set(true);
+
+    this.cuotaService.obtenerExoneradosPorCuota(cuota.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.estudiantesExonerados.set(data);
+          this.cargandoExonerados.set(false);
+        },
+        error: (err) => {
+          this.cargandoExonerados.set(false);
+          Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los exonerados.', 'error');
+        }
+      });
+  }
+
+  cerrarModalExonerados(): void {
+    this.modalExoneradosAbierto.set(false);
+    this.cuotaSeleccionadaExonerados.set(null);
+    this.estudiantesExonerados.set([]);
+  }
+
+  revertirExoneracion(item: EstudianteExoneradoCuota): void {
+    const cuota = this.cuotaSeleccionadaExonerados();
+    const aulaId = this.aulaSeleccionadaId();
+    if (!cuota || !aulaId) return;
+
+    Swal.fire({
+      title: '¿Revertir Exoneración?',
+      text: `El alumno ${item.nombreEstudiante} volverá al estado PENDIENTE de cobro.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, Revertir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#4f46e5'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.cuotaService.exonerarEstudiante({
+          cuotaDetalleId: item.cuotaDetalleId,
+          nuevoEstado: 'PENDIENTE',
+          motivoExoneracion: undefined
+        }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: () => {
+            Swal.fire('Revertido', 'El alumno vuelve a figurar como pendiente.', 'success');
+            this.abrirModalExonerados(cuota);
+            this.cargarCuotas(aulaId);
+          },
+          error: (err) => Swal.fire('Error', err.error?.mensaje || 'Error al revertir.', 'error')
+        });
+      }
+    });
   }
 }

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CreateCuotaCommand, Cuota, CuotaEstudianteCobro, EstudiantePendienteCuota, GenerarCuotasMensualesCommand, RegistrarPagoManualCommand } from '../models/cuota.model';
+import { CreateCuotaCommand, Cuota, CuotaEstudianteCobro, EstudianteExoneradoCuota, EstudiantePendienteCuota, GenerarCuotasMensualesCommand, RegistrarPagoManualCommand } from '../models/cuota.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -37,5 +37,13 @@ export class CuotaService {
 
   obtenerPendientesPorCuota(cuotaId: number): Observable<EstudiantePendienteCuota[]> {
     return this.http.get<EstudiantePendienteCuota[]>(`${this.apiUrl}/${cuotaId}/pendientes`);
+  }
+
+  exonerarEstudiante(payload: { cuotaDetalleId: number; nuevoEstado: string; motivoExoneracion?: string }): Observable<{ exito: boolean; mensaje: string }> {
+    return this.http.post<{ exito: boolean; mensaje: string }>(`${this.apiUrl}/exonerar-estudiante`, payload);
+  }
+
+  obtenerExoneradosPorCuota(cuotaId: number): Observable<EstudianteExoneradoCuota[]> {
+    return this.http.get<EstudianteExoneradoCuota[]>(`${this.apiUrl}/${cuotaId}/exonerados`);
   }
 }

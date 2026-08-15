@@ -28,6 +28,7 @@ namespace AulaComite.Application.Apoderado.Dtos
         public decimal MontoPendiente { get; set; }
         public string EstadoPago { get; set; } = "PENDIENTE";
         public string EstadoVisual { get; set; } = "PENDIENTE"; // PAGADO, VENCIDO, PENDIENTE
+        public string? MotivoExoneracion { get; set; }
         public DateTime? FechaPago { get; set; }
     }
 

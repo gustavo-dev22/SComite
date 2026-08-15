@@ -18,5 +18,6 @@ namespace AulaComite.Application.Cuotas.Dtos
         public decimal TotalMontoRecaudado { get; set; }
         public int EstudiantesAlDia { get; set; }
         public int EstudiantesPendientes { get; set; }
+        public int EstudiantesExonerados { get; set; }
     }
 }
