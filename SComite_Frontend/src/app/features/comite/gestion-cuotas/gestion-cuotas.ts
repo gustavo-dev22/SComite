@@ -14,6 +14,9 @@ import { PdfExporterService } from '../../../core/services/pdf-exporter.service'
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { Subject, takeUntil } from 'rxjs';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
+import { formatearFechaLocal } from '../../../core/utils/fecha.util';
 
 @Component({
   selector: 'app-gestion-cuotas',
@@ -49,6 +52,8 @@ export class GestionCuotasComponent implements OnInit {
   cargandoAulas = signal<boolean>(false);
   mostrarModal = signal<boolean>(false);
   tipoModal = signal<'EVENTUAL' | 'MENSUAL'>('EVENTUAL');
+  guardandoCuota = signal<boolean>(false);
+  cambiandoEstado = signal<boolean>(false);
 
   tienePeriodoSeleccionado = computed(() => this.periodoSeleccionadoId() !== null && this.periodoSeleccionadoId()! > 0);
   tieneAulaSeleccionada = computed(() => this.aulaSeleccionadaId() !== null && this.aulaSeleccionadaId()! > 0);
@@ -100,7 +105,7 @@ export class GestionCuotasComponent implements OnInit {
         next: (data) => {
           if (data) this.institucion.set(data);
         },
-        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
+        error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los datos de la institución educativa.')
       });
     }
 
@@ -141,7 +146,7 @@ export class GestionCuotasComponent implements OnInit {
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.periodos.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
     });
   }
 
@@ -170,7 +175,7 @@ export class GestionCuotasComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoAulas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
@@ -199,7 +204,7 @@ export class GestionCuotasComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las cuotas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las cuotas.');
       }
     });
   }
@@ -210,7 +215,7 @@ export class GestionCuotasComponent implements OnInit {
 
     this.actividadService.getActividadesPorAula(aulaId, anio).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.actividades.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actividades.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar las actividades.')
     });
   }
 
@@ -221,8 +226,8 @@ export class GestionCuotasComponent implements OnInit {
     if (actividadId) {
       const act = this.actividades().find(a => a.id === actividadId);
       if (act) {
-        // Formatear fecha y autocompletar campos
-        const fechaFormatted = new Date(act.fechaProgramada).toISOString().split('T')[0];
+        // Formatear fecha en hora local (evita el desplazamiento UTC de toISOString)
+        const fechaFormatted = formatearFechaLocal(act.fechaProgramada);
 
         this.cuotaForm.patchValue({
           concepto: `Cuota: ${act.nombreActividad}`,
@@ -253,8 +258,9 @@ export class GestionCuotasComponent implements OnInit {
 
   guardarCuota(): void {
     const aulaId = this.aulaSeleccionadaId();
-    if (this.cuotaForm.invalid || !aulaId) return;
+    if (this.cuotaForm.invalid || !aulaId || this.guardandoCuota()) return;
 
+    this.guardandoCuota.set(true);
     const rawValue = this.cuotaForm.getRawValue();
 
     const payload = {
@@ -264,18 +270,23 @@ export class GestionCuotasComponent implements OnInit {
 
     this.cuotaService.crear(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.guardandoCuota.set(false);
         this.cerrarModal();
         this.cargarCuotas(aulaId);
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo crear la cuota.', 'error')
+      error: (err) => {
+        this.guardandoCuota.set(false);
+        manejarErrorHttp(err, 'No se pudo crear la cuota.');
+      }
     });
   }
 
   guardarCuotaMensual(): void {
     const aulaId = this.aulaSeleccionadaId();
     const periodoId = this.periodoSeleccionadoId();
-    if (this.cuotaMensualForm.invalid || !aulaId || !periodoId) return;
+    if (this.cuotaMensualForm.invalid || !aulaId || !periodoId || this.guardandoCuota()) return;
 
+    this.guardandoCuota.set(true);
     const periodoObj = this.periodos().find(p => p.id === periodoId);
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
@@ -287,10 +298,14 @@ export class GestionCuotasComponent implements OnInit {
 
     this.cuotaService.programarMensual(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.guardandoCuota.set(false);
         this.cerrarModal();
         this.cargarCuotas(aulaId);
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo programar la cuota mensual.', 'error')
+      error: (err) => {
+        this.guardandoCuota.set(false);
+        manejarErrorHttp(err, 'No se pudo programar la cuota mensual.');
+      }
     });
   }
 
@@ -333,7 +348,7 @@ export class GestionCuotasComponent implements OnInit {
         },
         error: (err) => {
           this.cargandoMorosos.set(false);
-          Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los estudiantes pendientes.', 'error');
+          manejarErrorHttp(err, 'No se pudieron cargar los estudiantes pendientes.');
         }
       });
   }
@@ -349,11 +364,16 @@ export class GestionCuotasComponent implements OnInit {
     const aulaId = this.aulaSeleccionadaId();
     if (!cuota || !aulaId) return;
 
+    if (cuota.estado === 'CERRADA') {
+      void Swal.fire('Cuota Cerrada', 'Esta cuota está saneada; no se permiten exoneraciones.', 'warning');
+      return;
+    }
+
     Swal.fire({
       title: 'Exonerar / Subsanar Cuota',
       html: `
         <div class="text-left text-xs space-y-3 pt-2">
-          <p class="text-slate-600">Estudiante: <b class="text-slate-900">${item.nombreEstudiante}</b></p>
+          <p class="text-slate-600">Estudiante: <b class="text-slate-900">${this.escapaHtml(item.nombreEstudiante)}</b></p>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Motivo de Exoneración:</label>
             <select id="swal-motivo-tipo" class="w-full text-xs p-2 border border-slate-300 rounded-lg bg-slate-50 focus:ring-amber-500">
@@ -399,7 +419,7 @@ export class GestionCuotasComponent implements OnInit {
               this.cargarCuotas(aulaId);
             },
             error: (err) => {
-              Swal.fire('Error', err.error?.mensaje || 'No se pudo aplicar la exoneración.', 'error');
+              manejarErrorHttp(err, 'No se pudo aplicar la exoneración.');
             }
           });
       }
@@ -421,7 +441,7 @@ export class GestionCuotasComponent implements OnInit {
         },
         error: (err) => {
           this.cargandoExonerados.set(false);
-          Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los exonerados.', 'error');
+          manejarErrorHttp(err, 'No se pudieron cargar los exonerados.');
         }
       });
   }
@@ -432,10 +452,25 @@ export class GestionCuotasComponent implements OnInit {
     this.estudiantesExonerados.set([]);
   }
 
+  private escapaHtml(valor: string): string {
+    const mapa: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(valor).replace(/[&<>"']/g, c => mapa[c] ?? c);
+  }
+
+  obtenerLinkWhatsApp(telefono: string | null | undefined): string | null {
+    const normalizado = normalizarTelefonoPeru(telefono);
+    return normalizado ? `https://wa.me/${normalizado}` : null;
+  }
+
   revertirExoneracion(item: EstudianteExoneradoCuota): void {
     const cuota = this.cuotaSeleccionadaExonerados();
     const aulaId = this.aulaSeleccionadaId();
     if (!cuota || !aulaId) return;
+
+    if (cuota.estado === 'CERRADA') {
+      void Swal.fire('Cuota Cerrada', 'Esta cuota está saneada; no se permiten reversiones.', 'warning');
+      return;
+    }
 
     Swal.fire({
       title: '¿Revertir Exoneración?',
@@ -457,7 +492,7 @@ export class GestionCuotasComponent implements OnInit {
             this.abrirModalExonerados(cuota);
             this.cargarCuotas(aulaId);
           },
-          error: (err) => Swal.fire('Error', err.error?.mensaje || 'Error al revertir.', 'error')
+          error: (err) => manejarErrorHttp(err, 'Error al revertir.')
         });
       }
     });
@@ -465,7 +500,7 @@ export class GestionCuotasComponent implements OnInit {
 
   onCambiarEstadoCuota(cuota: Cuota): void {
     const aulaId = this.aulaSeleccionadaId();
-    if (!aulaId) return;
+    if (!aulaId || this.cambiandoEstado()) return;
 
     const esCierre = cuota.estado !== 'CERRADA';
     const titulo = esCierre ? '¿Cerrar y Sanear Cuota?' : '¿Reabrir Cobranza de Cuota?';
@@ -485,17 +520,20 @@ export class GestionCuotasComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         const nuevoEstado = esCierre ? 'CERRADA' : 'EN COBRO';
-        
+
+        this.cambiandoEstado.set(true);
         this.cuotaService.cambiarEstadoCuota({
           cuotaId: cuota.id,
           nuevoEstado: nuevoEstado
         }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: (res) => {
+            this.cambiandoEstado.set(false);
             Swal.fire('Actualizado', res.mensaje || 'Estado de cuota actualizado.', 'success');
-            this.cargarCuotas(aulaId); // Recarga para actualizar las cards y bordes
+            this.cargarCuotas(aulaId);
           },
           error: (err) => {
-            Swal.fire('Error', err.error?.mensaje || 'No se pudo cambiar el estado de la cuota.', 'error');
+            this.cambiandoEstado.set(false);
+            manejarErrorHttp(err, 'No se pudo cambiar el estado de la cuota.');
           }
         });
       }

@@ -1,12 +1,15 @@
 ﻿import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GastoService } from '../../../core/services/gasto.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { GastoComite, ResumenCajaAula } from '../../../core/models/gasto.model';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 
@@ -23,9 +26,14 @@ const EXTENSIONES_COMPROBANTE_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp', 'pdf']
 })
 export class RegistroGastosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private fb = inject(FormBuilder);
   private gastoService = inject(GastoService);
   private aulaService = inject(AulaService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   // Listas
   periodos = signal<PeriodoLectivo[]>([]);
@@ -59,6 +67,7 @@ export class RegistroGastosComponent implements OnInit {
     if (!mes || mes === 0) return lista;
 
     return lista.filter(g => {
+      if (!g.fechaGasto) return false;
       const fecha = new Date(g.fechaGasto);
       return (fecha.getMonth() + 1) === mes;
     });
@@ -73,7 +82,7 @@ export class RegistroGastosComponent implements OnInit {
     concepto: ['', [Validators.required, Validators.maxLength(150)]],
     categoria: ['MATERIALES', Validators.required],
     monto: [0, [Validators.required, Validators.min(0.10)]],
-    fechaGasto: [new Date().toISOString().substring(0, 10), Validators.required],
+    fechaGasto: [hoyLocal(), Validators.required],
     tipoComprobante: ['BOLETA', Validators.required],
     numeroComprobante: [''],
     proveedor: [''],
@@ -88,11 +97,12 @@ export class RegistroGastosComponent implements OnInit {
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.periodos.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
     });
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const id = Number((event.target as HTMLSelectElement).value) || null;
     this.periodoSeleccionadoId.set(id);
     this.aulaSeleccionadaId.set(null);
@@ -105,19 +115,20 @@ export class RegistroGastosComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getMisAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getMisAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
       error: (err) => {
         this.cargandoAulas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const aulaId = Number((event.target as HTMLSelectElement).value) || null;
     this.aulaSeleccionadaId.set(aulaId);
 
@@ -130,6 +141,7 @@ export class RegistroGastosComponent implements OnInit {
   }
 
   onMesChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const mes = Number((event.target as HTMLSelectElement).value);
     this.mesSeleccionado.set(mes);
 
@@ -140,6 +152,7 @@ export class RegistroGastosComponent implements OnInit {
   }
 
   cargarGastosYBalance(aulaId: number): void {
+    this.reiniciarCarga$.next();
     this.cargando.set(true);
 
     const periodoId = this.periodoSeleccionadoId();
@@ -148,20 +161,20 @@ export class RegistroGastosComponent implements OnInit {
     const mes = this.mesSeleccionado();
 
     // 1. Cargar Balance Mensual con Arrastre
-    this.gastoService.obtenerBalanceMensual(aulaId, anio, mes).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.gastoService.obtenerBalanceMensual(aulaId, anio, mes).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => this.resumenCaja.set(res),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo cargar el balance mensual.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudo cargar el balance mensual.')
     });
 
     // 2. Cargar Lista de Gastos
-    this.gastoService.obtenerPorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.gastoService.obtenerPorAula(aulaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.gastos.set(data);
         this.cargando.set(false);
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los gastos.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los gastos.');
       }
     });
   }
@@ -180,7 +193,7 @@ export class RegistroGastosComponent implements OnInit {
           Swal.fire({ icon: 'success', title: 'Gasto Actualizado', timer: 1500, showConfirmButton: false });
           this.cargarGastosYBalance(aulaId);
         },
-        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error')
+        error: (err) => manejarErrorHttp(err, 'No se pudo actualizar.')
       });
     } else {
       this.gastoService.crear(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -189,7 +202,7 @@ export class RegistroGastosComponent implements OnInit {
           Swal.fire({ icon: 'success', title: 'Gasto Registrado', timer: 1500, showConfirmButton: false });
           this.cargarGastosYBalance(aulaId);
         },
-        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar.', 'error')
+        error: (err) => manejarErrorHttp(err, 'No se pudo registrar.')
       });
     }
   }
@@ -197,7 +210,7 @@ export class RegistroGastosComponent implements OnInit {
   eliminarGasto(gasto: GastoComite): void {
     Swal.fire({
       title: '¿Eliminar Gasto?',
-      text: `Se reincorporarán S/. ${gasto.monto.toFixed(2)} al saldo de caja.`,
+      text: `Se reincorporarán S/. ${(Number(gasto.monto) || 0).toFixed(2)} al saldo de caja.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e11d48',
@@ -218,7 +231,7 @@ export class RegistroGastosComponent implements OnInit {
             });
             this.cargarGastosYBalance(this.aulaSeleccionadaId()!);
           },
-          error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el gasto.', 'error')
+          error: (err) => manejarErrorHttp(err, 'No se pudo eliminar el gasto.')
         });
       }
     });
@@ -243,7 +256,7 @@ export class RegistroGastosComponent implements OnInit {
     this.gastoForm.reset({
       categoria: 'MATERIALES',
       monto: 0,
-      fechaGasto: new Date().toISOString().substring(0, 10),
+      fechaGasto: hoyLocal(),
       tipoComprobante: 'BOLETA',
       urlComprobante: ''
     });
@@ -255,7 +268,7 @@ export class RegistroGastosComponent implements OnInit {
     this.gastoEditarId.set(g.id);
     this.archivoSeleccionadoNombre.set(g.urlComprobante ? 'Comprobante adjuntado' : '');
 
-    const fechaFormat = new Date(g.fechaGasto).toISOString().substring(0, 10);
+    const fechaFormat = formatearFechaLocal(g.fechaGasto);
 
     this.gastoForm.patchValue({
       concepto: g.concepto,
@@ -315,7 +328,7 @@ export class RegistroGastosComponent implements OnInit {
       },
       error: (err) => {
         this.subiendoArchivo.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo subir el archivo.', 'error');
+        manejarErrorHttp(err, 'No se pudo subir el archivo.');
       }
     });
   }

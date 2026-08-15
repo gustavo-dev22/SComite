@@ -6,6 +6,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { CuotaApoderado, HijoApoderado, ResumenPagosApoderado } from '../../../core/models/apoderado.model';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -59,7 +61,7 @@ export class MisPagosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoHijos.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar tus hijos.');
       }
     });
   }
@@ -70,6 +72,7 @@ export class MisPagosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoCuotas.set(true);
+    this.resumen.set(null);
     this.apoderadoService.getCuotasPendientes(estudianteId, this.anioLectivoActual).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.resumen.set(data);
@@ -77,7 +80,7 @@ export class MisPagosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoCuotas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las cuotas pendientes.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las cuotas pendientes.');
       }
     });
   }
@@ -91,14 +94,15 @@ export class MisPagosComponent implements OnInit {
     const hijo = this.hijoActual();
     if (!hijo) return;
 
-    const tesoreroTel = hijo.tesoreroTelefono.replace(/[^0-9]/g, '');
+    const tesoreroTel = normalizarTelefonoPeru(hijo.tesoreroTelefono);
     const tesoreroNom = hijo.tesoreroNombre || 'Tesorero(a)';
 
     if (!tesoreroTel) return;
 
-    const mensaje = `Hola ${tesoreroNom}, le escribo para notificarle que acabo de realizar el pago de S/. ${cuota.montoTotalCuota.toFixed(2)} por concepto de "${cuota.concepto}" para el alumno ${hijo.nombreEstudiante} del aula ${hijo.nombreAula}. Adjunto mi comprobante.`;
+    const montoCuota = Number(cuota.montoTotalCuota) || 0;
+    const mensaje = `Hola ${tesoreroNom}, le escribo para notificarle que acabo de realizar el pago de S/. ${montoCuota.toFixed(2)} por concepto de "${cuota.concepto}" para el alumno ${hijo.nombreEstudiante} del aula ${hijo.nombreAula}. Adjunto mi comprobante.`;
 
-    const url = `https://wa.me/51${tesoreroTel}?text=${encodeURIComponent(mensaje)}`;
+    const url = `https://wa.me/${tesoreroTel}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 }

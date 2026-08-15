@@ -1,6 +1,7 @@
 ﻿import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ActaService } from '../../../core/services/acta.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -13,6 +14,8 @@ import { ComiteIntegrante } from '../../../core/models/comiteIntegrante.model';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -24,12 +27,17 @@ import Swal from 'sweetalert2';
 })
 export class ActasAsambleaComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private actaService = inject(ActaService);
   private aulaService = inject(AulaService);
   private authService = inject(AuthService);
   private comiteService = inject(ComiteService);
   private institucionService = inject(InstitucionService);
   private pdfExporter = inject(PdfExporterService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
@@ -52,7 +60,7 @@ export class ActasAsambleaComponent implements OnInit {
     aulaId: 0,
     numeroActa: '',
     titulo: '',
-    fechaReunion: new Date().toISOString().split('T')[0],
+    fechaReunion: hoyLocal(),
     agendaAcuerdos: '',
     estadoActa: 'APROBADA',
     urlDocumentoPdf: '',
@@ -97,7 +105,7 @@ export class ActasAsambleaComponent implements OnInit {
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.periodos.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
     });
   }
 
@@ -106,11 +114,12 @@ export class ActasAsambleaComponent implements OnInit {
       next: (data) => {
         if (data) this.institucion.set(data);
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los datos de la institución educativa.')
     });
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const id = Number((event.target as HTMLSelectElement).value) || null;
     this.periodoSeleccionadoId.set(id);
     this.aulaSeleccionadaId.set(null);
@@ -122,19 +131,20 @@ export class ActasAsambleaComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getMisAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getMisAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
       error: (err) => {
         this.cargandoAulas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const aulaId = Number((event.target as HTMLSelectElement).value) || null;
     this.aulaSeleccionadaId.set(aulaId);
 
@@ -148,11 +158,11 @@ export class ActasAsambleaComponent implements OnInit {
   }
 
   cargarIntegrantesComite(aulaId: number): void {
-    this.comiteService.getComitePorAula(aulaId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.comiteService.getComitePorAula(aulaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.integrantesComiteRaw.set(data),
       error: (err) => {
         this.integrantesComiteRaw.set([]);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los integrantes del comité.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los integrantes del comité.');
       }
     });
   }
@@ -162,14 +172,14 @@ export class ActasAsambleaComponent implements OnInit {
     const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
-    this.actaService.getActasPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.actaService.getActasPorAula(aulaId, anio).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.actas.set(data);
         this.cargando.set(false);
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las actas.');
       }
     });
   }
@@ -191,7 +201,7 @@ export class ActasAsambleaComponent implements OnInit {
           aulaId: aulaId,
           numeroActa: res.siguienteNumeroActa, 
           titulo: '',
-          fechaReunion: new Date().toISOString().split('T')[0],
+          fechaReunion: hoyLocal(),
           agendaAcuerdos: '',
           estadoActa: 'BORRADOR',
           urlDocumentoPdf: '',
@@ -201,7 +211,7 @@ export class ActasAsambleaComponent implements OnInit {
         this.mostrarModal.set(true);
       },
       error: (err) => {
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo obtener el número de acta. Intente nuevamente.', 'error');
+        manejarErrorHttp(err, 'No se pudo obtener el número de acta. Intente nuevamente.');
       }
     });
   }
@@ -215,7 +225,7 @@ export class ActasAsambleaComponent implements OnInit {
       aulaId: a.aulaId,
       numeroActa: a.numeroActa,
       titulo: a.titulo,
-      fechaReunion: new Date(a.fechaReunion).toISOString().split('T')[0],
+      fechaReunion: formatearFechaLocal(a.fechaReunion),
       agendaAcuerdos: a.agendaAcuerdos,
       estadoActa: a.estadoActa,
       urlDocumentoPdf: a.urlDocumentoPdf || '',
@@ -252,7 +262,7 @@ export class ActasAsambleaComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar el acta.', 'error');
+        manejarErrorHttp(err, 'No se pudo guardar el acta.');
       }
     });
   }
@@ -289,7 +299,7 @@ export class ActasAsambleaComponent implements OnInit {
               });
               this.cargarActas(this.aulaSeleccionadaId()!);
             },
-            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el acta.', 'error')
+            error: (err) => manejarErrorHttp(err, 'No se pudo eliminar el acta.')
           });
       }
     });

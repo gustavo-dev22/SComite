@@ -5,6 +5,7 @@ import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { HijoApoderado } from '../../../core/models/apoderado.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 
@@ -73,6 +74,7 @@ export class TransparenciaBalanceComponent implements OnInit {
     if (!mes) return lista;
 
     return lista.filter(g => {
+      if (!g.fechaGasto) return false;
       const fecha = new Date(g.fechaGasto);
       return (fecha.getMonth() + 1) === mes;
     });
@@ -98,7 +100,7 @@ export class TransparenciaBalanceComponent implements OnInit {
         },
         error: (err) => {
           this.cargandoHijos.set(false);
-          Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+          manejarErrorHttp(err, 'No se pudieron cargar tus hijos.');
         }
       });
   }
@@ -109,6 +111,7 @@ export class TransparenciaBalanceComponent implements OnInit {
     if (!hijo || !hijo.aulaId) return;
 
     this.cargandoBalance.set(true);
+    this.balance.set(null);
     this.transparenciaService.getBalanceAula(hijo.aulaId, this.anioLectivoActual)
       .pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -118,7 +121,7 @@ export class TransparenciaBalanceComponent implements OnInit {
         },
         error: (err) => {
           this.cargandoBalance.set(false);
-          Swal.fire('Error', err.error?.mensaje || 'No se pudo cargar el balance del aula.', 'error');
+          manejarErrorHttp(err, 'No se pudo cargar el balance del aula.');
         }
       });
   }

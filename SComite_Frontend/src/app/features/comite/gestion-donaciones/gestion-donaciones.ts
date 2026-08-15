@@ -1,12 +1,15 @@
 ﻿import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AulaService } from '../../../core/services/aula.service';
 import { DonacionService } from '../../../core/services/donacion.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { DonacionComite } from '../../../core/models/donacion.model';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -18,8 +21,13 @@ import Swal from 'sweetalert2';
 })
 export class GestionDonacionesComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private donacionService = inject(DonacionService);
   private aulaService = inject(AulaService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
@@ -39,7 +47,7 @@ export class GestionDonacionesComponent implements OnInit {
     aulaId: 0,
     donante: '',
     monto: 0,
-    fechaDonacion: new Date().toISOString().split('T')[0],
+    fechaDonacion: hoyLocal(),
     concepto: '',
     observacion: ''
   });
@@ -58,11 +66,12 @@ export class GestionDonacionesComponent implements OnInit {
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.periodos.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
     });
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const id = Number((event.target as HTMLSelectElement).value) || null;
     this.periodoSeleccionadoId.set(id);
     this.aulaSeleccionadaId.set(null);
@@ -74,19 +83,20 @@ export class GestionDonacionesComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getMisAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getMisAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
       error: (err) => {
         this.cargandoAulas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const aulaId = Number((event.target as HTMLSelectElement).value) || null;
     this.aulaSeleccionadaId.set(aulaId);
 
@@ -98,6 +108,7 @@ export class GestionDonacionesComponent implements OnInit {
   }
 
   onMesChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const mes = Number((event.target as HTMLSelectElement).value);
     this.mesSeleccionado.set(mes);
 
@@ -113,14 +124,14 @@ export class GestionDonacionesComponent implements OnInit {
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
     const mes = this.mesSeleccionado();
 
-    this.donacionService.getDonacionesPorAula(aulaId, anio, mes).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.donacionService.getDonacionesPorAula(aulaId, anio, mes).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.donaciones.set(data);
         this.cargando.set(false);
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las donaciones.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las donaciones.');
       }
     });
   }
@@ -131,7 +142,7 @@ export class GestionDonacionesComponent implements OnInit {
       aulaId: this.aulaSeleccionadaId()!,
       donante: '',
       monto: 0,
-      fechaDonacion: new Date().toISOString().split('T')[0],
+      fechaDonacion: hoyLocal(),
       concepto: '',
       observacion: ''
     });
@@ -144,7 +155,7 @@ export class GestionDonacionesComponent implements OnInit {
       aulaId: d.aulaId,
       donante: d.donante,
       monto: d.monto,
-      fechaDonacion: new Date(d.fechaDonacion).toISOString().split('T')[0],
+      fechaDonacion: formatearFechaLocal(d.fechaDonacion),
       concepto: d.concepto,
       observacion: d.observacion || ''
     });
@@ -179,7 +190,7 @@ export class GestionDonacionesComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar la donación.', 'error');
+        manejarErrorHttp(err, 'No se pudo guardar la donación.');
       }
     });
   }
@@ -216,7 +227,7 @@ export class GestionDonacionesComponent implements OnInit {
               });
               this.cargarDonaciones(this.aulaSeleccionadaId()!);
             },
-            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la donación.', 'error')
+            error: (err) => manejarErrorHttp(err, 'No se pudo eliminar la donación.')
           });
       }
     });

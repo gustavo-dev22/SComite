@@ -1,12 +1,15 @@
 ﻿import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ActividadService } from '../../../core/services/actividad.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ActividadComite } from '../../../core/models/actividad.model';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
 import Swal from 'sweetalert2';
 
 const BADGES_ESTADO_ACTIVIDAD: Record<string, string> = {
@@ -26,8 +29,13 @@ const BADGES_ESTADO_ACTIVIDAD: Record<string, string> = {
 })
 export class CronogramaActividadesComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private actividadService = inject(ActividadService);
   private aulaService = inject(AulaService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   // Signals para listas
   periodos = signal<PeriodoLectivo[]>([]);
@@ -50,7 +58,7 @@ export class CronogramaActividadesComponent implements OnInit {
     aulaId: 0,
     nombreActividad: '',
     descripcion: '',
-    fechaProgramada: new Date().toISOString().split('T')[0],
+    fechaProgramada: hoyLocal(),
     montoPresupuestado: 0,
     cuotaSugeridaPorAlumno: 0,
     estado: 'PLANIFICADA'
@@ -75,11 +83,12 @@ export class CronogramaActividadesComponent implements OnInit {
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.periodos.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
     });
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const id = Number((event.target as HTMLSelectElement).value) || null;
     this.periodoSeleccionadoId.set(id);
     this.aulaSeleccionadaId.set(null);
@@ -91,19 +100,20 @@ export class CronogramaActividadesComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getMisAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getMisAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
       error: (err) => {
         this.cargandoAulas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const aulaId = Number((event.target as HTMLSelectElement).value) || null;
     this.aulaSeleccionadaId.set(aulaId);
 
@@ -120,14 +130,14 @@ export class CronogramaActividadesComponent implements OnInit {
     const p = this.periodos().find(x => x.id === periodoId);
     const anio = p ? p.anio : new Date().getFullYear();
 
-    this.actividadService.getActividadesPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.actividadService.getActividadesPorAula(aulaId, anio).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.actividades.set(data);
         this.cargandoActividades.set(false);
       },
       error: (err) => {
         this.cargandoActividades.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actividades.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las actividades.');
       }
     });
   }
@@ -138,7 +148,7 @@ export class CronogramaActividadesComponent implements OnInit {
       aulaId: this.aulaSeleccionadaId()!,
       nombreActividad: '',
       descripcion: '',
-      fechaProgramada: new Date().toISOString().split('T')[0],
+      fechaProgramada: hoyLocal(),
       montoPresupuestado: 0,
       cuotaSugeridaPorAlumno: 0,
       estado: 'PLANIFICADA'
@@ -152,7 +162,7 @@ export class CronogramaActividadesComponent implements OnInit {
       aulaId: act.aulaId,
       nombreActividad: act.nombreActividad,
       descripcion: act.descripcion || '',
-      fechaProgramada: new Date(act.fechaProgramada).toISOString().split('T')[0],
+      fechaProgramada: formatearFechaLocal(act.fechaProgramada),
       montoPresupuestado: act.montoPresupuestado,
       cuotaSugeridaPorAlumno: act.cuotaSugeridaPorAlumno,
       estado: act.estado
@@ -179,7 +189,7 @@ export class CronogramaActividadesComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar la actividad.', 'error');
+        manejarErrorHttp(err, 'No se pudo guardar la actividad.');
       }
     });
   }
@@ -216,7 +226,7 @@ export class CronogramaActividadesComponent implements OnInit {
               });
               this.cargarActividades(this.aulaSeleccionadaId()!);
             },
-            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar la actividad.', 'error')
+            error: (err) => manejarErrorHttp(err, 'No se pudo eliminar la actividad.')
           });
       }
     });

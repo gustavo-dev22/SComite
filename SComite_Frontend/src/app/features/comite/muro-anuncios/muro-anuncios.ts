@@ -1,6 +1,7 @@
 ﻿import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AnuncioService } from '../../../core/services/anuncio.service';
 import { AulaService } from '../../../core/services/aula.service';
@@ -8,6 +9,7 @@ import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { AnuncioComite, ResumenAuditoriaAnuncio } from '../../../core/models/anuncio.model';
 import { Aula } from '../../../core/models/aula.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 
 const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
@@ -26,9 +28,14 @@ const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
 })
 export class MuroAnunciosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
+  private reiniciarCarga$ = new Subject<void>();
   private anuncioService = inject(AnuncioService);
   private aulaService = inject(AulaService);
   private authService = inject(AuthService);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
+  }
 
   periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
@@ -78,11 +85,12 @@ export class MuroAnunciosComponent implements OnInit {
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.periodos.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
     });
   }
 
   onPeriodoChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const id = Number((event.target as HTMLSelectElement).value) || null;
     this.periodoSeleccionadoId.set(id);
     this.aulaSeleccionadaId.set(null);
@@ -94,19 +102,20 @@ export class MuroAnunciosComponent implements OnInit {
 
   cargarAulasPorPeriodo(periodoId: number): void {
     this.cargandoAulas.set(true);
-    this.aulaService.getMisAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.aulaService.getMisAulas(periodoId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.aulas.set(data);
         this.cargandoAulas.set(false);
       },
       error: (err) => {
         this.cargandoAulas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
 
   onAulaChange(event: Event): void {
+    this.reiniciarCarga$.next();
     const aulaId = Number((event.target as HTMLSelectElement).value) || null;
     this.aulaSeleccionadaId.set(aulaId);
 
@@ -122,14 +131,14 @@ export class MuroAnunciosComponent implements OnInit {
     const periodoObj = this.periodos().find(p => p.id === this.periodoSeleccionadoId());
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
-    this.anuncioService.getAnunciosPorAula(aulaId, anio).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.anuncioService.getAnunciosPorAula(aulaId, anio).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.anuncios.set(data);
         this.cargando.set(false);
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los comunicados.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los comunicados.');
       }
     });
   }
@@ -187,7 +196,7 @@ export class MuroAnunciosComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar el comunicado.', 'error');
+        manejarErrorHttp(err, 'No se pudo guardar el comunicado.');
       }
     });
   }
@@ -224,7 +233,7 @@ export class MuroAnunciosComponent implements OnInit {
               });
               this.cargarAnuncios(this.aulaSeleccionadaId()!);
             },
-            error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo eliminar el comunicado.', 'error')
+            error: (err) => manejarErrorHttp(err, 'No se pudo eliminar el comunicado.')
           });
       }
     });
@@ -251,7 +260,7 @@ export class MuroAnunciosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoAuditoria.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las vistas del comunicado.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las vistas del comunicado.');
       }
     });
   }

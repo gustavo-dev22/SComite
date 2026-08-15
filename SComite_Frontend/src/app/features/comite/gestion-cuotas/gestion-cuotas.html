@@ -177,7 +177,7 @@
                 <div 
                   class="h-2 rounded-full transition-all duration-500"
                   [ngClass]="cuota.estado === 'CERRADA' ? 'bg-emerald-500' : 'bg-slate-900'"
-                  [style.width.%]="(cuota.totalMontoRecaudado / cuota.totalMontoEsperado) * 100 || 0">
+                  [style.width.%]="cuota.totalMontoEsperado > 0 ? (cuota.totalMontoRecaudado / cuota.totalMontoEsperado) * 100 : 0">
                 </div>
               </div>
             </div>
@@ -228,13 +228,15 @@
               @if (cuota.estado === 'CERRADA') {
                 <button 
                   (click)="onCambiarEstadoCuota(cuota)"
-                  class="w-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200">
+                  [disabled]="cambiandoEstado()"
+                  class="w-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
                   🔓 Reabrir Cobranza
                 </button>
               } @else {
                 <button 
                   (click)="onCambiarEstadoCuota(cuota)"
-                  class="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
+                  [disabled]="cambiandoEstado()"
+                  class="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs disabled:cursor-not-allowed disabled:opacity-60">
                   🔒 Cerrar y Sanear Cuota
                 </button>
               }
@@ -342,7 +344,7 @@
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
-            <button type="submit" [disabled]="cuotaForm.invalid" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Guardar Cuota</button>
+            <button type="submit" [disabled]="cuotaForm.invalid || guardandoCuota()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Guardar Cuota</button>
           </div>
         </form>
       }
@@ -387,7 +389,7 @@
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
-            <button type="submit" [disabled]="cuotaMensualForm.invalid" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Programar Cuotas</button>
+            <button type="submit" [disabled]="cuotaMensualForm.invalid || guardandoCuota()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Programar Cuotas</button>
           </div>
         </form>
       }
@@ -471,8 +473,8 @@
                       {{ item.nombreApoderado }}
                     </td>
                     <td class="p-3 whitespace-nowrap">
-                      @if (item.telefonoApoderado !== '-') {
-                        <a [href]="'https://wa.me/51' + item.telefonoApoderado" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold px-2 py-1 rounded-lg border border-emerald-200 transition">
+                      @if (obtenerLinkWhatsApp(item.telefonoApoderado); as linkWhatsApp) {
+                        <a [href]="linkWhatsApp" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold px-2 py-1 rounded-lg border border-emerald-200 transition">
                           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current text-emerald-600" viewBox="0 0 24 24">
                             <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
                           </svg>

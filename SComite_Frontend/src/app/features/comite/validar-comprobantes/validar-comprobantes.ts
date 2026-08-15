@@ -5,6 +5,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
 import { AulaService } from '../../../core/services/aula.service';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { Cuota, CuotaEstudianteCobro, EstadoPago } from '../../../core/models/cuota.model';
@@ -43,6 +45,8 @@ export class ValidarComprobantesComponent implements OnInit {
   cargando = signal<boolean>(false);
   cargandoAulas = signal<boolean>(false);
   cargandoCuotas = signal<boolean>(false);
+  registrandoPago = signal<boolean>(false);
+  anulandoPago = signal<boolean>(false);
   mostrarModalPago = signal<boolean>(false);
   estudianteCobroModal = signal<CuotaEstudianteCobro | null>(null);
   montoMaximoAbono = signal<number>(0);
@@ -87,7 +91,7 @@ export class ValidarComprobantesComponent implements OnInit {
   cargarPeriodos(): void {
     this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.periodos.set(data),
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
     });
   }
 
@@ -113,7 +117,7 @@ export class ValidarComprobantesComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoAulas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
@@ -140,7 +144,7 @@ export class ValidarComprobantesComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoCuotas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las cuotas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las cuotas.');
       }
     });
   }
@@ -166,13 +170,15 @@ export class ValidarComprobantesComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los cobros de la cuota.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los cobros de la cuota.');
       }
     });
   }
 
   // Marcar como pago completo rápido con un solo clic (Ej. Pago total con Yape)
   pagoRapidoCompleto(item: CuotaEstudianteCobro): void {
+    if (this.registrandoPago()) return;
+    this.registrandoPago.set(true);
     const montoFaltante = item.montoAsignado - item.montoPagado;
     this.cuotaService.registrarPagoManual({
       cuotaDetalleId: item.cuotaDetalleId,
@@ -180,6 +186,7 @@ export class ValidarComprobantesComponent implements OnInit {
       formaPago: 'YAPE'
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.registrandoPago.set(false);
         Swal.fire({
           icon: 'success',
           title: '¡Pago Registrado!',
@@ -187,11 +194,14 @@ export class ValidarComprobantesComponent implements OnInit {
           timer: 1500,
           showConfirmButton: false
         });
-this.recargarCobros();
-          },
-          error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo revertir el pago.', 'error')
-        });
+        this.recargarCobros();
+      },
+      error: (err) => {
+        this.registrandoPago.set(false);
+        manejarErrorHttp(err, 'No se pudo registrar el pago.');
       }
+    });
+  }
 
   abrirModalPagoParcial(item: CuotaEstudianteCobro): void {
     this.estudianteCobroModal.set(item);
@@ -219,6 +229,8 @@ this.recargarCobros();
   confirmarPagoModal(): void {
     const comp = this.estudianteCobroModal();
     if (this.pagoForm.invalid || !comp) return;
+    if (this.registrandoPago()) return;
+    this.registrandoPago.set(true);
 
     this.cuotaService.registrarPagoManual({
       cuotaDetalleId: comp.cuotaDetalleId,
@@ -226,6 +238,7 @@ this.recargarCobros();
       formaPago: this.pagoForm.value.formaPago
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.registrandoPago.set(false);
         this.cerrarModal();
         Swal.fire({
           icon: 'success',
@@ -236,7 +249,10 @@ this.recargarCobros();
         });
         this.recargarCobros();
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar el abono.', 'error')
+      error: (err) => {
+        this.registrandoPago.set(false);
+        manejarErrorHttp(err, 'No se pudo guardar el abono.');
+      }
     });
   }
 
@@ -254,26 +270,33 @@ this.recargarCobros();
       allowEscapeKey: false
     }).then((result) => {
       if (result.isConfirmed) {
+        if (this.anulandoPago()) return;
+        this.anulandoPago.set(true);
         this.cuotaService.anularPago(item.cuotaDetalleId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => {
+            this.anulandoPago.set(false);
             Swal.fire({
               icon: 'success',
               title: 'Pago Revertido',
               text: 'El estado volvió a pendiente.',
               timer: 1500,
               showConfirmButton: false
-});
-        this.recargarCobros();
-      },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar el pago.', 'error')
-    });
-  }
+            });
+            this.recargarCobros();
+          },
+          error: (err) => {
+            this.anulandoPago.set(false);
+            manejarErrorHttp(err, 'No se pudo revertir el pago.');
+          }
+        });
+      }
     });
   }
 
   recargarCobros(): void {
     const cuotaId = this.cuotaSeleccionadaId();
     if (cuotaId && cuotaId > 0) {
+      this.reiniciarCarga$.next();
       this.cargarCobros(cuotaId);
     }
   }
@@ -281,5 +304,10 @@ this.recargarCobros();
   cerrarModal(): void {
     this.mostrarModalPago.set(false);
     this.estudianteCobroModal.set(null);
+  }
+
+  obtenerLinkWhatsApp(telefono: string | null | undefined): string | null {
+    const normalizado = normalizarTelefonoPeru(telefono);
+    return normalizado ? `https://wa.me/${normalizado}` : null;
   }
 }
