@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace AulaComite.Application.Cuotas.Dtos
+﻿namespace AulaComite.Application.Cuotas.Dtos
 {
     public class EstudianteExoneradoCuotaDto
     {

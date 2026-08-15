@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using AulaComite.Application.Common.Security;
+﻿using AulaComite.Application.Common.Security;
 using AulaComite.Application.Common.Interfaces;
 using AulaComite.Application.Cuotas.Dtos;
 using AulaComite.Application.Cuotas.Queries;

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  # Disparo manual (Actions > Run workflow) para re-aplicar migraciones o probar
+  # la conexion a la BD de produccion sin desplegar codigo.
+  workflow_dispatch:
 
 jobs:
   # ==========================================
@@ -29,17 +32,17 @@ jobs:
             - 'SComite_Backend/**'
 
     - name: Setup .NET
-      if: steps.backend-changes.outputs.src == 'true'
+      if: steps.backend-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
 
     - name: Install EF Core tools
-      if: steps.backend-changes.outputs.src == 'true'
+      if: steps.backend-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch'
       run: dotnet tool install --global dotnet-ef
 
     - name: Apply EF migrations to production database
-      if: steps.backend-changes.outputs.src == 'true'
+      if: steps.backend-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch'
       env:
         ConnectionStrings__DefaultConnection: ${{ secrets.PROD_DB_CONNECTION_STRING }}
       working-directory: SComite_Backend/AulaComite
