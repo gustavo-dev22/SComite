@@ -20,6 +20,7 @@ namespace AulaComite.Application.Apoderado.Dtos
     public class CuotaApoderadoDto
     {
         public int CuotaId { get; set; }
+        public int? CuotaDetalleId { get; set; }
         public string Concepto { get; set; } = string.Empty;
         public string TipoCuota { get; set; } = string.Empty;
         public decimal MontoTotalCuota { get; set; }

@@ -41,6 +41,11 @@ jobs:
       if: steps.backend-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch'
       run: dotnet tool install --global dotnet-ef
 
+    # dotnet ef necesita el restore previo; en el runner limpio no existe obj/project.assets.json
+    - name: Restore NuGet packages
+      if: steps.backend-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch'
+      run: dotnet restore SComite_Backend/AulaComite/AulaComite.Api/AulaComite.Api.csproj
+
     - name: Apply EF migrations to production database
       if: steps.backend-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch'
       env:
