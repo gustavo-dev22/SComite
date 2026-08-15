@@ -265,10 +265,13 @@ try
     }).AllowAnonymous();
 
 
-    // Aplicar Migraciones Automáticas en el arranque SOLO en Desarrollo.
-    // En Producción las migraciones NUNCA se aplican automáticamente: se ejecutan
-    // vía CI/CD o herramientas dedicadas (por ejemplo, `dotnet ef database update`).
-    if (app.Environment.IsDevelopment())
+    // Aplicar Migraciones Automáticas en el arranque (Desarrollo y Producción).
+    // El servidor de producción SIEMPRE alcanza su propia BD: los runners de
+    // GitHub/CI no pueden conectar a SQL Server (runasp bloquea IPs externas),
+    // por lo que el CI no aplica migraciones y esta es la única vía confiable.
+    // Fail-open: si una migración falla se registra el error y la app arranca igual.
+    // Se puede desactivar con la variable/config AplicarMigracionesAutomaticas=false.
+    if (app.Configuration.GetValue<bool>("AplicarMigracionesAutomaticas", true))
     {
         using (var scope = app.Services.CreateScope())
         {
@@ -281,7 +284,7 @@ try
             }
             catch (Exception ex)
             {
-                Log.Warning("Atención al verificar migraciones: {Message}", ex.Message);
+                Log.Warning("Atención al aplicar migraciones: {Message}", ex.Message);
             }
         }
     }
