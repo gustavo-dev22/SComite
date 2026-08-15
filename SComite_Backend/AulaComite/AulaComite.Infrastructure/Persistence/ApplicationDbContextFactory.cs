@@ -18,6 +18,7 @@ namespace AulaComite.Infrastructure.Persistence
                 .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
                 .Build();
 
             // 2. Obtener la cadena de conexión

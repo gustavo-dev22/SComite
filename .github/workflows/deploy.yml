@@ -7,9 +7,58 @@ on:
 
 jobs:
   # ==========================================
-  # JOB 1: BACKEND (Solo si hay cambios en SComite_Backend)
+  # JOB 1: MIGRACIONES DE BASE DE DATOS
+  # Aplica las migraciones EF en producción ANTES de desplegar el código,
+  # de modo que el esquema de BD siempre esté listo cuando suba el binario.
+  # Solo corre si hubo cambios en SComite_Backend. Si el secret
+  # PROD_DB_CONNECTION_STRING no está configurado, se omite con un warning.
+  # ==========================================
+  migrate-database:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Verifica si hubo cambios en la carpeta del backend
+    - name: Check for Backend changes
+      id: backend-changes
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          src:
+            - 'SComite_Backend/**'
+
+    - name: Setup .NET
+      if: steps.backend-changes.outputs.src == 'true'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Install EF Core tools
+      if: steps.backend-changes.outputs.src == 'true'
+      run: dotnet tool install --global dotnet-ef
+
+    - name: Apply EF migrations to production database
+      if: steps.backend-changes.outputs.src == 'true'
+      env:
+        ConnectionStrings__DefaultConnection: ${{ secrets.PROD_DB_CONNECTION_STRING }}
+      working-directory: SComite_Backend/AulaComite
+      run: |
+        if [ -z "$ConnectionStrings__DefaultConnection" ]; then
+          echo "::warning::El secret PROD_DB_CONNECTION_STRING no está configurado. Omitiendo migraciones automáticas."
+          exit 0
+        fi
+        dotnet ef database update \
+          --project AulaComite.Infrastructure/AulaComite.Infrastructure.csproj \
+          --startup-project AulaComite.Api/AulaComite.Api.csproj
+
+  # ==========================================
+  # JOB 2: BACKEND (Solo si hay cambios en SComite_Backend)
+  # Espera a que las migraciones terminen para no desplegar código nuevo
+  # sobre un esquema de BD desactualizado.
   # ==========================================
   deploy-backend:
+    needs: migrate-database
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
