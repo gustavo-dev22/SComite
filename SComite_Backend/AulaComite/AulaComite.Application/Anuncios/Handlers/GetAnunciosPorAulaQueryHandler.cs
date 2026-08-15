@@ -1,6 +1,7 @@
 ﻿using AulaComite.Application.Anuncios.Dtos;
 using AulaComite.Application.Anuncios.Queries;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using MediatR;
 
 namespace AulaComite.Application.Anuncios.Handlers
@@ -8,11 +9,24 @@ namespace AulaComite.Application.Anuncios.Handlers
     public class GetAnunciosPorAulaQueryHandler : IRequestHandler<GetAnunciosPorAulaQuery, IEnumerable<AnuncioComiteDto>>
     {
         private readonly IAnuncioRepository _repository;
+        private readonly IComiteRepository _comiteRepository;
+        private readonly IUserContextService _userContextService;
 
-        public GetAnunciosPorAulaQueryHandler(IAnuncioRepository repository) => _repository = repository;
+        public GetAnunciosPorAulaQueryHandler(
+            IAnuncioRepository repository,
+            IComiteRepository comiteRepository,
+            IUserContextService userContextService)
+        {
+            _repository = repository;
+            _comiteRepository = comiteRepository;
+            _userContextService = userContextService;
+        }
 
         public async Task<IEnumerable<AnuncioComiteDto>> Handle(GetAnunciosPorAulaQuery request, CancellationToken cancellationToken)
         {
+            // 🛡️ IDOR mitigación: el usuario debe pertenecer al Aula consultada (o ser Administrador Global).
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
+
             var anuncios = await _repository.ObtenerPorAulaAsync(request.AulaId, request.AnioLectivo);
 
             return anuncios.Select(a => new AnuncioComiteDto

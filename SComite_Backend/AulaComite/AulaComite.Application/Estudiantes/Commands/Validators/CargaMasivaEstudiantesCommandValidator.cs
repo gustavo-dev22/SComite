@@ -5,11 +5,15 @@ namespace AulaComite.Application.Estudiantes.Commands
 {
     public class CargaMasivaEstudiantesCommandValidator : AbstractValidator<CargaMasivaEstudiantesCommand>
     {
+        public const int MaximoEstudiantesPorTanda = 100;
+
         public CargaMasivaEstudiantesCommandValidator()
         {
             RuleFor(x => x.AulaId).GreaterThan(0).WithMessage("El AulaId es obligatorio.");
             RuleFor(x => x.Estudiantes).NotNull().NotEmpty()
-                .WithMessage("Debe enviar al menos un estudiante.");
+                .WithMessage("Debe enviar al menos un estudiante.")
+                .Must(x => x!.Count <= MaximoEstudiantesPorTanda)
+                .WithMessage($"El archivo supera el límite máximo de {MaximoEstudiantesPorTanda} estudiantes por tanda.");
 
             RuleForEach(x => x.Estudiantes).SetValidator(new EstudianteImportacionItemValidator());
         }

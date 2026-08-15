@@ -25,6 +25,15 @@ namespace AulaComite.Application.Estudiantes.Handlers
 
         public async Task<CargaMasivaResultadoDto> Handle(CargaMasivaEstudiantesCommand request, CancellationToken cancellationToken)
         {
+            // 🛡️ DoS mitigación: límite explícito de registros por tanda (guarda defensivo,
+            // el Validator aplica la misma regla antes de llegar aquí).
+            var maximoPorTanda = CargaMasivaEstudiantesCommandValidator.MaximoEstudiantesPorTanda;
+            if (request.Estudiantes.Count > maximoPorTanda)
+            {
+                throw new FluentValidation.ValidationException(
+                    $"El archivo supera el límite máximo de {maximoPorTanda} estudiantes por tanda.");
+            }
+
             var resultado = new CargaMasivaResultadoDto
             {
                 RegistrosProcesados = request.Estudiantes.Count

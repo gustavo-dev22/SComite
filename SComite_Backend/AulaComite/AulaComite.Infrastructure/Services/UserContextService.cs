@@ -63,24 +63,12 @@ namespace AulaComite.Infrastructure.Services
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return "127.0.0.1";
 
-            // 🛡️ Regla de seguridad: NO confiar a ciegas en X-Forwarded-For.
-            // Solo se usa cuando la petición proviene de un proxy inverso de confianza
-            // (p.ej. Kestrel detrás de IIS/NGINX), identificado porque la conexión
-            // remota NO es un bucle local. De lo contrario, se usa la IP directa,
-            // evitando que el cliente pueda falsificar su IP de auditoría.
-            var remoteIp = httpContext.Connection.RemoteIpAddress;
-
-            if (remoteIp != null && !IsPrivate(remoteIp))
-            {
-                string? forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(forwardedFor))
-                {
-                    string ip = forwardedFor.Split(',')[0].Trim();
-                    if (!string.IsNullOrEmpty(ip)) return ip;
-                }
-            }
-
-            string remote = remoteIp?.ToString() ?? string.Empty;
+            // 🛡️ Regla de seguridad: NO se lee X-Forwarded-For directamente (spoofeable).
+            // Se confía únicamente en la IP ya calculada por UseForwardedHeaders, que solo
+            // procesa la cabecera cuando el peer directo es un proxy de confianza (bucle
+            // local / red privada de IIS o rango publicado de Cloudflare), configurado en
+            // Program.cs. Un cliente de Internet no puede falsificar su IP de auditoría.
+            var remote = httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
 
             // Si estás probando localmente en IPv6 (::1), mapearlo a 127.0.0.1
             if (remote == "::1" || string.IsNullOrEmpty(remote))
@@ -89,21 +77,6 @@ namespace AulaComite.Infrastructure.Services
             }
 
             return remote;
-        }
-
-        private static bool IsPrivate(System.Net.IPAddress ip)
-        {
-            if (System.Net.IPAddress.IsLoopback(ip)) return true;
-
-            var bytes = ip.GetAddressBytes();
-            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-            {
-                if (bytes[0] == 10) return true;                                // 10.0.0.0/8
-                if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) return true; // 172.16.0.0/12
-                if (bytes[0] == 192 && bytes[1] == 168) return true;            // 192.168.0.0/16
-                if (bytes[0] == 169 && bytes[1] == 254) return true;            // 169.254.x.x (link-local)
-            }
-            return false;
         }
     }
 }

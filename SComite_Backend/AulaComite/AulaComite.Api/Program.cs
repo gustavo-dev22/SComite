@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -17,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
+using IPNetwork = System.Net.IPNetwork;
 
 // 1. Inicializar Serilog desde appsettings
 Log.Logger = new LoggerConfiguration()
@@ -113,18 +115,27 @@ try
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
-    // 🛡️ Trustar cabeceras de proxy inverso (Cloudflare/IIS/MonsterASP/NGINX) para
+    // 🛡️ Trustar cabeceras de proxy inverso (IIS/ARR de runasp, Cloudflare, NGINX) para
     // resolver la dirección IP real del cliente y el esquema HTTP original.
     // Se debe ejecutar antes de autenticación y del Rate Limiter.
+    //
+    // Hardening: solo se procesan las cabeceras cuando el peer directo es un proxy de
+    // confianza — bucle local, redes privadas del host de aplicaciones o los rangos IP
+    // publicados por Cloudflare. Un cliente de Internet que NO provenga de uno de estos
+    // nodos no puede inyectar X-Forwarded-For para falsificar su IP de auditoría/rate-limit.
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        // Los proxies de Cloudflare/IIS rotan direcciones, por lo que se aceptan
-        // cabeceras de cualquier origen. La validación final de la IP de auditoría
-        // la realiza UserContextService (no confía en X-Forwarded-For de orígenes privados).
+        options.ForwardLimit = 2;
+
         options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();
-        options.ForwardLimit = null;
+
+        // Nodos directos de confianza (IIS/ARR del mismo host y bucle local de pruebas).
+        options.KnownIPNetworks.Add(new IPNetwork(IPAddress.Loopback, 8));       // 127.0.0.0/8
+        options.KnownIPNetworks.Add(new IPNetwork(IPAddress.IPv6Loopback, 128)); // ::1
+        AgregarRedesPrivadas(options.KnownIPNetworks);
+        AgregarRedesCloudflare(options.KnownIPNetworks);
     });
 
     // Limitar intentos de inicio de sesión por IP real para mitigar ataques de fuerza bruta.
@@ -161,15 +172,54 @@ try
 
     static string ObtenerIpRealCliente(HttpContext httpContext)
     {
-        // Tras UseForwardedHeaders, RemoteIpAddress ya es la IP real. Aun así, se
-        // prefiere X-Forwarded-For (primer valor) como capa adicional de compatibilidad.
-        var forwarded = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrWhiteSpace(forwarded))
+        // 🛡️ Lógica unificada con UserContextService.ObtenerIpCliente: NO se lee
+        // X-Forwarded-For a ciegas; se usa la IP ya resuelta por UseForwardedHeaders
+        // (que solo confía en proxies conocidos configurados arriba).
+        var userContext = httpContext.RequestServices.GetService<IUserContextService>();
+        if (userContext != null)
         {
-            return forwarded.Split(',')[0].Trim();
+            return userContext.ObtenerIpCliente();
         }
 
+        // Fallback sin cabeceras: IP del nodo directo (seguro por defecto).
         return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+
+    static void AgregarRedesPrivadas(ICollection<IPNetwork> networks)
+    {
+        networks.Add(new IPNetwork(IPAddress.Parse("10.0.0.0"), 8));     // 10.0.0.0/8
+        networks.Add(new IPNetwork(IPAddress.Parse("172.16.0.0"), 12));   // 172.16.0.0/12
+        networks.Add(new IPNetwork(IPAddress.Parse("192.168.0.0"), 16));  // 192.168.0.0/16
+        networks.Add(new IPNetwork(IPAddress.Parse("169.254.0.0"), 16));  // link-local IPv4
+        networks.Add(new IPNetwork(IPAddress.Parse("fe80::"), 10));       // link-local IPv6
+        networks.Add(new IPNetwork(IPAddress.Parse("fc00::"), 7));        // ULA IPv6
+    }
+
+    static void AgregarRedesCloudflare(ICollection<IPNetwork> networks)
+    {
+        // Rangos IPv4 publicados por Cloudflare: https://www.cloudflare.com/ips-v4/
+        var ipv4 = new[]
+        {
+            "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
+            "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
+            "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+            "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22"
+        };
+        foreach (var cidr in ipv4) networks.Add(ParseIPNetwork(cidr));
+
+        // Rangos IPv6 publicados por Cloudflare: https://www.cloudflare.com/ips-v6/
+        var ipv6 = new[]
+        {
+            "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32",
+            "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32"
+        };
+        foreach (var cidr in ipv6) networks.Add(ParseIPNetwork(cidr));
+
+        static IPNetwork ParseIPNetwork(string cidr)
+        {
+            var partes = cidr.Split('/');
+            return new IPNetwork(IPAddress.Parse(partes[0]), int.Parse(partes[1]));
+        }
     }
 
     static string ObtenerPartitionKey(HttpContext httpContext, bool incluirUsuario)
@@ -245,6 +295,13 @@ try
     app.UseSerilogRequestLogging();
 
     app.UseHttpsRedirection();
+
+    // 🛡️ HSTS: fuerza el tránsito estricto por HTTPS en Producción.
+    if (app.Environment.IsProduction())
+    {
+        app.UseHsts();
+    }
+
     app.UseCors("CorsAngularPolicy");
     app.UseStaticFiles();
     app.UseAuthentication();
@@ -255,14 +312,19 @@ try
     app.UseAuthorization();
     app.MapControllers();
 
-    app.MapOpenApi().AllowAnonymous();
-    app.MapScalarApiReference(options =>
+    // 🛡️ OpenAPI y Scalar SOLO se exponen fuera de Producción: evita publicar el
+    // contrato de la API (esquemas, endpoints) a Internet desde el entorno real.
+    if (!app.Environment.IsProduction())
     {
-        options
-            .WithTitle("Sistema de Comité de Aula API")
-            .WithTheme(ScalarTheme.DeepSpace)
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-    }).AllowAnonymous();
+        app.MapOpenApi().AllowAnonymous();
+        app.MapScalarApiReference(options =>
+        {
+            options
+                .WithTitle("Sistema de Comité de Aula API")
+                .WithTheme(ScalarTheme.DeepSpace)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        }).AllowAnonymous();
+    }
 
 
     // ------------------------------------------------------------------------

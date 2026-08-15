@@ -40,7 +40,7 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpGet("periodos")]
-        [Authorize(Policy = "GestionEscolar")]
+        [Authorize]
         public async Task<IActionResult> GetPeriodos()
         {
             var periodos = await _aulaRepository.ObtenerPeriodosAsync();

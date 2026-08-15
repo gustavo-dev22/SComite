@@ -9,14 +9,25 @@ namespace AulaComite.Application.Cuotas.Handlers
     public class GetEstudiantesExoneradosCuotaQueryHandler : IRequestHandler<GetEstudiantesExoneradosCuotaQuery, List<EstudianteExoneradoCuotaDto>>
     {
         private readonly ICuotaRepository _repository;
+        private readonly IComiteRepository _comiteRepository;
+        private readonly IUserContextService _userContextService;
 
-        public GetEstudiantesExoneradosCuotaQueryHandler(ICuotaRepository repository)
+        public GetEstudiantesExoneradosCuotaQueryHandler(
+            ICuotaRepository repository,
+            IComiteRepository comiteRepository,
+            IUserContextService userContextService)
         {
             _repository = repository;
+            _comiteRepository = comiteRepository;
+            _userContextService = userContextService;
         }
 
         public async Task<List<EstudianteExoneradoCuotaDto>> Handle(GetEstudiantesExoneradosCuotaQuery request, CancellationToken cancellationToken)
         {
+            // 🛡️ IDOR mitigación: se resuelve el Aula de la cuota y se valida que el usuario pertenezca a ella.
+            var aulaId = await _repository.ObtenerAulaIdPorCuotaAsync(request.CuotaId);
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
+
             var result = await _repository.ObtenerEstudiantesExoneradosAsync(request.CuotaId);
 
             return result.Select(e => new EstudianteExoneradoCuotaDto

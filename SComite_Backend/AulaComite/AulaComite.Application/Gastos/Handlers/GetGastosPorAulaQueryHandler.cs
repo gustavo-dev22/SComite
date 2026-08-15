@@ -1,4 +1,5 @@
 ﻿using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Gastos.Dtos;
 using AulaComite.Application.Gastos.Queries;
 using MediatR;
@@ -8,14 +9,24 @@ namespace AulaComite.Application.Gastos.Handlers
     public class GetGastosPorAulaQueryHandler : IRequestHandler<GetGastosPorAulaQuery, IEnumerable<GastoComiteDto>>
     {
         private readonly IGastoRepository _repository;
+        private readonly IComiteRepository _comiteRepository;
+        private readonly IUserContextService _userContextService;
 
-        public GetGastosPorAulaQueryHandler(IGastoRepository repository)
+        public GetGastosPorAulaQueryHandler(
+            IGastoRepository repository,
+            IComiteRepository comiteRepository,
+            IUserContextService userContextService)
         {
             _repository = repository;
+            _comiteRepository = comiteRepository;
+            _userContextService = userContextService;
         }
 
         public async Task<IEnumerable<GastoComiteDto>> Handle(GetGastosPorAulaQuery request, CancellationToken cancellationToken)
         {
+            // 🛡️ IDOR mitigación: el usuario debe pertenecer al Aula consultada (o ser Administrador Global).
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
+
             var gastos = await _repository.ObtenerPorAulaAsync(request.AulaId);
 
             return gastos.Select(g => new GastoComiteDto

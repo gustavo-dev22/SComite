@@ -9,14 +9,25 @@ namespace AulaComite.Application.Cuotas.Handlers
     public class GetDetalleCobroEstudiantesQueryHandler : IRequestHandler<GetDetalleCobroEstudiantesQuery, IEnumerable<CuotaEstudianteCobroDto>>
     {
         private readonly ICuotaRepository _repository;
+        private readonly IComiteRepository _comiteRepository;
+        private readonly IUserContextService _userContextService;
 
-        public GetDetalleCobroEstudiantesQueryHandler(ICuotaRepository repository)
+        public GetDetalleCobroEstudiantesQueryHandler(
+            ICuotaRepository repository,
+            IComiteRepository comiteRepository,
+            IUserContextService userContextService)
         {
             _repository = repository;
+            _comiteRepository = comiteRepository;
+            _userContextService = userContextService;
         }
 
         public async Task<IEnumerable<CuotaEstudianteCobroDto>> Handle(GetDetalleCobroEstudiantesQuery request, CancellationToken cancellationToken)
         {
+            // 🛡️ IDOR mitigación: se resuelve el Aula de la cuota y se valida que el usuario pertenezca a ella.
+            var aulaId = await _repository.ObtenerAulaIdPorCuotaAsync(request.CuotaId);
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
+
             var cobros = await _repository.ObtenerDetalleCobroEstudiantesAsync(request.CuotaId);
 
             // 🛡️ M7: Se enmascara el documento del estudiante. El teléfono del apoderado se
