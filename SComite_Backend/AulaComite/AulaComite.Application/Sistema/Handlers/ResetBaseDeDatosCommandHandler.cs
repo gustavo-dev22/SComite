@@ -11,11 +11,16 @@ namespace AulaComite.Application.Sistema.Handlers
     {
         private readonly ISistemaRepository _repository;
         private readonly IUserContextService _userContextService;
+        private readonly ILogRepository _logRepository;
 
-        public ResetBaseDeDatosCommandHandler(ISistemaRepository repository, IUserContextService userContextService)
+        public ResetBaseDeDatosCommandHandler(
+            ISistemaRepository repository,
+            IUserContextService userContextService,
+            ILogRepository logRepository)
         {
             _repository = repository;
             _userContextService = userContextService;
+            _logRepository = logRepository;
         }
 
         public async Task<ResetBaseDeDatosResult> Handle(ResetBaseDeDatosCommand request, CancellationToken cancellationToken)
@@ -31,6 +36,16 @@ namespace AulaComite.Application.Sistema.Handlers
             {
                 return new ResetBaseDeDatosResult(false, "El texto de confirmación es incorrecto.");
             }
+
+            // 🛡️ T2.3: Auditoría explícita ANTES de la purga. El log se registra de forma
+            // independiente, fuera de cualquier transacción de negocio, y queda incluido
+            // en el script de respaldo pre-purga que se genera antes de limpiar la BD.
+            await _logRepository.RegistrarAsync(
+                nivel: "WARN",
+                modulo: "SISTEMA",
+                accion: "RESET_DATABASE",
+                mensaje: $"Reseteo total de la base de datos solicitado por {_userContextService.ObtenerUsuarioActual()}."
+            );
 
             await _repository.ResetBaseDeDatosAsync();
             return new ResetBaseDeDatosResult(true, "Se ha generado el backup pre-purga y la base de datos se ha limpiado por completo.");

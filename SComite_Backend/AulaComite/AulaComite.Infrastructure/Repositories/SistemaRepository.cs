@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Data;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Domain.Common;
 using Dapper;
 
@@ -43,13 +45,14 @@ namespace AulaComite.Infrastructure.Repositories
             using var connection = _connectionFactory.CreateConnection();
 
             var sql = new StringBuilder();
-            var fechaHora = DateTimeHelper.ObtenerHoraPeru().ToString("dd/MM/yyyy HH:mm:ss");
+            var fechaHora = DateTimeHelper.ObtenerHoraPeru().ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
 
             sql.AppendLine("-- ===========================================================");
             sql.AppendLine($"-- BACKUP MANUAL COMPLETO - SISTEMA DE COMITÉ DE AULA");
             sql.AppendLine($"-- FECHA DE EMISIÓN: {fechaHora}");
             sql.AppendLine("-- ===========================================================");
-            sql.AppendLine("USE [db_ComiteAula];");
+            // 🛡️ T2.4: Nombre de BD real tomado de la conexión activa (antes estaba hardcodeado).
+            sql.AppendLine($"USE [{connection.Database}];");
             sql.AppendLine("GO\n");
             sql.AppendLine("SET NOCOUNT ON;");
             // M18: Deshabilitar FK de forma PORTABLE (sin sp_MSforeachtable, no disponible en todas las ediciones).
@@ -64,7 +67,8 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: PeriodosLectivos");
             foreach (var p in periodos)
             {
-                sql.AppendLine($"INSERT INTO PeriodosLectivos (Anio, FechaInicio, FechaFin, Estado) VALUES ({p.Anio}, '{p.FechaInicio:yyyy-MM-dd}', '{p.FechaFin:yyyy-MM-dd}', {p.Estado});");
+                var nombre = string.IsNullOrEmpty(p.Nombre) ? "NULL" : $"'{EscaparSql(p.Nombre)}'";
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO PeriodosLectivos (Anio, Nombre, FechaInicio, FechaFin, EsActivo) VALUES ({p.Anio}, {nombre}, '{p.FechaInicio:yyyy-MM-dd}', '{p.FechaFin:yyyy-MM-dd}', {p.EsActivo});"));
             }
 
             // 3. Aulas
@@ -72,7 +76,7 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: Aulas");
             foreach (var a in aulas)
             {
-                sql.AppendLine($"INSERT INTO Aulas (PeriodoId, Grado, Seccion, Nivel, Estado) VALUES ({a.PeriodoId}, {a.Grado}, '{EscaparSql(a.Seccion)}', '{EscaparSql(a.Nivel)}', {a.Estado});");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO Aulas (PeriodoId, Grado, Seccion, Nivel, NombreDisplay, Estado) VALUES ({a.PeriodoId}, {a.Grado}, '{EscaparSql(a.Seccion)}', '{EscaparSql(a.Nivel)}', '{EscaparSql(a.NombreDisplay)}', {a.Estado});"));
             }
 
             // 4. Estudiantes
@@ -82,9 +86,12 @@ namespace AulaComite.Infrastructure.Repositories
             {
                 var apoderadoSasi = string.IsNullOrEmpty(e.UsuarioIdApoderadoSasi) ? "NULL" : $"'{EscaparSql(e.UsuarioIdApoderadoSasi)}'";
                 var nomApoderado = string.IsNullOrEmpty(e.NombreApoderado) ? "NULL" : $"'{EscaparSql(e.NombreApoderado)}'";
-                var telApoderado = string.IsNullOrEmpty(e.TelefonoApoderado) ? "NULL" : $"'{EscaparSql(e.TelefonoApoderado)}'";
+                // 🛡️ T2.4: Se enmascaran datos personales sensibles (DNI y teléfono del apoderado)
+                // en el volcado de texto para no exponer PII en el archivo de respaldo.
+                var dni = PiiMasker.EnmascararDocumento(e.NumeroDocumento);
+                var tel = PiiMasker.EnmascararTelefono(e.TelefonoApoderado);
 
-                sql.AppendLine($"INSERT INTO Estudiantes (AulaId, TipoDocumento, NumeroDocumento, Nombres, ApellidoPaterno, ApellidoMaterno, UsuarioIdApoderadoSasi, NombreApoderado, TelefonoApoderado, Estado) VALUES ({e.AulaId}, '{EscaparSql(e.TipoDocumento)}', '{EscaparSql(e.NumeroDocumento)}', '{EscaparSql(e.Nombres)}', '{EscaparSql(e.ApellidoPaterno)}', '{EscaparSql(e.ApellidoMaterno)}', {apoderadoSasi}, {nomApoderado}, {telApoderado}, {e.Estado});");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO Estudiantes (AulaId, TipoDocumento, NumeroDocumento, Nombres, ApellidoPaterno, ApellidoMaterno, UsuarioIdApoderadoSasi, NombreApoderado, TelefonoApoderado, Estado) VALUES ({e.AulaId}, '{EscaparSql(e.TipoDocumento)}', '{EscaparSql(dni)}', '{EscaparSql(e.Nombres)}', '{EscaparSql(e.ApellidoPaterno)}', '{EscaparSql(e.ApellidoMaterno)}', {apoderadoSasi}, {nomApoderado}, '{EscaparSql(tel)}', {e.Estado});"));
             }
 
             // 5. ComiteIntegrantes
@@ -92,7 +99,8 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: ComiteIntegrantes");
             foreach (var c in comite)
             {
-                sql.AppendLine($"INSERT INTO ComiteIntegrantes (AulaId, Cargo, UsuarioIdSasi, NombreCompleto, Telefono, FechaAsignacion, Estado) VALUES ({c.AulaId}, '{EscaparSql(c.Cargo)}', '{EscaparSql(c.UsuarioIdSasi)}', '{EscaparSql(c.NombreCompleto)}', '{EscaparSql(c.Telefono)}', '{c.FechaAsignacion:yyyy-MM-dd HH:mm:ss}', {c.Estado});");
+                var email = string.IsNullOrEmpty(c.Email) ? "NULL" : $"'{EscaparSql(c.Email)}'";
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO ComiteIntegrantes (AulaId, Cargo, UsuarioIdSasi, NombreCompleto, Email, FechaAsignacion, Estado) VALUES ({c.AulaId}, '{EscaparSql(c.Cargo)}', '{EscaparSql(c.UsuarioIdSasi)}', '{EscaparSql(c.NombreCompleto)}', {email}, '{c.FechaAsignacion:yyyy-MM-dd HH:mm:ss}', {c.Estado});"));
             }
 
             // 6. ActividadesComite
@@ -101,7 +109,7 @@ namespace AulaComite.Infrastructure.Repositories
             foreach (var act in actividades)
             {
                 var desc = string.IsNullOrEmpty(act.Descripcion) ? "NULL" : $"'{EscaparSql(act.Descripcion)}'";
-                sql.AppendLine($"INSERT INTO ActividadesComite (AulaId, NombreActividad, Descripcion, FechaProgramada, MontoPresupuestado, CuotaSugeridaPorAlumno, Estado) VALUES ({act.AulaId}, '{EscaparSql(act.NombreActividad)}', {desc}, '{act.FechaProgramada:yyyy-MM-dd}', {act.MontoPresupuestado}, {act.CuotaSugeridaPorAlumno}, '{EscaparSql(act.Estado)}');");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO ActividadesComite (AulaId, NombreActividad, Descripcion, FechaProgramada, MontoPresupuestado, CuotaSugeridaPorAlumno, Estado) VALUES ({act.AulaId}, '{EscaparSql(act.NombreActividad)}', {desc}, '{act.FechaProgramada:yyyy-MM-dd}', {act.MontoPresupuestado ?? 0}, {act.CuotaSugeridaPorAlumno ?? 0}, '{EscaparSql(act.Estado)}');"));
             }
 
             // 7. Cuotas
@@ -109,7 +117,7 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: Cuotas");
             foreach (var cu in cuotas)
             {
-                sql.AppendLine($"INSERT INTO Cuotas (AulaId, Concepto, MontoMembresia, FechaVencimiento, Estado) VALUES ({cu.AulaId}, '{EscaparSql(cu.Concepto)}', {cu.MontoMembresia}, '{cu.FechaVencimiento:yyyy-MM-dd}', '{EscaparSql(cu.Estado)}');");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO Cuotas (AulaId, Concepto, MontoIndividual, FechaVencimiento, Estado) VALUES ({cu.AulaId}, '{EscaparSql(cu.Concepto)}', {cu.MontoIndividual}, '{cu.FechaVencimiento:yyyy-MM-dd}', '{EscaparSql(cu.Estado)}');"));
             }
 
             // 8. CuotaDetalleEstudiante
@@ -117,11 +125,9 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: CuotaDetalleEstudiante");
             foreach (var cd in cuotaDetalles)
             {
-                var fPago = cd.FechaPago == null ? "NULL" : $"'{cd.FechaPago:yyyy-MM-dd HH:mm:ss}'";
-                var nComprobante = string.IsNullOrEmpty(cd.NumeroComprobante) ? "NULL" : $"'{EscaparSql(cd.NumeroComprobante)}'";
-                var obs = string.IsNullOrEmpty(cd.Observaciones) ? "NULL" : $"'{EscaparSql(cd.Observaciones)}'";
-
-                sql.AppendLine($"INSERT INTO CuotaDetalleEstudiante (CuotaId, EstudianteId, MontoMembresia, EstadoPago, FechaPago, NumeroComprobante, Observaciones) VALUES ({cd.CuotaId}, {cd.EstudianteId}, {cd.MontoMembresia}, '{EscaparSql(cd.EstadoPago)}', {fPago}, {nComprobante}, {obs});");
+                var fUltimoPago = cd.FechaUltimoPago == null ? "NULL" : $"'{cd.FechaUltimoPago:yyyy-MM-dd HH:mm:ss}'";
+                var motivo = string.IsNullOrEmpty(cd.MotivoExoneracion) ? "NULL" : $"'{EscaparSql(cd.MotivoExoneracion)}'";
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO CuotaDetalleEstudiante (CuotaId, EstudianteId, MontoAsignado, MontoPagado, EstadoPago, FechaUltimoPago, MotivoExoneracion) VALUES ({cd.CuotaId}, {cd.EstudianteId}, {cd.MontoAsignado}, {cd.MontoPagado ?? 0}, '{EscaparSql(cd.EstadoPago)}', {fUltimoPago}, {motivo});"));
             }
 
             // 9. GastosComite
@@ -129,10 +135,9 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: GastosComite");
             foreach (var g in gastos)
             {
-                var numDoc = string.IsNullOrEmpty(g.NumeroDocumento) ? "NULL" : $"'{EscaparSql(g.NumeroDocumento)}'";
+                var nComprobante = string.IsNullOrEmpty(g.NumeroComprobante) ? "NULL" : $"'{EscaparSql(g.NumeroComprobante)}'";
                 var urlAdj = string.IsNullOrEmpty(g.UrlComprobante) ? "NULL" : $"'{EscaparSql(g.UrlComprobante)}'";
-
-                sql.AppendLine($"INSERT INTO GastosComite (AulaId, Concepto, Categoria, MontoGasto, FechaGasto, TipoComprobante, NumeroDocumento, UrlComprobante, UsuarioRegistro) VALUES ({g.AulaId}, '{EscaparSql(g.Concepto)}', '{EscaparSql(g.Categoria)}', {g.MontoGasto}, '{g.FechaGasto:yyyy-MM-dd}', '{EscaparSql(g.TipoComprobante)}', {numDoc}, {urlAdj}, '{EscaparSql(g.UsuarioRegistro)}');");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO GastosComite (AulaId, Concepto, Categoria, Monto, FechaGasto, TipoComprobante, NumeroComprobante, UrlComprobante, UsuarioRegistro) VALUES ({g.AulaId}, '{EscaparSql(g.Concepto)}', '{EscaparSql(g.Categoria)}', {g.Monto}, '{g.FechaGasto:yyyy-MM-dd}', '{EscaparSql(g.TipoComprobante)}', {nComprobante}, {urlAdj}, '{EscaparSql(g.UsuarioRegistro)}');"));
             }
 
             // 10. DonacionesComite
@@ -140,8 +145,8 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: DonacionesComite");
             foreach (var d in donaciones)
             {
-                var obs = string.IsNullOrEmpty(d.Observaciones) ? "NULL" : $"'{EscaparSql(d.Observaciones)}'";
-                sql.AppendLine($"INSERT INTO DonacionesComite (AulaId, NombreDonante, Concepto, Monto, FechaDonacion, Observaciones) VALUES ({d.AulaId}, '{EscaparSql(d.NombreDonante)}', '{EscaparSql(d.Concepto)}', {d.Monto}, '{d.FechaDonacion:yyyy-MM-dd}', {obs});");
+                var obs = string.IsNullOrEmpty(d.Observacion) ? "NULL" : $"'{EscaparSql(d.Observacion)}'";
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO DonacionesComite (AulaId, Donante, Concepto, Monto, FechaDonacion, Observacion) VALUES ({d.AulaId}, '{EscaparSql(d.Donante)}', '{EscaparSql(d.Concepto)}', {d.Monto}, '{d.FechaDonacion:yyyy-MM-dd}', {obs});"));
             }
 
             // 11. ActasAsambleaComite
@@ -150,7 +155,7 @@ namespace AulaComite.Infrastructure.Repositories
             foreach (var ac in actas)
             {
                 var urlPdf = string.IsNullOrEmpty(ac.UrlDocumentoPdf) ? "NULL" : $"'{EscaparSql(ac.UrlDocumentoPdf)}'";
-                sql.AppendLine($"INSERT INTO ActasAsambleaComite (AulaId, NumeroActa, Titulo, FechaReunion, AgendaAcuerdos, EstadoActa, UrlDocumentoPdf, UsuarioRegistro) VALUES ({ac.AulaId}, '{EscaparSql(ac.NumeroActa)}', '{EscaparSql(ac.Titulo)}', '{ac.FechaReunion:yyyy-MM-dd}', '{EscaparSql(ac.AgendaAcuerdos)}', '{EscaparSql(ac.EstadoActa)}', {urlPdf}, '{EscaparSql(ac.UsuarioRegistro)}');");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO ActasAsambleaComite (AulaId, NumeroActa, Titulo, FechaReunion, AgendaAcuerdos, EstadoActa, UrlDocumentoPdf, UsuarioRegistro) VALUES ({ac.AulaId}, '{EscaparSql(ac.NumeroActa)}', '{EscaparSql(ac.Titulo)}', '{ac.FechaReunion:yyyy-MM-dd}', '{EscaparSql(ac.AgendaAcuerdos)}', '{EscaparSql(ac.EstadoActa)}', {urlPdf}, '{EscaparSql(ac.UsuarioRegistro)}');"));
             }
 
             // 12. AnunciosComite
@@ -159,7 +164,7 @@ namespace AulaComite.Infrastructure.Repositories
             foreach (var an in anuncios)
             {
                 var urlAdj = string.IsNullOrEmpty(an.UrlAdjunto) ? "NULL" : $"'{EscaparSql(an.UrlAdjunto)}'";
-                sql.AppendLine($"INSERT INTO AnunciosComite (AulaId, Titulo, Contenido, Categoria, EsFijado, UrlAdjunto, CantidadVistas, UsuarioRegistro, FechaPublicacion) VALUES ({an.AulaId}, '{EscaparSql(an.Titulo)}', '{EscaparSql(an.Contenido)}', '{EscaparSql(an.Categoria)}', {(an.EsFijado ? 1 : 0)}, {urlAdj}, {an.CantidadVistas ?? 0}, '{EscaparSql(an.UsuarioRegistro)}', '{an.FechaPublicacion:yyyy-MM-dd HH:mm:ss}');");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO AnunciosComite (AulaId, Titulo, Contenido, Categoria, EsFijado, UrlAdjunto, CantidadVistas, UsuarioRegistro, FechaPublicacion) VALUES ({an.AulaId}, '{EscaparSql(an.Titulo)}', '{EscaparSql(an.Contenido)}', '{EscaparSql(an.Categoria)}', {(an.EsFijado ? 1 : 0)}, {urlAdj}, {an.CantidadVistas ?? 0}, '{EscaparSql(an.UsuarioRegistro)}', '{an.FechaPublicacion:yyyy-MM-dd HH:mm:ss}');"));
             }
 
             // 13. AnuncioLecturasEstudiante
@@ -167,7 +172,7 @@ namespace AulaComite.Infrastructure.Repositories
             sql.AppendLine("\n-- TABLA: AnuncioLecturasEstudiante");
             foreach (var al in lecturasAnuncios)
             {
-                sql.AppendLine($"INSERT INTO AnuncioLecturasEstudiante (AnuncioId, EstudianteId, UsuarioApoderado, FechaLectura) VALUES ({al.AnuncioId}, {al.EstudianteId}, '{EscaparSql(al.UsuarioApoderado)}', '{al.FechaLectura:yyyy-MM-dd HH:mm:ss}');");
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO AnuncioLecturasEstudiante (AnuncioId, EstudianteId, UsuarioApoderado, FechaLectura) VALUES ({al.AnuncioId}, {al.EstudianteId}, '{EscaparSql(al.UsuarioApoderado)}', '{al.FechaLectura:yyyy-MM-dd HH:mm:ss}');"));
             }
 
             // 14. LogsSistema
@@ -176,7 +181,9 @@ namespace AulaComite.Infrastructure.Repositories
             foreach (var l in logs)
             {
                 var usr = string.IsNullOrEmpty(l.Usuario) ? "NULL" : $"'{EscaparSql(l.Usuario)}'";
-                sql.AppendLine($"INSERT INTO LogsSistema (Nivel, Modulo, Accion, Detalle, Usuario, FechaHora) VALUES ('{EscaparSql(l.Nivel)}', '{EscaparSql(l.Modulo)}', '{EscaparSql(l.Accion)}', '{EscaparSql(l.Detalle)}', {usr}, '{l.FechaHora:yyyy-MM-dd HH:mm:ss}');");
+                var ip = string.IsNullOrEmpty(l.IP) ? "NULL" : $"'{EscaparSql(l.IP)}'";
+                var detalle = string.IsNullOrEmpty(l.DetalleException) ? "NULL" : $"'{EscaparSql(l.DetalleException)}'";
+                sql.AppendLine(FormattableString.Invariant($"INSERT INTO LogsSistema (Nivel, Modulo, Accion, Mensaje, Usuario, IP, DetalleException, Fecha) VALUES ('{EscaparSql(l.Nivel)}', '{EscaparSql(l.Modulo)}', '{EscaparSql(l.Accion)}', '{EscaparSql(l.Mensaje)}', {usr}, {ip}, {detalle}, '{l.Fecha:yyyy-MM-dd HH:mm:ss}');"));
             }
 
             sql.AppendLine("\n-- Re-habilitar FK de forma PORTABLE (sin sp_MSforeachtable):");

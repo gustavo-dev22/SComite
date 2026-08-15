@@ -53,6 +53,11 @@ namespace AulaComite.Infrastructure.Repositories
 
         public async Task<PagedResultDto<LogSistema>> ObtenerFiltradosAsync(DateTime? fechaInicio, DateTime? fechaFin, string? nivel, string? modulo, string? busqueda, int pagina, int tamanoPagina)
         {
+            // 🛡️ T2.1: Protección defensiva: la capa API valida los rangos, pero aquí
+            // nunca debe ocurrir división por cero ni paginación fuera de rango.
+            int paginaSegura = Math.Max(1, pagina);
+            int tamanoSeguro = Math.Clamp(tamanoPagina, 1, 100);
+
             using var connection = _connectionFactory.CreateConnection();
             var items = (await connection.QueryAsync<LogSistema>(
                 "sp_Logs_ObtenerFiltrados",
@@ -63,20 +68,20 @@ namespace AulaComite.Infrastructure.Repositories
                     Nivel = nivel,
                     Modulo = modulo,
                     Busqueda = busqueda,
-                    Pagina = pagina,
-                    TamanoPagina = tamanoPagina
+                    Pagina = paginaSegura,
+                    TamanoPagina = tamanoSeguro
                 },
                 commandType: CommandType.StoredProcedure
             )).ToList();
 
             int totalRegistros = items.FirstOrDefault()?.TotalRegistros ?? 0;
-            int totalPaginas = (int)Math.Ceiling((double)totalRegistros / tamanoPagina);
+            int totalPaginas = (int)Math.Ceiling((double)totalRegistros / tamanoSeguro);
 
             return new PagedResultDto<LogSistema>
             {
                 Items = items,
                 TotalRegistros = totalRegistros,
-                PaginaActual = pagina,
+                PaginaActual = paginaSegura,
                 TotalPaginas = totalPaginas > 0 ? totalPaginas : 1
             };
         }

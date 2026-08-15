@@ -110,9 +110,11 @@ namespace AulaComite.Infrastructure.Services
 
                 return response?.Datos ?? new List<UsuarioSasiDto>();
             }
-            catch
+            catch (Exception ex)
             {
-                // Retornar lista vacía si la API de SASI no está disponible
+                // 🛡️ T2.5: Sin catch vacío: se registra el fallo de integración y se
+                // retorna lista vacía para no derrumbar el flujo de carga si SASI no responde.
+                _logger.LogWarning(ex, "No se pudo obtener los apoderados desde SASI: {Message}", ex.Message);
                 return new List<UsuarioSasiDto>();
             }
         }

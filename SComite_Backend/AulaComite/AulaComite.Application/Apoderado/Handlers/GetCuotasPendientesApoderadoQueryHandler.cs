@@ -24,11 +24,9 @@ namespace AulaComite.Application.Apoderado.Handlers
 
             if (!esHijo)
             {
-                return new ResumenPagosApoderadoDto
-                {
-                    EstudianteId = request.EstudianteId,
-                    Cuotas = new List<CuotaApoderadoDto>()
-                };
+                // 🛡️ T2.6: No se puede consultar un estudiante que no es hijo del apoderado
+                // autenticado. El middleware convierte esto en 403 Forbidden.
+                throw new UnauthorizedAccessException("El estudiante solicitado no pertenece al apoderado autenticado.");
             }
 
             var cuotas = (await _repository.ObtenerCuotasPendientesAsync(request.EstudianteId, request.AnioLectivo)).ToList();

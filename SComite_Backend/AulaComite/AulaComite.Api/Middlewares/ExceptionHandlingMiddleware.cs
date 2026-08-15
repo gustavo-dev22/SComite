@@ -2,6 +2,7 @@
 using System.Text.Json;
 using AulaComite.Application.Common.Interfaces;
 using FluentValidation;
+using Microsoft.Data.SqlClient;
 
 namespace AulaComite.Api.Middlewares
 {
@@ -59,6 +60,24 @@ namespace AulaComite.Api.Middlewares
                     };
 
                     await context.Response.WriteAsync(JsonSerializer.Serialize(forbiddenResponse));
+                    return;
+                }
+
+                // 🛡️ T2.0: Los errores de negocio lanzados desde Stored Procedures (THROW
+                // 50000-59999) son errores esperados de validación del dominio, no fallas
+                // del servidor. Se devuelven como 400 Bad Request sin registrarlos como ERROR.
+                if (ex is SqlException sqlEx && sqlEx.Number >= 50000 && sqlEx.Number < 60000)
+                {
+                    context.Response.ContentType = "application/json";
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+                    var businessResponse = new
+                    {
+                        statusCode = context.Response.StatusCode,
+                        mensaje = sqlEx.Message ?? "La operación no cumple con las reglas de negocio."
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(businessResponse));
                     return;
                 }
 

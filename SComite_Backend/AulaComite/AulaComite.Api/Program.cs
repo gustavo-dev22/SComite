@@ -61,6 +61,8 @@ try
             ?? throw new InvalidOperationException("SasiSettings:BaseUrl no está configurado.");
         client.BaseAddress = new Uri(baseUrl);
         client.DefaultRequestHeaders.Add("Accept", "application/json");
+        // 🛡️ T2.5: Timeout de 10 segundos para no dejar colgada la autenticación/consulta a SASI.
+        client.Timeout = TimeSpan.FromSeconds(10);
     });
 
     builder.Services.AddAuthentication(options =>

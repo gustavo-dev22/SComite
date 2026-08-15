@@ -24,7 +24,9 @@ namespace AulaComite.Application.Apoderado.Handlers
 
             if (!esHijo)
             {
-                return new List<AnuncioApoderadoDto>();
+                // 🛡️ T2.6: No se puede consultar un estudiante que no es hijo del apoderado
+                // autenticado. El middleware convierte esto en 403 Forbidden.
+                throw new UnauthorizedAccessException("El estudiante solicitado no pertenece al apoderado autenticado.");
             }
 
             var result = await _repository.ObtenerAnunciosMuroAsync(request.EstudianteId, request.AnioLectivo);
