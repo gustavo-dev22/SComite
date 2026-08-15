@@ -218,11 +218,6 @@
             </svg>
             {{ formAnuncio().id === 0 ? 'Publicar Comunicado Oficial' : 'Editar Comunicado' }}
           </h3>
-          <button (click)="cerrarModal()" class="text-slate-400 hover:text-white cursor-pointer transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
 
         <div class="p-5 space-y-4">
@@ -294,9 +289,6 @@
             <h3 class="font-bold text-sm sm:text-base">Control de Confirmación de Lectura</h3>
             <p class="text-xs text-slate-300 truncate max-w-lg mt-0.5">{{ anuncioAuditoriaTitulo() }}</p>
           </div>
-          <button (click)="cerrarModalAuditoria()" class="text-slate-400 hover:text-white transition cursor-pointer">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
         </div>
 
         <!-- Filtros y Métricas Rápidas -->

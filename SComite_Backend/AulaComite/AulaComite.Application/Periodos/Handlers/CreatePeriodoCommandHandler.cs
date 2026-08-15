@@ -23,6 +23,11 @@ namespace AulaComite.Application.Periodos.Handlers
 
         public async Task<int> Handle(CreatePeriodoCommand request, CancellationToken cancellationToken)
         {
+            if (await _repository.ExisteAnioAsync(request.Anio))
+            {
+                throw new FluentValidation.ValidationException($"Ya existe un Año Lectivo registrado para el año {request.Anio}. No se permite registrar el mismo año dos veces.");
+            }
+
             var p = new PeriodoLectivo
             {
                 Anio = request.Anio,

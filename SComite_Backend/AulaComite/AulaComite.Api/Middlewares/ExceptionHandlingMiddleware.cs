@@ -29,10 +29,16 @@ namespace AulaComite.Api.Middlewares
                     context.Response.ContentType = "application/json";
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
+                    var primerError = validationException.Errors.FirstOrDefault()?.ErrorMessage;
+
+                    var mensaje = !string.IsNullOrWhiteSpace(primerError) ? primerError
+                        : !string.IsNullOrWhiteSpace(validationException.Message) ? validationException.Message
+                        : "La solicitud no es válida.";
+
                     var validationResponse = new
                     {
                         statusCode = context.Response.StatusCode,
-                        mensaje = "La solicitud no es válida.",
+                        mensaje = mensaje,
                         errores = validationException.Errors
                             .Select(e => new { campo = e.PropertyName, mensaje = e.ErrorMessage })
                     };

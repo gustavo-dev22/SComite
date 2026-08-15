@@ -60,6 +60,9 @@ export class ValidarComprobantesComponent implements OnInit {
     return lista.filter(c => c.estadoPago === filtro);
   });
 
+  cantidadPendientes = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'PENDIENTE').length);
+  cantidadPagados = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'COMPLETO').length);
+
   pagoForm: FormGroup = this.fb.group({
     montoAbonado: [0, [Validators.required, Validators.min(0.10)]],
     formaPago: ['YAPE', Validators.required]

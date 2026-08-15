@@ -22,6 +22,8 @@ namespace AulaComite.Application.Estudiantes.Handlers
 
         public async Task<bool> Handle(DeleteEstudianteCommand request, CancellationToken cancellationToken)
         {
+            var estudiante = await _repository.ObtenerPorIdAsync(request.Id);
+
             bool resultado = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 return await _repository.EliminarEstudianteLogicoAsync(request.Id, transaction);
@@ -30,11 +32,15 @@ namespace AulaComite.Application.Estudiantes.Handlers
             // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
             if (resultado)
             {
+                string nombreEstudiante = estudiante != null && !string.IsNullOrWhiteSpace(estudiante.NombreCompleto)
+                    ? estudiante.NombreCompleto
+                    : $"Estudiante #{request.Id}";
+
                 await _logRepository.RegistrarAsync(
                     nivel: "WARNING",
                     modulo: "ESTUDIANTES",
                     accion: "DESACTIVAR_ESTUDIANTE",
-                    mensaje: $"El estudiante con ID #{request.Id} fue cambiado a estado Inactivo/Retirado."
+                    mensaje: $"El estudiante {nombreEstudiante} fue cambiado a estado Inactivo/Retirado."
                 );
             }
 

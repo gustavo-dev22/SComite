@@ -117,7 +117,7 @@
         [class.bg-white]="filtroEstado() !== 'PENDIENTE'"
         [class.text-slate-700]="filtroEstado() !== 'PENDIENTE'"
         class="px-3 py-1 rounded-full text-xs font-bold border border-slate-200 transition cursor-pointer flex items-center gap-1">
-        <span>Pendientes</span>
+        <span>Pendientes ({{ cantidadPendientes() }})</span>
       </button>
       <button 
         (click)="filtroEstado.set('COMPLETO')"
@@ -126,7 +126,7 @@
         [class.bg-white]="filtroEstado() !== 'COMPLETO'"
         [class.text-slate-700]="filtroEstado() !== 'COMPLETO'"
         class="px-3 py-1 rounded-full text-xs font-bold border border-slate-200 transition cursor-pointer flex items-center gap-1">
-        <span>Pagados</span>
+        <span>Pagados ({{ cantidadPagados() }})</span>
       </button>
     </div>
 

@@ -146,5 +146,20 @@ namespace AulaComite.Infrastructure.Repositories
                 WHERE cd.Id = @CuotaDetalleId";
             return await connection.QueryFirstOrDefaultAsync<int?>(sql, new { CuotaDetalleId = cuotaDetalleId });
         }
+
+        public async Task<CuotaDetalleInfoDto?> ObtenerDetalleCobroInfoAsync(int cuotaDetalleId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            const string sql = @"
+                SELECT c.Concepto,
+                       (e.ApellidoPaterno + ' ' + e.ApellidoMaterno + ', ' + e.Nombres) AS EstudianteNombreCompleto,
+                       cd.MontoAsignado,
+                       cd.MontoPagado
+                FROM CuotaDetalleEstudiante cd
+                INNER JOIN Cuotas c ON c.Id = cd.CuotaId
+                INNER JOIN Estudiantes e ON cd.EstudianteId = e.Id
+                WHERE cd.Id = @CuotaDetalleId";
+            return await connection.QueryFirstOrDefaultAsync<CuotaDetalleInfoDto>(sql, new { CuotaDetalleId = cuotaDetalleId });
+        }
     }
 }

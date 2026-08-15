@@ -50,7 +50,7 @@ namespace AulaComite.Application.Gastos.Handlers
                 nivel: "WARN",
                 modulo: "TESORERIA",
                 accion: "ELIMINAR_GASTO",
-                mensaje: $"Se eliminó el registro de gasto #{request.GastoId} por un monto de S/. {gasto.Monto:N2} de la caja del aula."
+                mensaje: $"Se eliminó el registro de gasto '{gasto.Concepto.ToUpper()}' por un monto de S/. {gasto.Monto:N2} ({gasto.Categoria}) de la caja del aula."
             );
 
             // 3. Una vez confirmada la eliminación en BD, borrar el comprobante del disco si existía

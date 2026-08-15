@@ -166,17 +166,15 @@
             <!-- BOTÓN PENDIENTES SIN SUBRAYADO -->
             <button 
               (click)="abrirModalMorosos(cuota)"
-              class="bg-amber-50 hover:bg-amber-100/80 p-2 rounded-xl border border-amber-200/80 transition cursor-pointer text-left no-underline">
-              <div class="flex items-center justify-between">
-                <span class="block font-bold text-amber-700 text-sm sm:text-base no-underline">{{ cuota.estudiantesPendientes }}</span>
-                <span class="text-[10px] text-amber-800 font-bold uppercase tracking-wider flex items-center gap-0.5 no-underline">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  Ver
-                </span>
-              </div>
+              class="relative bg-amber-50 hover:bg-amber-100/80 p-2 pt-4 rounded-xl border border-amber-200/80 transition cursor-pointer text-center no-underline w-full">
+              <span class="absolute top-1 right-1.5 text-[10px] text-amber-800 font-bold uppercase tracking-wider flex items-center gap-0.5 no-underline">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Ver
+              </span>
+              <span class="block font-bold text-amber-700 text-sm sm:text-base no-underline leading-none">{{ cuota.estudiantesPendientes }}</span>
               <span class="text-slate-500 block text-[11px] font-medium no-underline">Pendientes</span>
             </button>
           </div>
@@ -358,11 +356,6 @@
               <span>Exportar PDF</span>
             </button>
           }
-          <button (click)="cerrarModalMorosos()" class="text-amber-200 hover:text-white cursor-pointer transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
       </div>
 

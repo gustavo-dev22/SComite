@@ -19,6 +19,14 @@ namespace AulaComite.Application.Periodos.Handlers
 
         public async Task<bool> Handle(UpdatePeriodoCommand request, CancellationToken cancellationToken)
         {
+            var periodoExistente = await _repository.ObtenerPorIdAsync(request.Id);
+            if (periodoExistente == null) return false;
+
+            if (periodoExistente.Anio != request.Anio && await _repository.ExisteAnioAsync(request.Anio))
+            {
+                throw new FluentValidation.ValidationException($"Ya existe un Año Lectivo registrado para el año {request.Anio}. No se permite duplicar un año lectivo.");
+            }
+
             var p = new PeriodoLectivo
             {
                 Id = request.Id,

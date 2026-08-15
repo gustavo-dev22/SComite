@@ -34,17 +34,26 @@ namespace AulaComite.Application.Cuotas.Handlers
 
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
 
+            var detalle = await _cuotaRepository.ObtenerDetalleCobroInfoAsync(request.CuotaDetalleId);
+
             await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 await _cuotaRepository.AnularPagoEstudianteAsync(request.CuotaDetalleId, transaction);
             });
+
+            string conceptoMostrar = detalle != null && !string.IsNullOrWhiteSpace(detalle.Concepto)
+                ? detalle.Concepto
+                : $"Cuota #{request.CuotaDetalleId}";
+            string estudianteMostrar = detalle != null && !string.IsNullOrWhiteSpace(detalle.EstudianteNombreCompleto)
+                ? detalle.EstudianteNombreCompleto
+                : $"Detalle #{request.CuotaDetalleId}";
 
             // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
             await _logRepository.RegistrarAsync(
                 nivel: "WARN",
                 modulo: "TESORERIA",
                 accion: "ANULAR_PAGO",
-                mensaje: $"Se anuló el estado de pago de la cuota detalle #{request.CuotaDetalleId} devolviéndola a PENDIENTE."
+                mensaje: $"Se anuló el estado de pago del estudiante {estudianteMostrar} en la cuota '{conceptoMostrar}' devolviéndola a PENDIENTE."
             );
 
             return true;

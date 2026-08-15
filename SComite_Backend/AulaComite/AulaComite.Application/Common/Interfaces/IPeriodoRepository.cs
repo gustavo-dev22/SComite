@@ -11,5 +11,7 @@ namespace AulaComite.Application.Common.Interfaces
         Task<int> CrearAsync(PeriodoLectivo periodo, IDbTransaction? transaction = null);
         Task<bool> ActualizarAsync(PeriodoLectivo periodo);
         Task<bool> CambiarEstadoAsync(int id, bool esActivo);
+        Task<bool> ExisteAnioAsync(int anio);
+        Task<PeriodoLectivo?> ObtenerPorIdAsync(int id);
     }
 }

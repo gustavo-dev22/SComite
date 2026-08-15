@@ -59,6 +59,24 @@ namespace AulaComite.Infrastructure.Repositories
             return rows > 0;
         }
 
+        public async Task<bool> ExisteAnioAsync(int anio)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.ExecuteScalarAsync<bool>(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM PeriodosLectivos WHERE Anio = @Anio) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END",
+                new { Anio = anio }
+            );
+        }
+
+        public async Task<PeriodoLectivo?> ObtenerPorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            return await connection.QueryFirstOrDefaultAsync<PeriodoLectivo>(
+                "SELECT Id, Anio, Nombre, EsActivo, FechaInicio, FechaFin FROM PeriodosLectivos WHERE Id = @Id",
+                new { Id = id }
+            );
+        }
+
         public async Task<bool> CambiarEstadoAsync(int id, bool esActivo)
         {
             using var connection = _connectionFactory.CreateConnection();
