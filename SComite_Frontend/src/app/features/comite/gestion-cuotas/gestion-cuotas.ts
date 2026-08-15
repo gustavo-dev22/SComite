@@ -491,6 +491,7 @@ export class GestionCuotasComponent extends BasePeriodosComponent implements OnI
   onCambiarEstadoCuota(cuota: Cuota): void {
     const aulaId = this.aulaSeleccionadaId();
     if (!aulaId || this.cambiandoEstado()) return;
+    if (cuota.estado === 'ANULADA') return;
 
     const esCierre = cuota.estado === 'EN COBRO';
     const titulo = esCierre ? '¿Cerrar y Sanear Cuota?' : '¿Reabrir Cobranza de Cuota?';
