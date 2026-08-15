@@ -265,12 +265,19 @@ try
     }).AllowAnonymous();
 
 
+    // ------------------------------------------------------------------------
     // Aplicar Migraciones Automáticas en el arranque (Desarrollo y Producción).
-    // El servidor de producción SIEMPRE alcanza su propia BD: los runners de
-    // GitHub/CI no pueden conectar a SQL Server (runasp bloquea IPs externas),
-    // por lo que el CI no aplica migraciones y esta es la única vía confiable.
-    // Fail-open: si una migración falla se registra el error y la app arranca igual.
-    // Se puede desactivar con la variable/config AplicarMigracionesAutomaticas=false.
+    // NOSONAR: La regla de Sonar "Database.Migrate() en el arranque" (mínimo
+    // privilegio / DDL en tiempo de ejecución) se suprime de forma deliberada y
+    // documentada porque en este hosting (runasp, instancia única + BD única)
+    // es la ÚNICA vía viable:
+    //   * Los runners de GitHub/CI NO pueden conectar a SQL Server (timeout
+    //     TCP 258: runasp bloquea IPs externas), demostrado en CI.
+    //   * El servidor es el único proceso que alcanza su propia BD.
+    //   * No hay concurrencia (1 instancia) y EF Core 9+ usa lock global de BD.
+    // Safety valve: AplicarMigracionesAutomaticas=false desactiva el bloque.
+    // Fail-open: si algo falla se registra el error y la app arranca igual.
+    // ------------------------------------------------------------------------
     if (app.Configuration.GetValue<bool>("AplicarMigracionesAutomaticas", true))
     {
         using (var scope = app.Services.CreateScope())
@@ -279,7 +286,7 @@ try
             try
             {
                 var context = services.GetRequiredService<ApplicationDbContext>();
-                context.Database.Migrate();
+                context.Database.Migrate(); // NOSONAR - justificación en el bloque superior
                 Log.Information("Migraciones de la base de datos verificadas/aplicadas correctamente.");
             }
             catch (Exception ex)
