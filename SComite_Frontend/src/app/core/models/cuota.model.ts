@@ -1,4 +1,4 @@
-export type EstadoPago = 'PENDIENTE' | 'PARCIAL' | 'COMPLETO';
+export type EstadoPago = 'PENDIENTE' | 'PARCIAL' | 'COMPLETO' | 'EXONERADO';
 
 export interface Cuota {
   id: number;

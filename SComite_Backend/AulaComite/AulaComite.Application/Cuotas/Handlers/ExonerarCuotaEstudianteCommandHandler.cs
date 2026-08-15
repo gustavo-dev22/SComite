@@ -9,6 +9,7 @@ namespace AulaComite.Application.Cuotas.Handlers
     {
         private const string EstadoExonerado = "EXONERADO";
         private const string EstadoPendiente = "PENDIENTE";
+        private const string EstadoCuotaCerrada = "CERRADA";
 
         private readonly ICuotaRepository _cuotaRepository;
         private readonly IComiteRepository _comiteRepository;
@@ -40,6 +41,11 @@ namespace AulaComite.Application.Cuotas.Handlers
             if (!aulaId.HasValue) return false;
 
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
+
+            // 🛡️ Una cuota cerrada/saneada no admite exoneraciones ni reversiones.
+            var estadoCuota = await _cuotaRepository.ObtenerEstadoCuotaPorCuotaDetalleAsync(request.CuotaDetalleId);
+            if (string.Equals(estadoCuota, EstadoCuotaCerrada, StringComparison.OrdinalIgnoreCase))
+                return false;
 
             var detalle = await _cuotaRepository.ObtenerDetalleCobroInfoAsync(request.CuotaDetalleId);
 

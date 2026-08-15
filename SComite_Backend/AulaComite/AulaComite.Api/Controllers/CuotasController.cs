@@ -93,5 +93,17 @@ namespace AulaComite.Api.Controllers
             var result = await _mediator.Send(new GetEstudiantesExoneradosCuotaQuery(cuotaId));
             return Ok(result);
         }
+
+        [HttpPost("cambiar-estado")]
+        public async Task<IActionResult> CambiarEstado([FromBody] CambiarEstadoCuotaCommand command)
+        {
+            bool exito = await _mediator.Send(command);
+            if (!exito)
+            {
+                return BadRequest(new { exito = false, mensaje = "No se encontró la cuota especificada o el estado solicitado no es válido." });
+            }
+
+            return Ok(new { exito, mensaje = $"La cuota ha cambiado a estado {command.NuevoEstado} exitosamente." });
+        }
     }
 }

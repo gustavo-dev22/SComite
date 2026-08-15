@@ -125,64 +125,68 @@
     <!-- Grid de Cuotas -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       @for (cuota of cuotasFiltradas(); track cuota.id) {
-        <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 flex flex-col justify-between hover:border-slate-400 transition">
+        <!-- CARD DE CUOTA (Borde verde esmeralda si está CERRADA) -->
+        <div 
+          class="bg-white rounded-2xl shadow-xs border-2 p-5 flex flex-col justify-between transition duration-200"
+          [ngClass]="{
+            'border-emerald-500 ring-2 ring-emerald-100 bg-emerald-50/10': cuota.estado === 'CERRADA',
+            'border-slate-200 hover:border-slate-300': cuota.estado !== 'CERRADA'
+          }">
+          
           <div>
-            <div class="flex justify-between items-start mb-3">
-              <span 
-                [class.bg-emerald-50]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
-                [class.text-emerald-700]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
-                [class.border-emerald-200]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
-                [class.bg-purple-50]="cuota.tipoCuota === 'EXTRAORDINARIA'"
-                [class.text-purple-700]="cuota.tipoCuota === 'EXTRAORDINARIA'"
-                [class.border-purple-200]="cuota.tipoCuota === 'EXTRAORDINARIA'"
-                class="px-2.5 py-0.5 text-xs font-bold rounded-full border">
-                {{ cuota.tipoCuota === 'RECURRENTE_MENSUAL' ? 'Mensual' : 'Actividad' }}
+            <!-- Cabecera de la Card -->
+            <div class="flex justify-between items-start mb-3 gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span 
+                  [class.bg-emerald-50]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                  [class.text-emerald-700]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                  [class.border-emerald-200]="cuota.tipoCuota === 'RECURRENTE_MENSUAL'"
+                  [class.bg-purple-50]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                  [class.text-purple-700]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                  [class.border-purple-200]="cuota.tipoCuota === 'EXTRAORDINARIA'"
+                  class="px-2.5 py-0.5 text-xs font-bold rounded-full border">
+                  {{ cuota.tipoCuota === 'RECURRENTE_MENSUAL' ? 'Mensual' : 'Actividad' }}
+                </span>
+
+                <!-- Badge de Estado de Cuota -->
+                @if (cuota.estado === 'CERRADA') {
+                  <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-2xs">
+                    🔒 Saneada / Cerrada
+                  </span>
+                }
+              </div>
+
+              <span class="text-xs text-slate-400 font-medium whitespace-nowrap">
+                Vence: {{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}
               </span>
-              <span class="text-xs text-slate-400 font-medium">Vence: {{ cuota.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
             </div>
 
             <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-1 leading-snug">{{ cuota.concepto }}</h3>
-            <p class="text-xl sm:text-2xl font-black text-slate-900 mb-4">S/. {{ cuota.montoIndividual | number:'1.2-2' }} <span class="text-xs text-slate-400 font-normal">/ por estudiante</span></p>
+            <p class="text-xl sm:text-2xl font-black text-slate-900 mb-4">
+              S/. {{ cuota.montoIndividual | number:'1.2-2' }} 
+              <span class="text-xs text-slate-400 font-normal">/ por estudiante</span>
+            </p>
 
             <!-- Barra de Progreso de Recaudación -->
             <div class="mb-4">
               <div class="flex justify-between text-xs text-slate-600 font-medium mb-1.5">
-                <span>Recaudado: <strong>S/. {{ cuota.totalMontoRecaudado | number:'1.2-2' }}</strong></span>
-                <span>Meta: <strong>S/. {{ cuota.totalMontoEsperado | number:'1.2-2' }}</strong></span>
+                <span>Recaudado: <strong class="text-slate-900">S/. {{ cuota.totalMontoRecaudado | number:'1.2-2' }}</strong></span>
+                <span>Meta: <strong class="text-slate-900">S/. {{ cuota.totalMontoEsperado | number:'1.2-2' }}</strong></span>
               </div>
               <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="bg-slate-900 h-2 rounded-full transition-all duration-500" [style.width.%]="(cuota.totalMontoRecaudado / cuota.totalMontoEsperado) * 100 || 0"></div>
+                <div 
+                  class="h-2 rounded-full transition-all duration-500"
+                  [ngClass]="cuota.estado === 'CERRADA' ? 'bg-emerald-500' : 'bg-slate-900'"
+                  [style.width.%]="(cuota.totalMontoRecaudado / cuota.totalMontoEsperado) * 100 || 0">
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Resumen de Cumplimiento -->
-          <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 text-center text-xs">
-            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-              <span class="block font-bold text-emerald-700 text-sm sm:text-base">{{ cuota.estudiantesAlDia }}</span>
-              <span class="text-slate-500 font-medium">Al día</span>
-            </div>
-
-            <!-- BOTÓN PENDIENTES SIN SUBRAYADO -->
-            <button 
-              (click)="abrirModalMorosos(cuota)"
-              class="relative bg-amber-50 hover:bg-amber-100/80 p-2 pt-4 rounded-xl border border-amber-200/80 transition cursor-pointer text-center no-underline w-full">
-              <span class="absolute top-1 right-1.5 text-[10px] text-amber-800 font-bold uppercase tracking-wider flex items-center gap-0.5 no-underline">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Ver
-              </span>
-              <span class="block font-bold text-amber-700 text-sm sm:text-base no-underline leading-none">{{ cuota.estudiantesPendientes }}</span>
-              <span class="text-slate-500 block text-[11px] font-medium no-underline">Pendientes</span>
-            </button>
-
-            <!-- Indicador Lineal Condicional de Exonerados (Solo si > 0) -->
+            <!-- Indicador Lineal Condicional de Exonerados (Ubicado fuera del grid) -->
             @if ((cuota.estudiantesExonerados ?? 0) > 0) {
               <div 
                 (click)="abrirModalExonerados(cuota)"
-                class="flex items-center justify-between px-3 py-1.5 mb-3 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl cursor-pointer transition">
+                class="flex items-center justify-between px-3 py-1.5 mb-4 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl cursor-pointer transition">
                 <div class="flex items-center gap-1.5 text-slate-700">
                   <span class="text-xs">🛡️</span>
                   <span class="text-xs font-bold">
@@ -193,6 +197,50 @@
               </div>
             }
           </div>
+
+          <!-- Resumen de Cumplimiento y Acciones -->
+          <div class="space-y-3 pt-3 border-t border-slate-100">
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+              <!-- Al Día -->
+              <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex flex-col justify-center">
+                <span class="block font-bold text-emerald-700 text-sm sm:text-base leading-none mb-1">{{ cuota.estudiantesAlDia }}</span>
+                <span class="text-slate-500 font-medium text-[11px]">Al día</span>
+              </div>
+
+              <!-- Botón Pendientes / Morosos -->
+              <button 
+                (click)="abrirModalMorosos(cuota)"
+                class="relative bg-amber-50 hover:bg-amber-100/80 p-2 pt-3.5 rounded-xl border border-amber-200/80 transition cursor-pointer text-center no-underline w-full">
+                <span class="absolute top-1 right-1.5 text-[10px] text-amber-800 font-bold uppercase tracking-wider flex items-center gap-0.5 no-underline">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Ver
+                </span>
+                <span class="block font-bold text-amber-700 text-sm sm:text-base no-underline leading-none mb-1">{{ cuota.estudiantesPendientes }}</span>
+                <span class="text-slate-500 block text-[11px] font-medium no-underline">Pendientes</span>
+              </button>
+            </div>
+
+            <!-- Botón de Cierre / Reapertura de Cuota -->
+            <div class="flex justify-end">
+              @if (cuota.estado === 'CERRADA') {
+                <button 
+                  (click)="onCambiarEstadoCuota(cuota)"
+                  class="w-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200">
+                  🔓 Reabrir Cobranza
+                </button>
+              } @else {
+                <button 
+                  (click)="onCambiarEstadoCuota(cuota)"
+                  class="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
+                  🔒 Cerrar y Sanear Cuota
+                </button>
+              }
+            </div>
+          </div>
+
         </div>
       } @empty {
         <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 p-6">

@@ -46,4 +46,8 @@ export class CuotaService {
   obtenerExoneradosPorCuota(cuotaId: number): Observable<EstudianteExoneradoCuota[]> {
     return this.http.get<EstudianteExoneradoCuota[]>(`${this.apiUrl}/${cuotaId}/exonerados`);
   }
+
+  cambiarEstadoCuota(payload: { cuotaId: number; nuevoEstado: 'CERRADA' | 'EN COBRO' }): Observable<{ exito: boolean; mensaje: string }> {
+    return this.http.post<{ exito: boolean; mensaje: string }>(`${this.apiUrl}/cambiar-estado`, payload);
+  }
 }

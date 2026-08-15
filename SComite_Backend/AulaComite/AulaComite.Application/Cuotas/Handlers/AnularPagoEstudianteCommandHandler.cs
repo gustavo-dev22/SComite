@@ -17,6 +17,8 @@ namespace AulaComite.Application.Cuotas.Handlers
         private readonly IDbConnectionFactory _connectionFactory;
         private readonly IUserContextService _userContextService;
 
+        private const string EstadoCuotaCerrada = "CERRADA";
+
         public AnularPagoEstudianteCommandHandler(ICuotaRepository cuotaRepository, IComiteRepository comiteRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory, IUserContextService userContextService)
         {
             _cuotaRepository = cuotaRepository;
@@ -33,6 +35,11 @@ namespace AulaComite.Application.Cuotas.Handlers
             if (!aulaId.HasValue) return false;
 
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
+
+            // 🛡️ Una cuota cerrada/saneada no admite reversiones de pago.
+            var estadoCuota = await _cuotaRepository.ObtenerEstadoCuotaPorCuotaDetalleAsync(request.CuotaDetalleId);
+            if (string.Equals(estadoCuota, EstadoCuotaCerrada, StringComparison.OrdinalIgnoreCase))
+                return false;
 
             var detalle = await _cuotaRepository.ObtenerDetalleCobroInfoAsync(request.CuotaDetalleId);
 

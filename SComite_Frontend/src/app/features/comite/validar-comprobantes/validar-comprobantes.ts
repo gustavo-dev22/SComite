@@ -62,10 +62,22 @@ export class ValidarComprobantesComponent implements OnInit {
 
   cantidadPendientes = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'PENDIENTE').length);
   cantidadPagados = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'COMPLETO').length);
+  cantidadExonerados = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'EXONERADO').length);
 
   pagoForm: FormGroup = this.fb.group({
     montoAbonado: [0, [Validators.required, Validators.min(0.10)]],
     formaPago: ['YAPE', Validators.required]
+  });
+
+  // 🚀 Obtener la cuota seleccionada actualmente para conocer su estado
+  cuotaActual = computed(() => {
+    const id = this.cuotaSeleccionadaId();
+    return this.cuotas().find(c => c.id === id) || null;
+  });
+
+  // 🚀 Saber si la cuota seleccionada está CERRADA / Saneada
+  cuotaEstaCerrada = computed(() => {
+    return this.cuotaActual()?.estado === 'CERRADA';
   });
 
   ngOnInit(): void {

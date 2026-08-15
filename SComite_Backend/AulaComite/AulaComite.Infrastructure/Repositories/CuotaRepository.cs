@@ -147,6 +147,24 @@ namespace AulaComite.Infrastructure.Repositories
             return await connection.QueryFirstOrDefaultAsync<int?>(sql, new { CuotaDetalleId = cuotaDetalleId });
         }
 
+        public async Task<int?> ObtenerAulaIdPorCuotaAsync(int cuotaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            const string sql = "SELECT AulaId FROM Cuotas WHERE Id = @CuotaId";
+            return await connection.QueryFirstOrDefaultAsync<int?>(sql, new { CuotaId = cuotaId });
+        }
+
+        public async Task<string?> ObtenerEstadoCuotaPorCuotaDetalleAsync(int cuotaDetalleId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            const string sql = @"
+                SELECT c.Estado
+                FROM CuotaDetalleEstudiante cd
+                INNER JOIN Cuotas c ON c.Id = cd.CuotaId
+                WHERE cd.Id = @CuotaDetalleId";
+            return await connection.QueryFirstOrDefaultAsync<string>(sql, new { CuotaDetalleId = cuotaDetalleId });
+        }
+
         public async Task<CuotaDetalleInfoDto?> ObtenerDetalleCobroInfoAsync(int cuotaDetalleId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -191,6 +209,25 @@ namespace AulaComite.Infrastructure.Repositories
                 new { CuotaId = cuotaId },
                 commandType: CommandType.StoredProcedure
             );
+        }
+
+        public async Task<bool> CambiarEstadoCuotaAsync(int cuotaId, string nuevoEstado)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+
+            var sql = @"
+                        UPDATE Cuotas
+                        SET Estado = @NuevoEstado,
+                            FechaCierre = CASE WHEN @NuevoEstado = 'CERRADA' THEN GETDATE() ELSE NULL END
+                        WHERE Id = @CuotaId;";
+
+            var filasAfectadas = await connection.ExecuteAsync(sql, new
+            {
+                CuotaId = cuotaId,
+                NuevoEstado = nuevoEstado.ToUpper()
+            });
+
+            return filasAfectadas > 0;
         }
     }
 }

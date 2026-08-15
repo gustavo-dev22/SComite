@@ -98,8 +98,26 @@
     </div>
   } @else {
 
+    <!-- Banner Informativo si la Cuota está CERRADA / Saneada -->
+    @if (cuotaEstaCerrada()) {
+      <div class="mb-4 bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg shrink-0">
+            🔒
+          </div>
+          <div>
+            <h4 class="text-xs sm:text-sm font-bold text-emerald-900">Cuota Saneada y Cerrada</h4>
+            <p class="text-xs text-emerald-700">Esta cuota se encuentra liquidada formalmente. No se permiten registros ni reversiones de pagos.</p>
+          </div>
+        </div>
+        <span class="text-xs font-black uppercase text-emerald-800 bg-white px-3 py-1 rounded-xl border border-emerald-200 shadow-2xs">
+          Solo Lectura
+        </span>
+      </div>
+    }
+
     <!-- Sub-Filtro por Estado -->
-    <div class="flex items-center gap-2 mb-4">
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
       <span class="text-xs font-bold text-slate-500 uppercase">Mostrar:</span>
       <button 
         (click)="filtroEstado.set('TODOS')"
@@ -128,6 +146,17 @@
         class="px-3 py-1 rounded-full text-xs font-bold border border-slate-200 transition cursor-pointer flex items-center gap-1">
         <span>Pagados ({{ cantidadPagados() }})</span>
       </button>
+      @if (cantidadExonerados() > 0) {
+        <button 
+          (click)="filtroEstado.set('EXONERADO')"
+          [class.bg-slate-700]="filtroEstado() === 'EXONERADO'"
+          [class.text-white]="filtroEstado() === 'EXONERADO'"
+          [class.bg-white]="filtroEstado() !== 'EXONERADO'"
+          [class.text-slate-700]="filtroEstado() !== 'EXONERADO'"
+          class="px-3 py-1 rounded-full text-xs font-bold border border-slate-200 transition cursor-pointer flex items-center gap-1">
+          <span>🛡️ Exonerados ({{ cantidadExonerados() }})</span>
+        </button>
+      }
     </div>
 
     <!-- Matriz de Estudiantes -->
@@ -147,7 +176,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100 text-xs sm:text-sm text-slate-700">
             @for (item of cobrosFiltrados(); track item.cuotaDetalleId; let i = $index) {
-              <tr class="hover:bg-slate-50/80 transition">
+              <tr class="hover:bg-slate-50/80 transition" [ngClass]="{'bg-slate-50/40 opacity-75': item.estadoPago === 'EXONERADO'}">
                 <td class="p-3.5 sm:p-4 text-xs text-slate-400 font-bold font-mono">{{ i + 1 }}</td>
                 <td class="p-3.5 sm:p-4">
                   <span class="block font-bold text-slate-900 text-xs sm:text-sm">{{ item.estudianteNombreCompleto }}</span>
@@ -168,25 +197,57 @@
                     }
                   </span>
                 </td>
-                <td class="p-3.5 sm:p-4 text-right font-bold text-slate-700">S/. {{ item.montoAsignado | number:'1.2-2' }}</td>
-                <td class="p-3.5 sm:p-4 text-right font-black text-emerald-700">S/. {{ item.montoPagado | number:'1.2-2' }}</td>
-                <td class="p-3.5 sm:p-4 text-center">
-                  <span 
-                    [class.bg-amber-50]="item.estadoPago === 'PENDIENTE'"
-                    [class.text-amber-700]="item.estadoPago === 'PENDIENTE'"
-                    [class.border-amber-200]="item.estadoPago === 'PENDIENTE'"
-                    [class.bg-emerald-50]="item.estadoPago === 'COMPLETO'"
-                    [class.text-emerald-700]="item.estadoPago === 'COMPLETO'"
-                    [class.border-emerald-200]="item.estadoPago === 'COMPLETO'"
-                    [class.bg-blue-50]="item.estadoPago === 'PARCIAL'"
-                    [class.text-blue-700]="item.estadoPago === 'PARCIAL'"
-                    [class.border-blue-200]="item.estadoPago === 'PARCIAL'"
-                    class="px-2.5 py-0.5 text-xs font-bold rounded-full border">
-                    {{ item.estadoPago }}
-                  </span>
+                
+                <!-- Monto Asignado -->
+                <td class="p-3.5 sm:p-4 text-right font-bold" [ngClass]="item.estadoPago === 'EXONERADO' ? 'text-slate-400 line-through' : 'text-slate-700'">
+                  S/. {{ item.montoAsignado | number:'1.2-2' }}
                 </td>
-                <td class="p-3.5 sm:p-4 text-center">
-                  @if (item.estadoPago === 'PENDIENTE' || item.estadoPago === 'PARCIAL') {
+
+                <!-- Monto Abonado -->
+                <td class="p-3.5 sm:p-4 text-right font-black text-emerald-700">
+                  S/. {{ item.montoPagado | number:'1.2-2' }}
+                </td>
+
+                <!-- Columna de Estado -->
+                <td class="p-3.5 sm:p-4 text-center whitespace-nowrap">
+                  @if (item.estadoPago === 'EXONERADO') {
+                    <span class="px-2.5 py-0.5 text-xs font-bold rounded-full border bg-slate-100 text-slate-700 border-slate-300">
+                      🛡️ Exonerado
+                    </span>
+                  } @else {
+                    <span 
+                      [class.bg-amber-50]="item.estadoPago === 'PENDIENTE'"
+                      [class.text-amber-700]="item.estadoPago === 'PENDIENTE'"
+                      [class.border-amber-200]="item.estadoPago === 'PENDIENTE'"
+                      [class.bg-emerald-50]="item.estadoPago === 'COMPLETO'"
+                      [class.text-emerald-700]="item.estadoPago === 'COMPLETO'"
+                      [class.border-emerald-200]="item.estadoPago === 'COMPLETO'"
+                      [class.bg-blue-50]="item.estadoPago === 'PARCIAL'"
+                      [class.text-blue-700]="item.estadoPago === 'PARCIAL'"
+                      [class.border-blue-200]="item.estadoPago === 'PARCIAL'"
+                      class="px-2.5 py-0.5 text-xs font-bold rounded-full border">
+                      {{ item.estadoPago }}
+                    </span>
+                  }
+                </td>
+
+                <!-- Columna de Acciones -->
+                <td class="p-3.5 sm:p-4 text-center whitespace-nowrap">
+                  
+                  <!-- CASO 1: Si la cuota está saneada (CERRADA) -->
+                  @if (cuotaEstaCerrada()) {
+                    <span class="inline-flex items-center gap-1 text-xs text-slate-400 font-medium italic">
+                      🔒 Cuota Liquidada
+                    </span>
+                  }
+                  <!-- CASO 2: Si el estudiante está exonerado -->
+                  @else if (item.estadoPago === 'EXONERADO') {
+                    <span class="inline-flex items-center gap-1 text-xs text-slate-400 font-medium">
+                      Sin cobro requerido
+                    </span>
+                  }
+                  <!-- CASO 3: Si está pendiente o parcial -->
+                  @else if (item.estadoPago === 'PENDIENTE' || item.estadoPago === 'PARCIAL') {
                     <div class="flex items-center justify-center gap-1.5">
                       <button 
                         (click)="pagoRapidoCompleto(item)"
@@ -204,9 +265,13 @@
                         + Abono
                       </button>
                     </div>
-                  } @else {
+                  }
+                  <!-- CASO 4: Si está pagado/completo -->
+                  @else {
                     <div class="flex items-center justify-center gap-2">
-                      <span class="text-xs text-slate-400 font-medium">Pagado {{ item.fechaUltimoPago | date:'dd/MM' }}</span>
+                      <span class="text-xs text-slate-400 font-medium">
+                        Pagado {{ item.fechaUltimoPago ? (item.fechaUltimoPago | date:'dd/MM') : '' }}
+                      </span>
                       <button 
                         (click)="anularPago(item)"
                         title="Revertir Pago a Pendiente"
@@ -218,6 +283,7 @@
                       </button>
                     </div>
                   }
+
                 </td>
               </tr>
             } @empty {
@@ -229,7 +295,6 @@
         </table>
       </div>
     </div>
-
   }
 </div>
 

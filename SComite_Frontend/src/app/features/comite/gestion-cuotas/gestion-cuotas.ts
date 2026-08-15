@@ -462,4 +462,43 @@ export class GestionCuotasComponent implements OnInit {
       }
     });
   }
+
+  onCambiarEstadoCuota(cuota: Cuota): void {
+    const aulaId = this.aulaSeleccionadaId();
+    if (!aulaId) return;
+
+    const esCierre = cuota.estado !== 'CERRADA';
+    const titulo = esCierre ? '¿Cerrar y Sanear Cuota?' : '¿Reabrir Cobranza de Cuota?';
+    const texto = esCierre
+      ? `Al cerrar "${cuota.concepto}", se considerará liquidada por tesorería.`
+      : `Al reabrir "${cuota.concepto}", se podrán registrar o revertir pagos nuevamente.`;
+
+    Swal.fire({
+      title: titulo,
+      text: texto,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: esCierre ? 'Sí, Cerrar y Liquidar' : 'Sí, Reabrir Cobro',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: esCierre ? '#059669' : '#4f46e5',
+      cancelButtonColor: '#64748b'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const nuevoEstado = esCierre ? 'CERRADA' : 'EN COBRO';
+        
+        this.cuotaService.cambiarEstadoCuota({
+          cuotaId: cuota.id,
+          nuevoEstado: nuevoEstado
+        }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: (res) => {
+            Swal.fire('Actualizado', res.mensaje || 'Estado de cuota actualizado.', 'success');
+            this.cargarCuotas(aulaId); // Recarga para actualizar las cards y bordes
+          },
+          error: (err) => {
+            Swal.fire('Error', err.error?.mensaje || 'No se pudo cambiar el estado de la cuota.', 'error');
+          }
+        });
+      }
+    });
+  }
 }
