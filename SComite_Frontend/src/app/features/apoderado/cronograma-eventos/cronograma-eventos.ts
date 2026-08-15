@@ -11,6 +11,7 @@ const BADGES_ESTADO_EVENTO: Record<string, string> = {
   'PLANIFICADA': 'bg-amber-100 text-amber-800 border-amber-200'
 };
 import { ApoderadoService } from '../../../core/services/apoderado.service';
+import { AulaService } from '../../../core/services/aula.service';
 import { EventoCronogramaApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
 import Swal from 'sweetalert2';
 
@@ -25,6 +26,7 @@ export class CronogramaEventosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private reiniciarCarga$ = new Subject<void>();
   private apoderadoService = inject(ApoderadoService);
+  private aulaService = inject(AulaService);
 
   constructor() {
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
@@ -38,7 +40,7 @@ export class CronogramaEventosComponent implements OnInit {
 
   eventos = signal<EventoCronogramaApoderado[]>([]);
 
-  anioLectivoActual = new Date().getFullYear();
+  anioLectivoActual = signal<number>(new Date().getFullYear());
 
   hijoActual = computed(() => {
     const id = this.estudianteSeleccionadoId();
@@ -54,12 +56,18 @@ export class CronogramaEventosComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.cargarHijos();
+    this.aulaService.getAnioLectivoVigente().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (anio) => {
+        this.anioLectivoActual.set(anio);
+        this.cargarHijos();
+      },
+      error: () => this.cargarHijos()
+    });
   }
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -82,7 +90,7 @@ export class CronogramaEventosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoEventos.set(true);
-    this.apoderadoService.getCronogramaEventos(estudianteId, this.anioLectivoActual).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getCronogramaEventos(estudianteId, this.anioLectivoActual()).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.eventos.set(data);
         this.cargandoEventos.set(false);

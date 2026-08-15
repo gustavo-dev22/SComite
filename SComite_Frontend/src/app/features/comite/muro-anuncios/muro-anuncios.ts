@@ -1,15 +1,14 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AnuncioService } from '../../../core/services/anuncio.service';
-import { AulaService } from '../../../core/services/aula.service';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { AnuncioComite, ResumenAuditoriaAnuncio } from '../../../core/models/anuncio.model';
 import { Aula } from '../../../core/models/aula.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 
 const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
@@ -26,18 +25,16 @@ const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
   templateUrl: './muro-anuncios.html',
   styleUrl: './muro-anuncios.scss',
 })
-export class MuroAnunciosComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class MuroAnunciosComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private anuncioService = inject(AnuncioService);
-  private aulaService = inject(AulaService);
   private authService = inject(AuthService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   anuncios = signal<AnuncioComite[]>([]);
 
@@ -80,13 +77,6 @@ export class MuroAnunciosComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPeriodos();
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   onPeriodoChange(event: Event): void {

@@ -2,6 +2,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
+import { AulaService } from '../../../core/services/aula.service';
 import { AnuncioApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
 import Swal from 'sweetalert2';
 
@@ -22,6 +23,7 @@ const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
 export class MurosComunicadosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private apoderadoService = inject(ApoderadoService);
+  private aulaService = inject(AulaService);
 
   cargandoHijos = signal<boolean>(false);
   cargandoAnuncios = signal<boolean>(false);
@@ -33,7 +35,7 @@ export class MurosComunicadosComponent implements OnInit {
 
   private lecturasEnCurso = new Set<number>();
 
-  anioLectivoActual = new Date().getFullYear();
+  anioLectivoActual = signal<number>(new Date().getFullYear());
 
   hijoActual = computed(() => {
     const id = this.estudianteSeleccionadoId();
@@ -41,12 +43,18 @@ export class MurosComunicadosComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.cargarHijos();
+    this.aulaService.getAnioLectivoVigente().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (anio) => {
+        this.anioLectivoActual.set(anio);
+        this.cargarHijos();
+      },
+      error: () => this.cargarHijos()
+    });
   }
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -68,7 +76,7 @@ export class MurosComunicadosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoAnuncios.set(true);
-    this.apoderadoService.getAnunciosMuro(estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getAnunciosMuro(estudianteId, this.anioLectivoActual()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.anuncios.set(data);
         this.cargandoAnuncios.set(false);
@@ -94,7 +102,7 @@ export class MurosComunicadosComponent implements OnInit {
 
     this.lecturasEnCurso.add(anuncio.id);
 
-    this.apoderadoService.marcarLecturaAnuncio(anuncio.id, estudianteId, this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.marcarLecturaAnuncio(anuncio.id, estudianteId, this.anioLectivoActual()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.lecturasEnCurso.delete(anuncio.id);
         this.anuncios.update(lista =>

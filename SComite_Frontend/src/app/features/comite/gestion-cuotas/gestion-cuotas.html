@@ -232,7 +232,7 @@
                   class="w-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
                   🔓 Reabrir Cobranza
                 </button>
-              } @else {
+              } @else if (cuota.estado === 'EN COBRO') {
                 <button 
                   (click)="onCambiarEstadoCuota(cuota)"
                   [disabled]="cambiandoEstado()"

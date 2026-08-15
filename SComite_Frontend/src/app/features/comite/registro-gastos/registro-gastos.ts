@@ -1,15 +1,14 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, takeUntil } from 'rxjs';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GastoService } from '../../../core/services/gasto.service';
-import { AulaService } from '../../../core/services/aula.service';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { GastoComite, ResumenCajaAula } from '../../../core/models/gasto.model';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
 
@@ -24,19 +23,17 @@ const EXTENSIONES_COMPROBANTE_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp', 'pdf']
   templateUrl: './registro-gastos.html',
   styleUrl: './registro-gastos.scss',
 })
-export class RegistroGastosComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class RegistroGastosComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private fb = inject(FormBuilder);
   private gastoService = inject(GastoService);
-  private aulaService = inject(AulaService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
   // Listas
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   gastos = signal<GastoComite[]>([]);
   resumenCaja = signal<ResumenCajaAula>({
@@ -76,6 +73,7 @@ export class RegistroGastosComponent implements OnInit {
   esEdicion = signal<boolean>(false);
   gastoEditarId = signal<number | null>(null);
   subiendoArchivo = signal<boolean>(false);
+  guardando = signal<boolean>(false);
   archivoSeleccionadoNombre = signal<string>('');
 
   gastoForm: FormGroup = this.fb.group({
@@ -92,13 +90,6 @@ export class RegistroGastosComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPeriodos();
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   onPeriodoChange(event: Event): void {
@@ -182,29 +173,27 @@ export class RegistroGastosComponent implements OnInit {
   guardarGasto(): void {
     const aulaId = this.aulaSeleccionadaId();
     if (this.gastoForm.invalid || !aulaId) return;
+    if (this.guardando()) return;
+    this.guardando.set(true);
 
     const payload = { ...this.gastoForm.value, aulaId };
 
-    if (this.esEdicion()) {
-      const id = this.gastoEditarId()!;
-      this.gastoService.actualizar(id, { ...payload, id }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          this.cerrarModal();
-          Swal.fire({ icon: 'success', title: 'Gasto Actualizado', timer: 1500, showConfirmButton: false });
-          this.cargarGastosYBalance(aulaId);
-        },
-        error: (err) => manejarErrorHttp(err, 'No se pudo actualizar.')
-      });
-    } else {
-      this.gastoService.crear(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          this.cerrarModal();
-          Swal.fire({ icon: 'success', title: 'Gasto Registrado', timer: 1500, showConfirmButton: false });
-          this.cargarGastosYBalance(aulaId);
-        },
-        error: (err) => manejarErrorHttp(err, 'No se pudo registrar.')
-      });
-    }
+    const request: Observable<unknown> = this.esEdicion()
+      ? this.gastoService.actualizar(this.gastoEditarId()!, { ...payload, id: this.gastoEditarId()! })
+      : this.gastoService.crear(payload);
+
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.guardando.set(false);
+        this.cerrarModal();
+        Swal.fire({ icon: 'success', title: this.esEdicion() ? 'Gasto Actualizado' : 'Gasto Registrado', timer: 1500, showConfirmButton: false });
+        this.cargarGastosYBalance(aulaId);
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        manejarErrorHttp(err, this.esEdicion() ? 'No se pudo actualizar.' : 'No se pudo registrar.');
+      }
+    });
   }
 
   eliminarGasto(gasto: GastoComite): void {

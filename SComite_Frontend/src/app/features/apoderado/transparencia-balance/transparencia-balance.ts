@@ -2,11 +2,11 @@
 import { BalanceAula } from '../../../core/models/gastoTransparencia.model';
 import { TransparenciaService } from '../../../core/services/transparencia.service';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
+import { AulaService } from '../../../core/services/aula.service';
 import { HijoApoderado } from '../../../core/models/apoderado.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
-import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -21,6 +21,7 @@ export class TransparenciaBalanceComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private apoderadoService = inject(ApoderadoService);
   private transparenciaService = inject(TransparenciaService);
+  private aulaService = inject(AulaService);
 
   constructor() {
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
@@ -34,7 +35,7 @@ export class TransparenciaBalanceComponent implements OnInit {
 
   balance = signal<BalanceAula | null>(null);
   mesFiltroSeleccionado = signal<number | null>(null);
-  anioLectivoActual = new Date().getFullYear();
+  anioLectivoActual = signal<number>(new Date().getFullYear());
 
   hijoActual = computed(() => {
     const id = this.estudianteSeleccionadoId();
@@ -81,12 +82,18 @@ export class TransparenciaBalanceComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.cargarHijos();
+    this.aulaService.getAnioLectivoVigente().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (anio) => {
+        this.anioLectivoActual.set(anio);
+        this.cargarHijos();
+      },
+      error: () => this.cargarHijos()
+    });
   }
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual)
+    this.apoderadoService.getMisHijos(this.anioLectivoActual())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -112,7 +119,7 @@ export class TransparenciaBalanceComponent implements OnInit {
 
     this.cargandoBalance.set(true);
     this.balance.set(null);
-    this.transparenciaService.getBalanceAula(hijo.aulaId, this.anioLectivoActual)
+    this.transparenciaService.getBalanceAula(hijo.aulaId, this.anioLectivoActual())
       .pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

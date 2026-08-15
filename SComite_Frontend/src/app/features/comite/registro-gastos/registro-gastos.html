@@ -384,8 +384,8 @@
 
         <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
           <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
-          <button type="submit" [disabled]="gastoForm.invalid || subiendoArchivo()" class="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1">
-            @if (subiendoArchivo()) {
+          <button type="submit" [disabled]="gastoForm.invalid || subiendoArchivo() || guardando()" class="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1">
+            @if (subiendoArchivo() || guardando()) {
               <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
               <span>Guardando...</span>
             } @else {

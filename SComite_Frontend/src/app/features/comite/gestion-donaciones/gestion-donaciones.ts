@@ -1,15 +1,14 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { AulaService } from '../../../core/services/aula.service';
 import { DonacionService } from '../../../core/services/donacion.service';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { DonacionComite } from '../../../core/models/donacion.model';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -19,17 +18,15 @@ import Swal from 'sweetalert2';
   templateUrl: './gestion-donaciones.html',
   styleUrl: './gestion-donaciones.scss',
 })
-export class GestionDonacionesComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class GestionDonacionesComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private donacionService = inject(DonacionService);
-  private aulaService = inject(AulaService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   donaciones = signal<DonacionComite[]>([]);
 
@@ -61,13 +58,6 @@ export class GestionDonacionesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPeriodos();
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   onPeriodoChange(event: Event): void {

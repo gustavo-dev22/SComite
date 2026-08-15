@@ -1,12 +1,10 @@
 ﻿import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ActaService } from '../../../core/services/acta.service';
-import { AulaService } from '../../../core/services/aula.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ActaAsambleaComite } from '../../../core/models/acta.model';
 import { ComiteService } from '../../../core/services/comite.service';
@@ -16,6 +14,7 @@ import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -25,21 +24,19 @@ import Swal from 'sweetalert2';
   templateUrl: './actas-asamblea.html',
   styleUrl: './actas-asamblea.scss',
 })
-export class ActasAsambleaComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class ActasAsambleaComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private actaService = inject(ActaService);
-  private aulaService = inject(AulaService);
   private authService = inject(AuthService);
   private comiteService = inject(ComiteService);
   private institucionService = inject(InstitucionService);
   private pdfExporter = inject(PdfExporterService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   actas = signal<ActaAsambleaComite[]>([]);
   integrantesComiteRaw = signal<ComiteIntegrante[]>([]);
@@ -100,13 +97,6 @@ export class ActasAsambleaComponent implements OnInit {
   ngOnInit(): void {
     this.cargarPeriodos();
     this.cargarDatosInstitucion();
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   cargarDatosInstitucion(): void {

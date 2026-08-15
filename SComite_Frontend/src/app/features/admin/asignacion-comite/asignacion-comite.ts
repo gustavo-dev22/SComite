@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -9,11 +9,11 @@ const BADGES_CARGO: Record<string, string> = {
   'VOCAL': 'bg-amber-100 text-amber-800 border-amber-200'
 };
 import { ComiteService } from '../../../core/services/comite.service';
-import { AulaService } from '../../../core/services/aula.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ComiteIntegrante, UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 
@@ -24,18 +24,16 @@ import { CommonModule } from '@angular/common';
   templateUrl: './asignacion-comite.html',
   styleUrl: './asignacion-comite.scss',
 })
-export class AsignacionComiteComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class AsignacionComiteComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private comiteService = inject(ComiteService);
-  private aulaService = inject(AulaService);
   private fb = inject(FormBuilder);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   integrantes = signal<ComiteIntegrante[]>([]);
   apoderadosSasi = signal<UsuarioSasi[]>([]);
@@ -44,6 +42,7 @@ export class AsignacionComiteComponent implements OnInit {
   aulaSeleccionada = signal<number | null>(null);
 
   cargando = signal<boolean>(false);
+  guardando = signal<boolean>(false);
   modalAbierto = signal<boolean>(false);
 
   cargosDisponibles = ['PRESIDENTE', 'TESORERO', 'SECRETARIO', 'VOCAL'];
@@ -58,26 +57,12 @@ export class AsignacionComiteComponent implements OnInit {
     this.cargarApoderadosSasi();
   }
 
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
-      this.periodos.set(data);
-
-      if (data.length > 0) {
-        const anioActualSistema = new Date().getFullYear(); // 2026
-
-        // 1. Buscamos el periodo cuya propiedad 'anio' o número dentro de 'nombre' coincida con el año actual
-        const periodoActual = data.find(p => {
-          const anioExtraido = p.anio || Number(p.nombre.replace(/\D/g, '')); // Extrae los dígitos (ej: "Año Lectivo 2026" -> 2026)
-          return anioExtraido === anioActualSistema;
-        }) || data.find(p => p.esActivo) || data[0];
-
-        // 2. Asignamos el ID del periodo 2026
-        this.periodoSeleccionado.set(periodoActual.id);
-
-        // 3. Cargamos de inmediato las aulas de ese periodo
-        this.cargarAulasPorPeriodo(periodoActual.id);
-      }
-    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error'));
+  protected override onPeriodosCargados(data: PeriodoLectivo[]): void {
+    const periodoActual = this.buscarPeriodoVigente(data);
+    if (periodoActual) {
+      this.periodoSeleccionado.set(periodoActual.id);
+      this.cargarAulasPorPeriodo(periodoActual.id);
+    }
   }
 
   cargarAulasPorPeriodo(periodoId: number): void {
@@ -149,9 +134,14 @@ export class AsignacionComiteComponent implements OnInit {
       this.comiteForm.markAllAsTouched();
       return;
     }
+    if (this.guardando()) return;
+    this.guardando.set(true);
 
     const apoderado = this.apoderadosSasi().find(a => a.usuarioId === this.comiteForm.value.usuarioIdSasi);
-    if (!apoderado) return;
+    if (!apoderado) {
+      this.guardando.set(false);
+      return;
+    }
 
     const payload = {
       aulaId: this.aulaSeleccionada()!,
@@ -163,6 +153,7 @@ export class AsignacionComiteComponent implements OnInit {
 
     this.comiteService.asignarIntegrante(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.guardando.set(false);
         Swal.fire({
           icon: 'success',
           title: '¡Asignado!',
@@ -173,7 +164,10 @@ export class AsignacionComiteComponent implements OnInit {
         this.cerrarModal();
         this.cargarComiteAula(this.aulaSeleccionada()!);
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'Error al asignar.', 'error')
+      error: (err) => {
+        this.guardando.set(false);
+        Swal.fire('Error', err.error?.mensaje || 'Error al asignar.', 'error');
+      }
     });
   }
 

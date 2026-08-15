@@ -5,10 +5,10 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { FormsModule } from '@angular/forms';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
+import { AulaService } from '../../../core/services/aula.service';
 import { CuotaApoderado, HijoApoderado, ResumenPagosApoderado } from '../../../core/models/apoderado.model';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
-import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-mis-pagos',
@@ -21,6 +21,7 @@ export class MisPagosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private reiniciarCarga$ = new Subject<void>();
   private apoderadoService = inject(ApoderadoService);
+  private aulaService = inject(AulaService);
 
   constructor() {
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
@@ -34,7 +35,7 @@ export class MisPagosComponent implements OnInit {
 
   resumen = signal<ResumenPagosApoderado | null>(null);
 
-  anioLectivoActual = new Date().getFullYear();
+  anioLectivoActual = signal<number>(new Date().getFullYear());
 
   // 🚀 Hijo actualmente activo
   hijoActual = computed(() => {
@@ -43,12 +44,18 @@ export class MisPagosComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.cargarHijos();
+    this.aulaService.getAnioLectivoVigente().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (anio) => {
+        this.anioLectivoActual.set(anio);
+        this.cargarHijos();
+      },
+      error: () => this.cargarHijos()
+    });
   }
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -73,7 +80,7 @@ export class MisPagosComponent implements OnInit {
 
     this.cargandoCuotas.set(true);
     this.resumen.set(null);
-    this.apoderadoService.getCuotasPendientes(estudianteId, this.anioLectivoActual).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getCuotasPendientes(estudianteId, this.anioLectivoActual()).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.resumen.set(data);
         this.cargandoCuotas.set(false);

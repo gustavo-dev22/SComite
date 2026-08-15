@@ -60,7 +60,7 @@ export class MantenimientoSistemaComponent {
       next: (res) => {
         this.procesandoReset.set(false);
         this.cerrarModal();
-        alert('✅ ' + res.mensaje);
+        Swal.fire({ icon: 'success', title: 'Base de Datos Reiniciada', text: res.mensaje });
         window.location.reload(); // Recargar la aplicación limpia
       },
       error: (err) => {

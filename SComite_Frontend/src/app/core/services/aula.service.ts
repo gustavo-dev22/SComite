@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { PeriodoLectivo } from '../models/periodoLectivo.model';
 import { Aula } from '../models/aula.model';
 import { ApiResponse } from '../models/api-response.model';
@@ -26,6 +26,15 @@ export class AulaService {
 
   getPeriodos(): Observable<PeriodoLectivo[]> {
     return this.http.get<PeriodoLectivo[]>(`${this.apiUrl}/periodos`);
+  }
+
+  getAnioLectivoVigente(): Observable<number> {
+    return this.http.get<PeriodoLectivo[]>(`${this.apiUrl}/periodos`).pipe(
+      map((periodos) => {
+        const vigente = periodos.find(p => p.esActivo) ?? periodos[0];
+        return vigente?.anio ?? new Date().getFullYear();
+      })
+    );
   }
 
   crearAula(aula: { periodoId: number; nivel: string; grado: string; seccion: string }): Observable<ApiResponse> {

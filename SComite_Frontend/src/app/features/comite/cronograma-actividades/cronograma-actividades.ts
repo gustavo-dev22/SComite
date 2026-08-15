@@ -1,13 +1,12 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ActividadService } from '../../../core/services/actividad.service';
-import { AulaService } from '../../../core/services/aula.service';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ActividadComite } from '../../../core/models/actividad.model';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
 import Swal from 'sweetalert2';
@@ -27,18 +26,16 @@ const BADGES_ESTADO_ACTIVIDAD: Record<string, string> = {
   templateUrl: './cronograma-actividades.html',
   styleUrl: './cronograma-actividades.scss',
 })
-export class CronogramaActividadesComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class CronogramaActividadesComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private actividadService = inject(ActividadService);
-  private aulaService = inject(AulaService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
   // Signals para listas
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   actividades = signal<ActividadComite[]>([]);
 
@@ -78,13 +75,6 @@ export class CronogramaActividadesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPeriodos();
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   onPeriodoChange(event: Event): void {

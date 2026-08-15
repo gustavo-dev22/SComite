@@ -1,10 +1,8 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { BalanceService } from '../../../core/services/balance.service';
-import { AulaService } from '../../../core/services/aula.service';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { BalanceConsolidado, GastoCategoriaResumen, GastoComiteDTO, GastoDetalleAgrupado } from '../../../core/models/balance.model';
 import { ComiteService } from '../../../core/services/comite.service';
@@ -13,6 +11,7 @@ import { InstitucionService } from '../../../core/services/institucion.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -22,21 +21,19 @@ import Swal from 'sweetalert2';
   templateUrl: './balance-caja.html',
   styleUrl: './balance-caja.scss',
 })
-export class BalanceCajaComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class BalanceCajaComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private balanceService = inject(BalanceService);
-  private aulaService = inject(AulaService);
   private comiteService = inject(ComiteService);
   private institucionService = inject(InstitucionService);
   private pdfExporter = inject(PdfExporterService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
   // Listas
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   gastosCategorias = signal<GastoCategoriaResumen[]>([]);
   gastosDetalles = signal<GastoComiteDTO[]>([]);
@@ -147,13 +144,6 @@ export class BalanceCajaComponent implements OnInit {
   ngOnInit(): void {
     this.cargarPeriodos();
     this.cargarDatosInstitucion();
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   cargarDatosInstitucion(): void {

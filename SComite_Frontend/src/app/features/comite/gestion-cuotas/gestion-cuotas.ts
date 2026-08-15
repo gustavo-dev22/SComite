@@ -1,11 +1,9 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
 import { Cuota, EstudianteExoneradoCuota, EstudiantePendienteCuota } from '../../../core/models/cuota.model';
-import { AulaService } from '../../../core/services/aula.service';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ActividadService } from '../../../core/services/actividad.service';
 import { ActividadComite } from '../../../core/models/actividad.model';
@@ -17,6 +15,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
 import { formatearFechaLocal } from '../../../core/utils/fecha.util';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 
 @Component({
   selector: 'app-gestion-cuotas',
@@ -25,21 +24,19 @@ import { formatearFechaLocal } from '../../../core/utils/fecha.util';
   templateUrl: './gestion-cuotas.html',
   styleUrl: './gestion-cuotas.scss',
 })
-export class GestionCuotasComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class GestionCuotasComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private fb = inject(FormBuilder);
   private cuotaService = inject(CuotaService);
-  private aulaService = inject(AulaService);
   private actividadService = inject(ActividadService);
   private pdfExporter = inject(PdfExporterService);
   private institucionService = inject(InstitucionService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   cuotas = signal<Cuota[]>([]);
   actividades = signal<ActividadComite[]>([]);
@@ -141,13 +138,6 @@ export class GestionCuotasComponent implements OnInit {
     } finally {
       this.descargandoPdfMorosos.set(false);
     }
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   onPeriodoChange(event: Event): void {
@@ -502,7 +492,7 @@ export class GestionCuotasComponent implements OnInit {
     const aulaId = this.aulaSeleccionadaId();
     if (!aulaId || this.cambiandoEstado()) return;
 
-    const esCierre = cuota.estado !== 'CERRADA';
+    const esCierre = cuota.estado === 'EN COBRO';
     const titulo = esCierre ? '¿Cerrar y Sanear Cuota?' : '¿Reabrir Cobranza de Cuota?';
     const texto = esCierre
       ? `Al cerrar "${cuota.concepto}", se considerará liquidada por tesorería.`

@@ -44,7 +44,7 @@
       <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
         <div>
           <span class="text-xs font-bold text-slate-400 uppercase block mb-0.5">
-            Total Recaudado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual + ')' }}
+            Total Recaudado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual() + ')' }}
           </span>
           <h3 class="text-xl sm:text-2xl font-black text-emerald-700">S/. {{ totalIngresos() | number:'1.2-2' }}</h3>
         </div>
@@ -59,7 +59,7 @@
       <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
         <div>
           <span class="text-xs font-bold text-slate-400 uppercase block mb-0.5">
-            Total Gastado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual + ')' }}
+            Total Gastado {{ mesSeleccionadoData() ? '(' + mesSeleccionadoData()?.nombreMes + ')' : '(Año ' + anioLectivoActual() + ')' }}
           </span>
           <h3 class="text-xl sm:text-2xl font-black text-rose-700">S/. {{ totalEgresos() | number:'1.2-2' }}</h3>
         </div>

@@ -1,5 +1,5 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -10,12 +10,12 @@ const BADGES_ESTADO_CAJA: Record<string, string> = {
 };
 import { FormsModule } from '@angular/forms';
 import { AuditoriaService } from '../../../core/services/auditoria.service';
-import { AulaService } from '../../../core/services/aula.service';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { ResumenGeneralCajasConsolidadas } from '../../../core/models/auditoria.model';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -25,20 +25,18 @@ import Swal from 'sweetalert2';
   templateUrl: './resumen-general-cajas.html',
   styleUrl: './resumen-general-cajas.scss',
 })
-export class ResumenGeneralCajasComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class ResumenGeneralCajasComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private auditoriaService = inject(AuditoriaService);
-  private aulaService = inject(AulaService);
   private institucionService = inject(InstitucionService);
   private pdfExporter = inject(PdfExporterService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
   cargando = signal<boolean>(false);
-  periodos = signal<PeriodoLectivo[]>([]);
   periodoSeleccionadoId = signal<number | null>(null);
   nivelFiltro = signal<string>('');
 
@@ -58,18 +56,12 @@ export class ResumenGeneralCajasComponent implements OnInit {
     this.cargarDatosInstitucion();
   }
 
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => {
-        this.periodos.set(data);
-        const activo = data.find(p => p.esActivo);
-        if (activo) {
-          this.periodoSeleccionadoId.set(activo.id);
-          this.cargarResumen();
-        }
-      },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error')
-    });
+  protected override onPeriodosCargados(data: PeriodoLectivo[]): void {
+    const activo = data.find(p => p.esActivo);
+    if (activo) {
+      this.periodoSeleccionadoId.set(activo.id);
+      this.cargarResumen();
+    }
   }
 
   cargarDatosInstitucion(): void {

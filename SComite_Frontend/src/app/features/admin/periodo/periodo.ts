@@ -1,9 +1,9 @@
-﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AulaService } from '../../../core/services/aula.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { PeriodoService } from '../../../core/services/periodo.service';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 
@@ -14,14 +14,12 @@ import { CommonModule } from '@angular/common';
   templateUrl: './periodo.html',
   styleUrl: './periodo.scss',
 })
-export class PeriodoComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
-  private aulaService = inject(AulaService);
+export class PeriodoComponent extends BasePeriodosComponent implements OnInit {
   private periodoService = inject(PeriodoService);
   private fb = inject(FormBuilder);
 
-  periodos = signal<PeriodoLectivo[]>([]);
   cargando = signal<boolean>(false);
+  guardando = signal<boolean>(false);
   modalAbierto = signal<boolean>(false);
   esEdicion = signal<boolean>(false);
 
@@ -34,21 +32,16 @@ export class PeriodoComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.cargando.set(true);
     this.cargarPeriodos();
   }
 
-  cargarPeriodos(): void {
-    this.cargando.set(true);
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => {
-        this.periodos.set(data);
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error');
-      }
-    });
+  protected override onPeriodosCargados(): void {
+    this.cargando.set(false);
+  }
+
+  protected override onPeriodosError(): void {
+    this.cargando.set(false);
   }
 
   abrirModalCrear(): void {
@@ -91,6 +84,8 @@ export class PeriodoComponent implements OnInit {
       this.periodoForm.markAllAsTouched();
       return;
     }
+    if (this.guardando()) return;
+    this.guardando.set(true);
 
     const val = this.periodoForm.value;
     const payload = {
@@ -101,24 +96,27 @@ export class PeriodoComponent implements OnInit {
       esActivo: Boolean(val.esActivo)
     };
 
-    if (this.esEdicion()) {
-      this.periodoService.actualizarPeriodo(payload.id, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          Swal.fire({ icon: 'success', title: '¡Actualizado!', text: 'Periodo lectivo modificado.', timer: 1500, showConfirmButton: false });
-          this.cerrarModal();
-          this.cargarPeriodos();
-        },
-        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error')
-      });
-    } else {
-      this.periodoService.crearPeriodo(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          Swal.fire({ icon: 'success', title: '¡Creado!', text: 'Periodo lectivo registrado.', timer: 1500, showConfirmButton: false });
-          this.cerrarModal();
-          this.cargarPeriodos();
-        },
-        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo crear.', 'error')
-      });
-    }
+    const request = this.esEdicion()
+      ? this.periodoService.actualizarPeriodo(payload.id, payload)
+      : this.periodoService.crearPeriodo(payload);
+
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.guardando.set(false);
+        Swal.fire({
+          icon: 'success',
+          title: this.esEdicion() ? '¡Actualizado!' : '¡Creado!',
+          text: this.esEdicion() ? 'Periodo lectivo modificado.' : 'Periodo lectivo registrado.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        this.cerrarModal();
+        this.cargarPeriodos();
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        Swal.fire('Error', err.error?.mensaje || (this.esEdicion() ? 'No se pudo actualizar.' : 'No se pudo crear.'), 'error');
+      }
+    });
   }
 }

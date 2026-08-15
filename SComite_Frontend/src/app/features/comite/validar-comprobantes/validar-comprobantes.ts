@@ -1,15 +1,14 @@
 ﻿import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
-import { AulaService } from '../../../core/services/aula.service';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
-import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { Cuota, CuotaEstudianteCobro, EstadoPago } from '../../../core/models/cuota.model';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -19,19 +18,17 @@ import Swal from 'sweetalert2';
   templateUrl: './validar-comprobantes.html',
   styleUrl: './validar-comprobantes.scss',
 })
-export class ValidarComprobantesComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class ValidarComprobantesComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private fb = inject(FormBuilder);
   private cuotaService = inject(CuotaService);
-  private aulaService = inject(AulaService);
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
   // Listas
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   cuotas = signal<Cuota[]>([]);
   cobrosEstudiantes = signal<CuotaEstudianteCobro[]>([]);
@@ -61,10 +58,11 @@ export class ValidarComprobantesComponent implements OnInit {
     const filtro = this.filtroEstado();
 
     if (filtro === 'TODOS') return lista;
+    if (filtro === 'PENDIENTE') return lista.filter(c => c.estadoPago === 'PENDIENTE' || c.estadoPago === 'PARCIAL');
     return lista.filter(c => c.estadoPago === filtro);
   });
 
-  cantidadPendientes = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'PENDIENTE').length);
+  cantidadPendientes = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'PENDIENTE' || c.estadoPago === 'PARCIAL').length);
   cantidadPagados = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'COMPLETO').length);
   cantidadExonerados = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'EXONERADO').length);
 
@@ -86,13 +84,6 @@ export class ValidarComprobantesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPeriodos();
-  }
-
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.periodos.set(data),
-      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los periodos lectivos.')
-    });
   }
 
   onPeriodoChange(event: Event): void {
@@ -218,7 +209,7 @@ export class ValidarComprobantesComponent implements OnInit {
 
     this.pagoForm.controls['montoAbonado'].setValidators([
       Validators.required,
-      Validators.min(0.10),
+      Validators.min(Math.min(0.10, saldoPendiente)),
       Validators.max(saldoPendiente) // 👈 No permite superar el saldo restante
     ]);
     this.pagoForm.controls['montoAbonado'].updateValueAndValidity();

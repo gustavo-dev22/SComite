@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnIni
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
+import { AulaService } from '../../../core/services/aula.service';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { ActaApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
@@ -20,6 +21,7 @@ export class ActasDocumentosComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private reiniciarCarga$ = new Subject<void>();
   private apoderadoService = inject(ApoderadoService);
+  private aulaService = inject(AulaService);
   private institucionService = inject(InstitucionService);
   private pdfExporter = inject(PdfExporterService);
 
@@ -37,7 +39,7 @@ export class ActasDocumentosComponent implements OnInit {
   institucion = signal<InstitucionEducativa | null>(null);
 
   descargandoPdf = signal<boolean>(false);
-  anioLectivoActual = new Date().getFullYear();
+  anioLectivoActual = signal<number>(new Date().getFullYear());
 
   hijoActual = computed(() => {
     const id = this.estudianteSeleccionadoId();
@@ -45,13 +47,19 @@ export class ActasDocumentosComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.cargarHijos();
+    this.aulaService.getAnioLectivoVigente().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (anio) => {
+        this.anioLectivoActual.set(anio);
+        this.cargarHijos();
+      },
+      error: () => this.cargarHijos()
+    });
     this.cargarDatosInstitucion();
   }
 
   cargarHijos(): void {
     this.cargandoHijos.set(true);
-    this.apoderadoService.getMisHijos(this.anioLectivoActual).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getMisHijos(this.anioLectivoActual()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.hijos.set(data);
         this.cargandoHijos.set(false);
@@ -83,7 +91,7 @@ export class ActasDocumentosComponent implements OnInit {
     if (!estudianteId) return;
 
     this.cargandoActas.set(true);
-    this.apoderadoService.getActasAprobadas(estudianteId, this.anioLectivoActual).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.apoderadoService.getActasAprobadas(estudianteId, this.anioLectivoActual()).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.actas.set(data);
         this.cargandoActas.set(false);
@@ -114,7 +122,7 @@ export class ActasDocumentosComponent implements OnInit {
         nombreInstitucion: this.institucion()?.nombreInstitucion,
         urlLogo: this.institucion()?.urlLogo,
         aulaNombre: this.hijoActual()?.nombreAula || '',
-        anioLectivo: this.anioLectivoActual,
+        anioLectivo: this.anioLectivoActual(),
         numeroActa: acta.numeroActa,
         estadoActa: acta.estadoActa,
         fechaReunion: fechaReunionStr,

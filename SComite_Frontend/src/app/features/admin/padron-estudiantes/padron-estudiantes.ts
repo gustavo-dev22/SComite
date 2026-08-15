@@ -1,14 +1,14 @@
-﻿import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { EstudianteService } from '../../../core/services/estudiante.service';
-import { AulaService } from '../../../core/services/aula.service';
 import { ComiteService } from '../../../core/services/comite.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { Estudiante } from '../../../core/models/estudiante.model';
 import { UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
+import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
@@ -68,15 +68,12 @@ interface RegistroPrevioEstudiante {
   templateUrl: './padron-estudiantes.html',
   styleUrl: './padron-estudiantes.scss',
 })
-export class PadronEstudiantesComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+export class PadronEstudiantesComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
   private estudianteService = inject(EstudianteService);
-  private aulaService = inject(AulaService);
   private comiteService = inject(ComiteService);
   private fb = inject(FormBuilder);
 
-  periodos = signal<PeriodoLectivo[]>([]);
   aulas = signal<Aula[]>([]);
   estudiantes = signal<Estudiante[]>([]);
   apoderadosSasi = signal<UsuarioSasi[]>([]);
@@ -123,6 +120,7 @@ export class PadronEstudiantesComponent implements OnInit {
   }
 
   constructor() {
+    super();
     this.destroyRef.onDestroy(() => this.reiniciarCarga$.complete());
   }
 
@@ -133,26 +131,12 @@ export class PadronEstudiantesComponent implements OnInit {
     }
   }
 
-  cargarPeriodos(): void {
-    this.aulaService.getPeriodos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
-      this.periodos.set(data);
-
-      if (data.length > 0) {
-        const anioActualSistema = new Date().getFullYear(); // 2026
-
-        // 1. Buscamos el periodo cuya propiedad 'anio' o número dentro de 'nombre' coincida con el año actual
-        const periodoActual = data.find(p => {
-          const anioExtraido = p.anio || Number(p.nombre.replace(/\D/g, '')); // Extrae los dígitos (ej: "Año Lectivo 2026" -> 2026)
-          return anioExtraido === anioActualSistema;
-        }) || data.find(p => p.esActivo) || data[0];
-
-        // 2. Asignamos el ID del periodo 2026
-        this.periodoSeleccionado.set(periodoActual.id);
-
-        // 3. Cargamos de inmediato las aulas de ese periodo
-        this.cargarAulasPorPeriodo(periodoActual.id);
-      }
-    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los periodos lectivos.', 'error'));
+  protected override onPeriodosCargados(data: PeriodoLectivo[]): void {
+    const periodoActual = this.buscarPeriodoVigente(data);
+    if (periodoActual) {
+      this.periodoSeleccionado.set(periodoActual.id);
+      this.cargarAulasPorPeriodo(periodoActual.id);
+    }
   }
 
   cargarAulasPorPeriodo(periodoId: number): void {
