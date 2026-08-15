@@ -90,14 +90,14 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
-        public async Task RegistrarPagoManualAsync(int cuotaDetalleId, decimal montoAbonado, string formaPago, IDbTransaction? transaction = null)
+        public async Task RegistrarPagoManualAsync(int cuotaDetalleId, decimal montoAbonado, string formaPago, string? usuarioRegistro = null, IDbTransaction? transaction = null)
         {
             var connection = transaction?.Connection ?? _connectionFactory.CreateConnection();
             try
             {
                 await connection.ExecuteAsync(
                     "sp_Cuotas_RegistrarPagoManual",
-                    new { CuotaDetalleId = cuotaDetalleId, MontoAbonado = montoAbonado, FormaPago = formaPago },
+                    new { CuotaDetalleId = cuotaDetalleId, MontoAbonado = montoAbonado, FormaPago = formaPago, UsuarioRegistro = usuarioRegistro },
                     transaction: transaction,
                     commandType: CommandType.StoredProcedure
                 );
@@ -218,7 +218,7 @@ namespace AulaComite.Infrastructure.Repositories
             var sql = @"
                         UPDATE Cuotas
                         SET Estado = @NuevoEstado,
-                            FechaCierre = CASE WHEN @NuevoEstado = 'CERRADA' THEN GETDATE() ELSE NULL END
+                            FechaCierre = CASE WHEN @NuevoEstado = 'CERRADA' THEN DATEADD(HOUR, -5, GETUTCDATE()) ELSE NULL END
                         WHERE Id = @CuotaId;";
 
             var filasAfectadas = await connection.ExecuteAsync(sql, new

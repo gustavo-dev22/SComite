@@ -45,7 +45,12 @@ namespace AulaComite.Application.Cuotas.Handlers
 
             await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
-                await _cuotaRepository.RegistrarPagoManualAsync(request.CuotaDetalleId, request.MontoAbonado, request.FormaPago, transaction);
+                await _cuotaRepository.RegistrarPagoManualAsync(
+                    request.CuotaDetalleId,
+                    request.MontoAbonado,
+                    request.FormaPago,
+                    _userContextService.ObtenerUsuarioActual(),
+                    transaction);
             });
 
             string conceptoMostrar = detalle != null && !string.IsNullOrWhiteSpace(detalle.Concepto)

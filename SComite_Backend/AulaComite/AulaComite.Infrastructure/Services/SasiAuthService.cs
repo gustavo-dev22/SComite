@@ -89,9 +89,6 @@ namespace AulaComite.Infrastructure.Services
                     Exito = true,
                     Bloqueado = sasiResult.Bloqueado,
                     Token = tokenLocal,
-                    // 🛡️ M4: Propagar el token original de SASI para consumo interno
-                    // backend-a-backend cuando sea necesario.
-                    TokenSasi = sasiResult.Token ?? string.Empty,
                     NombreUsuario = sasiResult.Usuario?.NombreCompleto ?? string.Empty,
                     Email = sasiResult.Usuario?.Email ?? string.Empty,
                     SistemaComite = sistemaComite

@@ -35,6 +35,14 @@ namespace AulaComite.Application.Gastos.Handlers
             // 🛡️ Validar pertenencia: el gasto debe pertenecer a un Aula asignada al usuario.
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _currentUserService, gastoExistente.AulaId);
 
+            // 🛡️ Integridad financiera: el AulaId es INMUTABLE. Se prohíbe trasladar un gasto
+            // a otra aula (evita descuadres de caja entre aulas).
+            if (request.AulaId != gastoExistente.AulaId)
+            {
+                throw new FluentValidation.ValidationException(
+                    "No se permite trasladar un gasto a otra aula. El AulaId no puede modificarse.");
+            }
+
             // 2. Si se adjuntó un nuevo comprobante distinto al previo, eliminar el archivo antiguo
             if (!string.IsNullOrEmpty(gastoExistente.UrlComprobante) &&
                 !string.IsNullOrEmpty(request.UrlComprobante) &&
@@ -46,7 +54,7 @@ namespace AulaComite.Application.Gastos.Handlers
             var gasto = new GastoComite
             {
                 Id = request.Id,
-                AulaId = request.AulaId,
+                AulaId = gastoExistente.AulaId,
                 Concepto = request.Concepto,
                 Categoria = request.Categoria,
                 Monto = request.Monto,

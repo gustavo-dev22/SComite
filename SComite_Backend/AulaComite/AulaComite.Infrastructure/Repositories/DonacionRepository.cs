@@ -40,12 +40,12 @@ namespace AulaComite.Infrastructure.Repositories
         public async Task<bool> EliminarAsync(int id, int aulaId)
         {
             using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.ExecuteScalarAsync<int>(
+            var rowsAffected = await connection.ExecuteAsync(
                 "sp_Donaciones_Eliminar",
                 new { Id = id, AulaId = aulaId },
                 commandType: CommandType.StoredProcedure
             );
-            return rows > 0;
+            return rowsAffected > 0;
         }
     }
 }

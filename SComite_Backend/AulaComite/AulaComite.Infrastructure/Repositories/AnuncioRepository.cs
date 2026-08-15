@@ -28,6 +28,13 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
+        public async Task<AnuncioComite?> ObtenerPorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var sql = "SELECT * FROM AnunciosComite WHERE Id = @Id";
+            return await connection.QueryFirstOrDefaultAsync<AnuncioComite>(sql, new { Id = id });
+        }
+
         public async Task<int> GuardarAsync(int id, int aulaId, string titulo, string contenido, string categoria, bool esFijado, string? urlAdjunto, string usuarioRegistro)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -41,12 +48,12 @@ namespace AulaComite.Infrastructure.Repositories
         public async Task<bool> EliminarAsync(int id, int aulaId)
         {
             using var connection = _connectionFactory.CreateConnection();
-            var rows = await connection.ExecuteScalarAsync<int>(
+            var rowsAffected = await connection.ExecuteAsync(
                 "sp_Anuncios_Eliminar",
                 new { Id = id, AulaId = aulaId },
                 commandType: CommandType.StoredProcedure
             );
-            return rows > 0;
+            return rowsAffected > 0;
         }
 
         public async Task<IEnumerable<AuditoriaLecturaDto>> ObtenerAuditoriaLecturasAsync(int anuncioId)

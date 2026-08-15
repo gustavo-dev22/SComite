@@ -1,4 +1,5 @@
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Security;
 using AulaComite.Application.Estudiantes.Dtos;
 using AulaComite.Application.Estudiantes.Queries;
 using MediatR;
@@ -13,10 +14,17 @@ namespace AulaComite.Application.Estudiantes.Handlers
     public class GetEstudianteByIdQueryHandler : IRequestHandler<GetEstudianteByIdQuery, EstudianteDto?>
     {
         private readonly IEstudianteRepository _repository;
+        private readonly IComiteRepository _comiteRepository;
+        private readonly IUserContextService _userContextService;
 
-        public GetEstudianteByIdQueryHandler(IEstudianteRepository repository)
+        public GetEstudianteByIdQueryHandler(
+            IEstudianteRepository repository,
+            IComiteRepository comiteRepository,
+            IUserContextService userContextService)
         {
             _repository = repository;
+            _comiteRepository = comiteRepository;
+            _userContextService = userContextService;
         }
 
         public async Task<EstudianteDto?> Handle(GetEstudianteByIdQuery request, CancellationToken cancellationToken)
@@ -24,6 +32,10 @@ namespace AulaComite.Application.Estudiantes.Handlers
             var estudiante = await _repository.ObtenerPorIdAsync(request.EstudianteId);
             if (estudiante == null)
                 return null;
+
+            // 🛡️ IDOR mitigación: solo Administrador Global o miembro del comité del aula
+            // del estudiante puede ver el detalle (con PII completa) para edición.
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, estudiante.AulaId);
 
             return new EstudianteDto
             {
