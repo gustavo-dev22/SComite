@@ -32,6 +32,11 @@ namespace AulaComite.Infrastructure
 
             services.AddScoped<IUserContextService, UserContextService>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+            // 🛡️ SASI-DOWN: almacén en memoria del JWT emitido por SASI en el login.
+            // Se usa para autenticar (Bearer) las llamadas backend-a-backend a los
+            // endpoints protegidos de SASI (p. ej. catálogo de apoderados).
+            services.AddSingleton<ISasiTokenStore, SasiTokenStore>();
             services.AddScoped<IAulaRepository, AulaRepository>();
             services.AddScoped<IComiteRepository, ComiteRepository>();
             services.AddScoped<IEstudianteRepository, EstudianteRepository>();
