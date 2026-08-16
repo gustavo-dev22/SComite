@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using AulaComite.Application.Comite.Commands;
 using AulaComite.Application.Common.Interfaces;
@@ -16,14 +17,16 @@ namespace AulaComite.Application.Comite.Handlers
         private readonly ILogRepository _logRepository;
         private readonly IDbConnectionFactory _connectionFactory;
         private readonly IUserContextService _userContextService;
+        private readonly ISasiAuthService _sasiAuthService;
 
-        public AsignarComiteCommandHandler(IComiteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory, IUserContextService userContextService)
+        public AsignarComiteCommandHandler(IComiteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory, IUserContextService userContextService, ISasiAuthService sasiAuthService)
         {
             _repository = repository;
             _aulaRepository = aulaRepository;
             _logRepository = logRepository;
             _connectionFactory = connectionFactory;
             _userContextService = userContextService;
+            _sasiAuthService = sasiAuthService;
         }
 
         public async Task<int> Handle(AsignarComiteCommand request, CancellationToken cancellationToken)
@@ -31,12 +34,27 @@ namespace AulaComite.Application.Comite.Handlers
             // 🛡️ Validar pertenencia: solo se puede asignar integrantes al Aula del usuario.
             await AulaAccessValidator.ValidarAccesoAulaAsync(_repository, _userContextService, request.AulaId);
 
+            // 🛡️ SASI-DOWN/IDOR (crítico): se valida en el SERVIDOR que el UsuarioIdSasi
+            // corresponde a un apoderado REAL del catálogo SASI en el momento de la asignación.
+            // Si SASI está caído, ObtenerApoderadosAsync lanza SasiNoDisponibleException -> 503
+            // y NO se asigna nada (evita asignar con datos desactualizados o forjados).
+            // Además se toman los datos (nombre/email) del catálogo REAL de SASI, no del cliente.
+            var apoderadosSasi = (await _sasiAuthService.ObtenerApoderadosAsync()).ToList();
+            var apoderadoSasi = apoderadosSasi.FirstOrDefault(a =>
+                string.Equals(a.UsuarioId, request.UsuarioIdSasi, StringComparison.OrdinalIgnoreCase));
+
+            if (apoderadoSasi == null)
+            {
+                throw new FluentValidation.ValidationException(
+                    "El apoderado seleccionado no está registrado en el servicio SASI. No se puede asignar el cargo.");
+            }
+
             var integrante = new ComiteIntegrante
             {
                 AulaId = request.AulaId,
-                UsuarioIdSasi = request.UsuarioIdSasi,
-                NombreCompleto = request.NombreCompleto,
-                Email = request.Email,
+                UsuarioIdSasi = apoderadoSasi.UsuarioId,
+                NombreCompleto = apoderadoSasi.NombreCompleto,
+                Email = apoderadoSasi.Email,
                 Cargo = request.Cargo.ToUpper()
             };
 
@@ -46,9 +64,9 @@ namespace AulaComite.Application.Comite.Handlers
                 ? $"{aula.Nivel} - {aula.Grado}° \"{aula.Seccion}\""
                 : $"Aula ID #{request.AulaId}";
 
-            // Si el request ya trae el NombreCompletoApoderado desde el Frontend:
-            string nombreApoderado = !string.IsNullOrEmpty(request.NombreCompleto)
-                ? request.NombreCompleto
+            // El nombre/apellido provienen del catálogo REAL de SASI (validado arriba)
+            string nombreApoderado = !string.IsNullOrEmpty(apoderadoSasi.NombreCompleto)
+                ? apoderadoSasi.NombreCompleto
                 : $"Apoderado ({request.UsuarioIdSasi})";
 
             // 🚀 2. Construir el mensaje legible

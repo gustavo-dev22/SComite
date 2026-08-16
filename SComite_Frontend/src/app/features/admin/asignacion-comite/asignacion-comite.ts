@@ -159,27 +159,59 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
       return;
     }
     if (this.guardando()) return;
-
-    // 🛡️ SASI-DOWN: sin el catálogo de apoderados no es posible asignar integrantes.
-    if (!this.sasiDisponible()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'SASI no disponible',
-        text: 'No se pudo cargar el catálogo de apoderados del servicio SASI. No puede asignar integrantes al comité en este momento. Intente nuevamente en unos minutos.',
-        confirmButtonColor: '#2563eb',
-        confirmButtonText: 'Entendido'
-      });
-      return;
-    }
-
     this.guardando.set(true);
 
-    const apoderado = this.apoderadosSasi().find(a => a.usuarioId === this.comiteForm.value.usuarioIdSasi);
-    if (!apoderado) {
-      this.guardando.set(false);
-      return;
-    }
+    // 🛡️ SASI-DOWN (CRÍTICO): se re-consulta el catálogo de SASI en el MOMENTO de guardar,
+    // en lugar de confiar en la señal cacheada de cuando se abrió el modal. Así, si SASI se
+    // cayó mientras el modal estaba abierto, la asignación se bloquea con mensaje amigable.
+    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (apoderados) => {
+        this.sasiDisponible.set(true);
+        this.apoderadosSasi.set([...apoderados].sort((a, b) =>
+          a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
+        ));
 
+        const apoderado = apoderados.find(a => a.usuarioId === this.comiteForm.value.usuarioIdSasi);
+        if (!apoderado) {
+          this.guardando.set(false);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Apoderado no disponible',
+            text: 'El apoderado seleccionado ya no está disponible en el servicio SASI. Vuelva a seleccionarlo e intente nuevamente.',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: 'Entendido'
+          });
+          return;
+        }
+
+        this.ejecutarAsignacion(apoderado);
+      },
+      error: (err) => {
+        this.guardando.set(false);
+
+        const esSasiNoDisponible =
+          (err as { status?: number } | null)?.status === 503 ||
+          (err as { status?: number } | null)?.status === 0;
+
+        this.sasiDisponible.set(!esSasiNoDisponible);
+
+        if (esSasiNoDisponible) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'SASI no disponible',
+            text: 'El servicio de autenticación (SASI) no está disponible. No se pudo asignar el cargo. Intente nuevamente en unos minutos.',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: 'Entendido'
+          });
+          return;
+        }
+
+        manejarErrorHttp(err, 'Error al asignar.');
+      }
+    });
+  }
+
+  private ejecutarAsignacion(apoderado: UsuarioSasi): void {
     const payload = {
       aulaId: this.aulaSeleccionada()!,
       usuarioIdSasi: apoderado.usuarioId,
