@@ -12,6 +12,12 @@ jobs:
   # (Program.cs -> AplicarMigracionesAutomaticas). El CI no puede conectar a la
   # BD de producción (runasp bloquea IPs externas de GitHub), por eso no existe
   # job de migraciones en este pipeline.
+  #
+  # 🛡️ Deploy seguro de DLLs: en runasp (IIS + ASP.NET Core Module) el backend en
+  # ejecución BLOQUEA los archivos .dll, por lo que FTP no puede sobrescribirlos
+  # (error 550 "Could not access file"). La solución es subir un archivo
+  # app_offline.htm ANTES del deploy (IIS detiene la app y libera los locks) y
+  # eliminarlo DESPUÉS (IIS reinicia la app automáticamente).
   # ==========================================
   deploy-backend:
     runs-on: ubuntu-latest
@@ -41,6 +47,22 @@ jobs:
       if: steps.backend-changes.outputs.src == 'true'
       run: dotnet publish ./SComite_Backend/AulaComite/AulaComite.Api/AulaComite.Api.csproj -c Release -o ./publish-backend
 
+    # 🛡️ Detener la app ANTES de subir: colocar app_offline.htm en wwwroot.
+    # El servidor usa FTPS explícito (por defecto de FTP-Deploy-Action); se intenta
+    # con --ssl-reqd y, si falla, se reintenta en FTP plano.
+    - name: Take app offline (app_offline.htm)
+      if: steps.backend-changes.outputs.src == 'true'
+      env:
+        FTP_SERVER: ${{ secrets.FTP_BACKEND_SERVER }}
+        FTP_USER: ${{ secrets.FTP_BACKEND_USERNAME }}
+        FTP_PASS: ${{ secrets.FTP_BACKEND_PASSWORD }}
+      run: |
+        echo '<html><body><h2>Actualización en curso</h2><p>El sistema se está actualizando. Intente nuevamente en unos minutos.</p></body></html>' > app_offline.htm
+        curl --ssl-reqd -sS -T app_offline.htm "ftp://$FTP_SERVER/wwwroot/app_offline.htm" -u "$FTP_USER:$FTP_PASS" \
+          || curl -sS -T app_offline.htm "ftp://$FTP_SERVER/wwwroot/app_offline.htm" -u "$FTP_USER:$FTP_PASS"
+        # Espera para que IIS/ANCM detecte el archivo y libere los locks de los .dll
+        sleep 10
+
     - name: FTP Deploy Backend
       if: steps.backend-changes.outputs.src == 'true'
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -50,6 +72,28 @@ jobs:
         password: ${{ secrets.FTP_BACKEND_PASSWORD }}
         local-dir: ./publish-backend/
         server-dir: /wwwroot/
+
+    # 🛡️ Reiniciar la app DESPUÉS del deploy: eliminar app_offline.htm.
+    # Se ejecuta incluso si el deploy falló (if: always()) para no dejar el sitio
+    # caído. Se reintenta hasta 3 veces en caso de fallo transitorio de FTP.
+    - name: Bring app back online (remove app_offline.htm)
+      if: always() && steps.backend-changes.outputs.src == 'true'
+      env:
+        FTP_SERVER: ${{ secrets.FTP_BACKEND_SERVER }}
+        FTP_USER: ${{ secrets.FTP_BACKEND_USERNAME }}
+        FTP_PASS: ${{ secrets.FTP_BACKEND_PASSWORD }}
+      run: |
+        for intento in 1 2 3; do
+          if curl --ssl-reqd -sS -Q "DELE /wwwroot/app_offline.htm" "ftp://$FTP_SERVER" -u "$FTP_USER:$FTP_PASS" \
+            || curl -sS -Q "DELE /wwwroot/app_offline.htm" "ftp://$FTP_SERVER" -u "$FTP_USER:$FTP_PASS"; then
+            echo "app_offline.htm eliminado (intento $intento). La app se reiniciará."
+            exit 0
+          fi
+          echo "Reintentando eliminar app_offline.htm ($intento/3)..."
+          sleep 5
+        done
+        echo "No se pudo eliminar app_offline.htm. Verifique el servidor."
+        exit 1
 
   # ==========================================
   # JOB 2: FRONTEND (Solo si hay cambios en SComite_Frontend)
@@ -73,7 +117,7 @@ jobs:
       if: steps.frontend-changes.outputs.src == 'true'
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
 
     - name: Build Angular Frontend
       if: steps.frontend-changes.outputs.src == 'true'
