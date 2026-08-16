@@ -1,4 +1,5 @@
 ﻿import { CommonModule } from '@angular/common';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
@@ -21,7 +22,7 @@ const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
 @Component({
   selector: 'app-muro-anuncios',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './muro-anuncios.html',
   styleUrl: './muro-anuncios.scss',
 })

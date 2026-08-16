@@ -16,6 +16,7 @@ import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
 import { formatearFechaLocal } from '../../../core/utils/fecha.util';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 interface CuotaForm {
   actividadId: FormControl<number | null>;
@@ -35,7 +36,7 @@ interface CuotaMensualForm {
 @Component({
   selector: 'app-gestion-cuotas',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalA11yDirective],
   templateUrl: './gestion-cuotas.html',
   styleUrl: './gestion-cuotas.scss',
 })

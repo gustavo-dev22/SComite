@@ -6,11 +6,12 @@ import { PeriodoService } from '../../../core/services/periodo.service';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 @Component({
   selector: 'app-periodo',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalA11yDirective],
   templateUrl: './periodo.html',
   styleUrl: './periodo.scss',
 })

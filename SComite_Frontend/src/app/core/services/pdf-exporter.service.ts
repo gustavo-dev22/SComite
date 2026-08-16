@@ -1,6 +1,4 @@
 import { Injectable } from '@angular/core';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 export interface ColumnasPdf {
   header: string;
@@ -21,6 +19,14 @@ interface JsPDFConAutoTable {
   providedIn: 'root'
 })
 export class PdfExporterService {
+  private cargarJsPDF(): Promise<typeof import('jspdf')['default']> {
+    return import('jspdf').then((m) => m.default);
+  }
+
+  private cargarAutoTable(): Promise<typeof import('jspdf-autotable')['default']> {
+    return import('jspdf-autotable').then((m) => m.default);
+  }
+
   async exportarActaOficial(config: {
     nombreArchivo: string;
     nombreInstitucion?: string;
@@ -35,6 +41,7 @@ export class PdfExporterService {
     agendaAcuerdos: string;
     fechaEmision: Date;
   }): Promise<void> {
+    const jsPDF = await this.cargarJsPDF();
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -213,6 +220,8 @@ export class PdfExporterService {
     }[];
     fechaEmision: Date;
   }): Promise<void> {
+    const jsPDF = await this.cargarJsPDF();
+    const autoTable = await this.cargarAutoTable();
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -372,6 +381,8 @@ export class PdfExporterService {
       monto: number;
     }[];
   }): Promise<void> {
+    const jsPDF = await this.cargarJsPDF();
+    const autoTable = await this.cargarAutoTable();
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -604,6 +615,8 @@ export class PdfExporterService {
     }[];
     fechaEmision: Date;
   }): Promise<void> {
+    const jsPDF = await this.cargarJsPDF();
+    const autoTable = await this.cargarAutoTable();
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',

@@ -11,8 +11,8 @@ import { UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
-import { Workbook, type Cell } from 'exceljs';
-
+import type { Cell } from 'exceljs';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 const MAX_ARCHIVO_MB = 5;
 const MAX_FILAS_CARGA = 1000;
 const FILAS_POR_PAGINA_PREVIEW = 20;
@@ -121,7 +121,7 @@ interface RegistroPrevioEstudiante {
 @Component({
   selector: 'app-padron-estudiantes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalA11yDirective],
   templateUrl: './padron-estudiantes.html',
   styleUrl: './padron-estudiantes.scss',
 })
@@ -417,7 +417,8 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   }
 
   // 🚀 1. Generar y Descargar Plantilla Excel (.xlsx) Nativa
-  descargarPlantillaExcel(): void {
+  async descargarPlantillaExcel(): Promise<void> {
+    const { Workbook } = await import('exceljs');
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Estudiantes');
 
@@ -488,6 +489,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   private async procesarArchivoExcel(file: File, input: HTMLInputElement): Promise<void> {
     try {
       const arrayBuffer = await file.arrayBuffer();
+      const { Workbook } = await import('exceljs');
       const workbook = new Workbook();
       await workbook.xlsx.load(arrayBuffer);
 

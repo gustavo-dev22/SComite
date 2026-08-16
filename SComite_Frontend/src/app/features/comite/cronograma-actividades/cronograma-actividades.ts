@@ -1,4 +1,5 @@
 ﻿import { CommonModule } from '@angular/common';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
@@ -22,7 +23,7 @@ const BADGES_ESTADO_ACTIVIDAD: Record<string, string> = {
 @Component({
   selector: 'app-cronograma-actividades',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './cronograma-actividades.html',
   styleUrl: './cronograma-actividades.scss',
 })

@@ -1,4 +1,5 @@
 ﻿import { CommonModule, DatePipe } from '@angular/common';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
@@ -20,7 +21,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-actas-asamblea',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './actas-asamblea.html',
   styleUrl: './actas-asamblea.scss',
 })

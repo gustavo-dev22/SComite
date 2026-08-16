@@ -230,7 +230,7 @@
   <!-- 🚀 MODAL / SPINNER DE DESCARGA (SOLO SE MUESTRA AL PULSAR BOTÓN) -->
   <!-- ======================================================= -->
   @if (descargandoPdf()) {
-    <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;" role="status" aria-live="polite" aria-label="Procesando y descargando PDF">
       <div style="background-color: #ffffff; padding: 1rem 2rem; border-radius: 9999px; display: flex; gap: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
         <div style="width: 1.25rem; height: 1.25rem; border: 3px solid #4f46e5; border-top-color: transparent; border-radius: 50%;" class="animate-spin"></div>
         <span style="font-size: 0.875rem; font-weight: 700; color: #1e293b;">Procesando y descargando PDF...</span>

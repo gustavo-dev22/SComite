@@ -190,6 +190,8 @@
                 (click)="abrirModalExonerados(cuota)"
                 (keydown.enter)="abrirModalExonerados(cuota)"
                 tabindex="0"
+                role="button"
+                aria-label="Ver lista de estudiantes exonerados"
                 class="flex items-center justify-between px-3 py-1.5 mb-4 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl cursor-pointer transition">
                 <div class="flex items-center gap-1.5 text-slate-700">
                   <span class="text-xs">🛡️</span>
@@ -259,7 +261,7 @@
 
 <!-- Modal Formulario de Cuota -->
 @if (mostrarModal()) {
-  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" appModalA11y (appModalClose)="cerrarModal()">
     <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 border border-slate-100 animate-fade-in">
       
       <!-- Selector de Pestañas -->
@@ -423,7 +425,7 @@
 
 <!-- MODAL DIRECTO DE DETALLE DE ESTUDIANTES PENDIENTES / MOROSOS -->
 @if (modalMorososAbierto()) {
-  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" appModalA11y (appModalClose)="cerrarModalMorosos()">
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 animate-fade-in">
       
       <!-- Cabecera del Modal con Botón Exportar PDF -->
@@ -543,7 +545,7 @@
 <!-- 🚀 MODAL / SPINNER DE DESCARGA PDF DE MOROSOS -->
 <!-- ======================================================= -->
 @if (descargandoPdfMorosos()) {
-  <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;" role="status" aria-live="polite" aria-label="Generando PDF de lista de pendientes">
     <div style="background-color: #ffffff; padding: 1rem 2rem; border-radius: 9999px; display: flex; gap: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
       <div style="width: 1.25rem; height: 1.25rem; border: 3px solid #0f172a; border-top-color: transparent; border-radius: 50%;" class="animate-spin"></div>
       <span style="font-size: 0.875rem; font-weight: 700; color: #1e293b;">Generando PDF de Lista de Pendientes...</span>
@@ -553,7 +555,7 @@
 
 <!-- MODAL DE ESTUDIANTES EXONERADOS / NO APLICAN -->
 @if (modalExoneradosAbierto()) {
-  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" appModalA11y (appModalClose)="cerrarModalExonerados()">
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-100 animate-fade-in">
       
       <!-- Cabecera del Modal (Color Pizarra / Slate) -->

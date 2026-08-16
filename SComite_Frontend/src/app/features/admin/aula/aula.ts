@@ -6,11 +6,12 @@ import Swal from 'sweetalert2';
 import { Aula } from '../../../core/models/aula.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import { CommonModule } from '@angular/common';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 @Component({
   selector: 'app-aula',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalA11yDirective],
   templateUrl: './aula.html',
   styleUrl: './aula.scss',
 })

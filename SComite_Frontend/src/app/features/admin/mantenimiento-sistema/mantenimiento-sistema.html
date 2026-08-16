@@ -83,7 +83,7 @@
 
   <!-- Modal de Doble Confirmación -->
   @if (mostrarModalConfirmacion()) {
-    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" appModalA11y (appModalClose)="cerrarModal()">
       <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 relative border border-slate-100 animate-fade-in">
         
         <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-rose-100">

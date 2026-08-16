@@ -10,6 +10,7 @@ import { Aula } from '../../../core/models/aula.model';
 import { Cuota, CuotaEstudianteCobro, EstadoPago } from '../../../core/models/cuota.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 interface PagoForm {
   montoAbonado: FormControl<number>;
@@ -19,7 +20,7 @@ interface PagoForm {
 @Component({
   selector: 'app-validar-comprobantes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalA11yDirective],
   templateUrl: './validar-comprobantes.html',
   styleUrl: './validar-comprobantes.scss',
 })

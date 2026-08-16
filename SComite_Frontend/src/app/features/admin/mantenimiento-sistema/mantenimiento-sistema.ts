@@ -4,11 +4,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { SistemaService } from '../../../core/services/sistema.service';
 import Swal from 'sweetalert2';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 @Component({
   selector: 'app-mantenimiento-sistema',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalA11yDirective],
   templateUrl: './mantenimiento-sistema.html',
   styleUrl: './mantenimiento-sistema.scss',
 })

@@ -11,6 +11,7 @@ import { formatearFechaLocal, hoyLocal } from '../../../core/utils/fecha.util';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../environments/environment';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 const MAX_COMPROBANTE_MB = 5;
 const TIPOS_COMPROBANTE_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -31,7 +32,7 @@ interface GastoForm {
 @Component({
   selector: 'app-registro-gastos',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalA11yDirective],
   templateUrl: './registro-gastos.html',
   styleUrl: './registro-gastos.scss',
 })

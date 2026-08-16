@@ -6,11 +6,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LogSistema, PagedResult } from '../../../core/models/log.model';
 import { CommonModule } from '@angular/common';
 import Swal from 'sweetalert2';
+import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 @Component({
   selector: 'app-logs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalA11yDirective],
   templateUrl: './logs.html',
   styleUrl: './logs.scss',
 })

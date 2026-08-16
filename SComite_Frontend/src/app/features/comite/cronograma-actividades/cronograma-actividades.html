@@ -164,6 +164,7 @@
                   <div class="flex items-center justify-center gap-1">
                     <button 
                       (click)="abrirModalEditar(act)" 
+                      aria-label="Editar actividad"
                       class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer" 
                       title="Editar">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -172,6 +173,7 @@
                     </button>
                     <button 
                       (click)="eliminarActividad(act.id)" 
+                      aria-label="Eliminar actividad"
                       class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" 
                       title="Eliminar">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,7 +199,7 @@
 
   <!-- MODAL DE REGISTRO / EDICIÓN -->
   @if (mostrarModal()) {
-    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" appModalA11y (appModalClose)="cerrarModal()">
       <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-100 animate-fade-in">
         
         <div class="bg-slate-900 text-white px-5 py-4 flex justify-between items-center">
