@@ -1,6 +1,7 @@
 ﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -78,7 +79,14 @@ export class LoginComponent {
       },
       error: (err) => {
         this.cargando.set(false);
-        const mensajeError = err.error?.mensaje || 'Ocurrió un error al intentar iniciar sesión.';
+
+        // 🛡️ Status 0 = error de red / backend caído. Se informa con claridad
+        // que no se pudo conectar con el servidor, en lugar de un mensaje genérico.
+        const esErrorDeConexion = err instanceof HttpErrorResponse && err.status === 0;
+        const mensajeError = esErrorDeConexion
+          ? 'No se pudo conectar con el servidor. Verifique su conexión o intente nuevamente.'
+          : err.error?.mensaje || 'Ocurrió un error al intentar iniciar sesión.';
+
         this.errorMensaje.set(mensajeError);
         Swal.fire({
           icon: 'error',

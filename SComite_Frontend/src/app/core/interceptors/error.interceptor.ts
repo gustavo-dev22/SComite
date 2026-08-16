@@ -9,6 +9,7 @@ let sesionExpiradaEnCurso = false;
 let permisosAlertaEnCurso = false;
 let demasiadasPeticionesAlertaEnCurso = false;
 let servicioNoDisponibleAlertaEnCurso = false;
+let sinConexionAlertaEnCurso = false;
 let suscripcionNavegacionRegistrada = false;
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
@@ -26,6 +27,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         permisosAlertaEnCurso = false;
         demasiadasPeticionesAlertaEnCurso = false;
         servicioNoDisponibleAlertaEnCurso = false;
+        sinConexionAlertaEnCurso = false;
       });
   }
 
@@ -38,7 +40,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           ? error
           : new HttpErrorResponse({ error, status: 0, statusText: 'Error' });
 
-      if (!esSolicitudLogin && httpError.status === 401) {
+      // 🛡️ Status 0 = error de red / backend caído / sin conexión con el servidor.
+      // Se informa al usuario con una alerta global única (el sistema está caído),
+      // en lugar de mostrar mensajes por recurso que inducen a error.
+      if (httpError.status === 0) {
+        manejarSinConexion();
+      } else if (!esSolicitudLogin && httpError.status === 401) {
         manejarSesionExpirada(authService, router);
       } else if (!esSolicitudLogin && httpError.status === 403) {
         manejarPermisosInsuficientes();
@@ -52,6 +59,26 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     })
   );
 };
+
+/**
+ * 🛡️ Alerta global cuando NO se puede alcanzar el servidor (status 0):
+ * backend detenido, red caída, CORS bloqueado o servidor apagado. Se muestra una
+ * sola vez (bandera) para no acumular múltiples alertas por cada petición fallida.
+ */
+function manejarSinConexion(): void {
+  if (sinConexionAlertaEnCurso) return;
+  sinConexionAlertaEnCurso = true;
+
+  void Swal.fire({
+    icon: 'error',
+    title: 'Sistema no disponible',
+    text: 'No se pudo conectar con el servidor. Verifique su conexión o intente nuevamente en unos minutos.',
+    confirmButtonColor: '#2563eb',
+    confirmButtonText: 'Entendido'
+  }).then(() => {
+    sinConexionAlertaEnCurso = false;
+  });
+}
 
 function manejarSesionExpirada(authService: AuthService, router: Router): void {
   if (sesionExpiradaEnCurso) return;

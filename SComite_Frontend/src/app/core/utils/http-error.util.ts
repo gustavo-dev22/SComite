@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
-const STATUS_MANEJADOS_GLOBALMENTE = [401, 403, 429];
+const STATUS_MANEJADOS_GLOBALMENTE = [0, 401, 403, 429];
 
 export function manejarErrorHttp(err: unknown, mensajeFallback: string): void {
   const status = err instanceof HttpErrorResponse ? err.status : 0;
@@ -10,7 +10,8 @@ export function manejarErrorHttp(err: unknown, mensajeFallback: string): void {
     STATUS_MANEJADOS_GLOBALMENTE.includes(status) || (status >= 500 && status <= 504);
 
   if (esErrorGlobal) {
-    // El errorInterceptor ya mostró la alerta global (sesión expirada, permisos, etc.)
+    // El errorInterceptor ya mostró la alerta global (sesión expirada, permisos,
+    // demasiadas peticiones, sistema caído sin conexión, servicio no disponible, etc.)
     return;
   }
 
