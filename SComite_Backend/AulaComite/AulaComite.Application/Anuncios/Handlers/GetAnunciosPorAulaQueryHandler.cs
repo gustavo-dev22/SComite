@@ -6,6 +6,11 @@ using MediatR;
 
 namespace AulaComite.Application.Anuncios.Handlers
 {
+    /// <summary>
+    /// 🚀 T3.5: Listado de anuncios del muro por aula. Soporte volumétrico actual:
+    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
+    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// </summary>
     public class GetAnunciosPorAulaQueryHandler : IRequestHandler<GetAnunciosPorAulaQuery, IEnumerable<AnuncioComiteDto>>
     {
         private readonly IAnuncioRepository _repository;

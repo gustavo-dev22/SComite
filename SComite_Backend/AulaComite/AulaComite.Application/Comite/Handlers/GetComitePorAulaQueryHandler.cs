@@ -6,6 +6,11 @@ using MediatR;
 
 namespace AulaComite.Application.Comite.Handlers
 {
+    /// <summary>
+    /// 🚀 T3.5: Listado de integrantes del comité por aula. Soporte volumétrico actual:
+    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
+    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// </summary>
     public class GetComitePorAulaQueryHandler : IRequestHandler<GetComitePorAulaQuery, IEnumerable<ComiteIntegranteDto>>
     {
         private readonly IComiteRepository _repository;

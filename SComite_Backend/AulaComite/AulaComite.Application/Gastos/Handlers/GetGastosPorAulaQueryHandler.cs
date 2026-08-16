@@ -6,6 +6,11 @@ using MediatR;
 
 namespace AulaComite.Application.Gastos.Handlers
 {
+    /// <summary>
+    /// 🚀 T3.5: Listado de gastos por aula. Soporte volumétrico actual:
+    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
+    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// </summary>
     public class GetGastosPorAulaQueryHandler : IRequestHandler<GetGastosPorAulaQuery, IEnumerable<GastoComiteDto>>
     {
         private readonly IGastoRepository _repository;

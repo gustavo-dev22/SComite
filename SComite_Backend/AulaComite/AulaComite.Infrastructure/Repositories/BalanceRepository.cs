@@ -45,6 +45,13 @@ namespace AulaComite.Infrastructure.Repositories
         {
             using var connection = _connectionFactory.CreateConnection();
 
+            // 🚀 T3.2: Rango continuo de fechas (SARGable) en lugar de MONTH()/YEAR().
+            // Permite que el optimizador use IX_Gastos_AulaId_Fecha (AulaId, FechaGasto).
+            DateTime? fechaInicio = mes.HasValue && mes.Value > 0
+                ? new DateTime(anioLectivo, mes.Value, 1)
+                : (DateTime?)null;
+            DateTime? fechaFin = fechaInicio.HasValue ? fechaInicio.Value.AddMonths(1) : (DateTime?)null;
+
             // Consulta directa para traer el desglose completo de gastos
             var sql = @"
                 SELECT 
@@ -58,10 +65,12 @@ namespace AulaComite.Infrastructure.Repositories
                     Proveedor
                 FROM GastosComite
                 WHERE AulaId = @AulaId
-                  AND (@Mes IS NULL OR @Mes = 0 OR (MONTH(FechaGasto) = @Mes AND YEAR(FechaGasto) = @AnioLectivo))
+                  AND (@FechaInicio IS NULL OR (FechaGasto >= @FechaInicio AND FechaGasto < @FechaFin))
                 ORDER BY FechaGasto DESC;";
 
-            return await connection.QueryAsync<GastoComiteDto>(sql, new { AulaId = aulaId, AnioLectivo = anioLectivo, Mes = mes });
+            return await connection.QueryAsync<GastoComiteDto>(
+                sql,
+                new { AulaId = aulaId, FechaInicio = fechaInicio, FechaFin = fechaFin });
         }
     }
 }

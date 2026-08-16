@@ -6,6 +6,11 @@ using MediatR;
 
 namespace AulaComite.Application.ActasAsamblea.Handlers
 {
+    /// <summary>
+    /// 🚀 T3.5: Listado de actas de asamblea por aula. Soporte volumétrico actual:
+    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
+    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// </summary>
     public class GetActasPorAulaQueryHandler : IRequestHandler<GetActasPorAulaQuery, IEnumerable<ActaAsambleaComiteDto>>
     {
         private readonly IActaAsambleaRepository _repository;

@@ -15,15 +15,31 @@ namespace AulaComite.Application.Estudiantes.Handlers
     public class UpdateEstudianteCommandHandler : IRequestHandler<UpdateEstudianteCommand, bool>
     {
         private readonly IEstudianteRepository _repository;
+        private readonly IUserContextService _userContextService;
 
-        public UpdateEstudianteCommandHandler(IEstudianteRepository repository)
+        public UpdateEstudianteCommandHandler(IEstudianteRepository repository, IUserContextService userContextService)
         {
             _repository = repository;
+            _userContextService = userContextService;
         }
 
         public async Task<bool> Handle(UpdateEstudianteCommand request, CancellationToken cancellationToken)
         {
             RechazarDatosEnmascarados(request.NumeroDocumento, request.TelefonoApoderado);
+
+            // 🛡️ T3.4: Protección contra Mass Assignment. Un usuario que no sea
+            // Administrador Global NO puede trasladar a un estudiante a otra aula
+            // cambiando el AulaId en el body; solo puede editar sus datos dentro
+            // del aula actual.
+            var existente = await _repository.ObtenerPorIdAsync(request.Id);
+            if (existente == null)
+                return false;
+
+            if (existente.AulaId != request.AulaId && !_userContextService.EsAdministradorGlobal())
+            {
+                throw new UnauthorizedAccessException(
+                    "No tiene permisos para trasladar al estudiante a otra aula. El AulaId no puede modificarse.");
+            }
 
             var e = new Estudiante
             {

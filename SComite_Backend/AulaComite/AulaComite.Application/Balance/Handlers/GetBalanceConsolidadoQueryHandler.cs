@@ -31,9 +31,17 @@ namespace AulaComite.Application.Balance.Handlers
             // 🛡️ IDOR mitigación: el usuario debe pertenecer al Aula consultada (o ser Administrador Global).
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
 
-            var consolidado = await _repository.ObtenerConsolidadoAsync(request.AulaId, request.AnioLectivo, request.Mes);
-            var categorias = await _repository.ObtenerGastosPorCategoriaAsync(request.AulaId, request.AnioLectivo, request.Mes);
-            var gastosDetalle = await _repository.ObtenerGastosDetalleAsync(request.AulaId, request.AnioLectivo, request.Mes);
+            // 🚀 T3.3: Los subtotales son independientes y cada método abre su PROPIA
+            // conexión SQL, por lo que se ejecutan en paralelo con Task.WhenAll.
+            var tareaConsolidado = _repository.ObtenerConsolidadoAsync(request.AulaId, request.AnioLectivo, request.Mes);
+            var tareaCategorias = _repository.ObtenerGastosPorCategoriaAsync(request.AulaId, request.AnioLectivo, request.Mes);
+            var tareaGastosDetalle = _repository.ObtenerGastosDetalleAsync(request.AulaId, request.AnioLectivo, request.Mes);
+
+            await Task.WhenAll(tareaConsolidado, tareaCategorias, tareaGastosDetalle);
+
+            var consolidado = await tareaConsolidado;
+            var categorias = await tareaCategorias;
+            var gastosDetalle = await tareaGastosDetalle;
 
             return new BalanceGeneralDto(
                 new BalanceConsolidadoDto

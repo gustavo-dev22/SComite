@@ -6,6 +6,11 @@ using MediatR;
 
 namespace AulaComite.Application.Estudiantes.Handlers
 {
+    /// <summary>
+    /// 🚀 T3.5: Listado de estudiantes por aula. Soporte volumétrico actual:
+    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
+    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// </summary>
     public class GetEstudiantesPorAulaQueryHandler : IRequestHandler<GetEstudiantesPorAulaQuery, IEnumerable<EstudianteDto>>
     {
         private readonly IEstudianteRepository _repository;
