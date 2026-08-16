@@ -369,25 +369,74 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       return;
     }
 
-    // 🛡️ SASI-DOWN: si el usuario intenta vincular un apoderado y SASI no está disponible,
-    // se le advierte ANTES de guardar para evitar registrar alumnos con vínculo incompleto.
+    // 🛡️ SASI-DOWN (CRÍTICO): solo se re-consulta SASI si el usuario está vinculando un
+    // apoderado. Si SASI se cayó mientras el modal estaba abierto, la señal cacheada ya no
+    // es fiable, por lo que se valida en el MOMENTO de guardar contra el catálogo real.
     const vinculandoApoderado =
       !!this.estudianteForm.value.usuarioIdApoderadoSasi ||
       !!this.estudianteForm.value.nombreApoderado?.trim();
 
-    if (!this.sasiDisponible() && vinculandoApoderado) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'SASI no disponible',
-        text: 'No se pudo cargar el catálogo de apoderados del servicio SASI. No puede vincular un apoderado en este momento. Puede guardar el estudiante sin apoderado y vincularlo más tarde.',
-        confirmButtonColor: '#2563eb',
-        confirmButtonText: 'Entendido'
-      });
+    if (!vinculandoApoderado) {
+      this.ejecutarGuardadoEstudiante(aulaId);
       return;
     }
 
     this.guardando.set(true);
 
+    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (apoderados) => {
+        this.sasiDisponible.set(true);
+        this.apoderadosSasi.set([...apoderados].sort((a, b) =>
+          a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
+        ));
+
+        const apoderado = apoderados.find(a => a.usuarioId === this.estudianteForm.value.usuarioIdApoderadoSasi);
+        if (!apoderado) {
+          this.guardando.set(false);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Apoderado no disponible',
+            text: 'El apoderado seleccionado ya no está disponible en el servicio SASI. Vuelva a seleccionarlo, guarde sin apoderado o intente nuevamente.',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: 'Entendido'
+          });
+          return;
+        }
+
+        // Se normaliza el nombre desde el catálogo REAL de SASI antes de guardar.
+        this.estudianteForm.patchValue({
+          usuarioIdApoderadoSasi: apoderado.usuarioId,
+          nombreApoderado: apoderado.nombreCompleto
+        });
+
+        this.ejecutarGuardadoEstudiante(aulaId);
+      },
+      error: (err) => {
+        this.guardando.set(false);
+
+        const esSasiNoDisponible =
+          (err as { status?: number } | null)?.status === 503 ||
+          (err as { status?: number } | null)?.status === 0;
+
+        this.sasiDisponible.set(!esSasiNoDisponible);
+
+        if (esSasiNoDisponible) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'SASI no disponible',
+            text: 'El servicio de autenticación (SASI) no está disponible. No se pudo vincular el apoderado. Puede guardar el estudiante sin apoderado o intentar nuevamente en unos minutos.',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: 'Entendido'
+          });
+          return;
+        }
+
+        manejarErrorHttp(err, 'No se pudo registrar.');
+      }
+    });
+  }
+
+  private ejecutarGuardadoEstudiante(aulaId: number): void {
     const payload = {
       ...this.estudianteForm.getRawValue(),
       aulaId

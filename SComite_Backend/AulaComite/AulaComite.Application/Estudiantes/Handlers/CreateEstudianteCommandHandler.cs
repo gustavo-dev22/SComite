@@ -18,18 +18,48 @@ namespace AulaComite.Application.Estudiantes.Handlers
         private readonly IAulaRepository _aulaRepository;
         private readonly ILogRepository _logRepository;
         private readonly IDbConnectionFactory _connectionFactory;
+        private readonly ISasiAuthService _sasiAuthService;
 
-        public CreateEstudianteCommandHandler(IEstudianteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory)
+        public CreateEstudianteCommandHandler(IEstudianteRepository repository, IAulaRepository aulaRepository, ILogRepository logRepository, IDbConnectionFactory connectionFactory, ISasiAuthService sasiAuthService)
         {
             _repository = repository;
             _aulaRepository = aulaRepository;
             _logRepository = logRepository;
             _connectionFactory = connectionFactory;
+            _sasiAuthService = sasiAuthService;
         }
 
         public async Task<int> Handle(CreateEstudianteCommand request, CancellationToken cancellationToken)
         {
             RechazarDatosEnmascarados(request.NumeroDocumento, request.TelefonoApoderado);
+
+            // 🛡️ SASI-DOWN/IDOR (crítico): si se envía un UsuarioIdApoderadoSasi, se valida en el
+            // SERVIDOR que corresponde a un apoderado REAL del catálogo SASI en el momento del
+            // registro. Si SASI está caído, ObtenerApoderadosAsync lanza SasiNoDisponibleException
+            // -> 503 y NO se persiste (evita vincular con datos desactualizados o forjados).
+            // El apoderado es OPCIONAL: si no se envía, se permite guardar sin vínculo.
+            string? usuarioIdApoderado = request.UsuarioIdApoderadoSasi;
+            string? nombreApoderado = request.NombreApoderado;
+
+            if (!string.IsNullOrWhiteSpace(usuarioIdApoderado))
+            {
+                var apoderadosSasi = (await _sasiAuthService.ObtenerApoderadosAsync()).ToList();
+                var apoderadoSasi = apoderadosSasi.FirstOrDefault(a =>
+                    string.Equals(a.UsuarioId, usuarioIdApoderado, StringComparison.OrdinalIgnoreCase));
+
+                if (apoderadoSasi == null)
+                {
+                    throw new ValidationException(new[]
+                    {
+                        new ValidationFailure(nameof(CreateEstudianteCommand.UsuarioIdApoderadoSasi),
+                            "El apoderado seleccionado no está registrado en el servicio SASI. Verifique el vínculo o guarde sin apoderado.")
+                    });
+                }
+
+                // Se toman los datos del catálogo REAL de SASI, no del cliente.
+                usuarioIdApoderado = apoderadoSasi.UsuarioId;
+                nombreApoderado = apoderadoSasi.NombreCompleto;
+            }
 
             var e = new Estudiante
             {
@@ -39,8 +69,8 @@ namespace AulaComite.Application.Estudiantes.Handlers
                 Nombres = request.Nombres,
                 ApellidoPaterno = request.ApellidoPaterno,
                 ApellidoMaterno = request.ApellidoMaterno,
-                UsuarioIdApoderadoSasi = request.UsuarioIdApoderadoSasi,
-                NombreApoderado = request.NombreApoderado,
+                UsuarioIdApoderadoSasi = usuarioIdApoderado,
+                NombreApoderado = nombreApoderado,
                 TelefonoApoderado = request.TelefonoApoderado
             };
 
@@ -52,7 +82,7 @@ namespace AulaComite.Application.Estudiantes.Handlers
 
             // 🚀 2. Armar el mensaje legible con el Apoderado y el Aula.
             // 🛡️ M7/PII: el documento se registra ENMASCARADO (nunca completo) en el log.
-            string mensajeLegible = $"Se registró al estudiante {request.ApellidoPaterno} {request.ApellidoMaterno}, {request.Nombres} ({request.TipoDocumento}: {PiiMasker.EnmascararDocumento(request.NumeroDocumento)}) con apoderado \"{request.NombreApoderado}\" en el Aula {aulaDisplay}.";
+            string mensajeLegible = $"Se registró al estudiante {request.ApellidoPaterno} {request.ApellidoMaterno}, {request.Nombres} ({request.TipoDocumento}: {PiiMasker.EnmascararDocumento(request.NumeroDocumento)}) con apoderado \"{nombreApoderado}\" en el Aula {aulaDisplay}.";
 
             int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {

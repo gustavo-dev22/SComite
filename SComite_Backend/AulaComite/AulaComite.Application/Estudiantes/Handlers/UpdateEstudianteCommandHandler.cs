@@ -16,11 +16,13 @@ namespace AulaComite.Application.Estudiantes.Handlers
     {
         private readonly IEstudianteRepository _repository;
         private readonly IUserContextService _userContextService;
+        private readonly ISasiAuthService _sasiAuthService;
 
-        public UpdateEstudianteCommandHandler(IEstudianteRepository repository, IUserContextService userContextService)
+        public UpdateEstudianteCommandHandler(IEstudianteRepository repository, IUserContextService userContextService, ISasiAuthService sasiAuthService)
         {
             _repository = repository;
             _userContextService = userContextService;
+            _sasiAuthService = sasiAuthService;
         }
 
         public async Task<bool> Handle(UpdateEstudianteCommand request, CancellationToken cancellationToken)
@@ -41,6 +43,33 @@ namespace AulaComite.Application.Estudiantes.Handlers
                     "No tiene permisos para trasladar al estudiante a otra aula. El AulaId no puede modificarse.");
             }
 
+            // 🛡️ SASI-DOWN/IDOR (crítico): si se envía un UsuarioIdApoderadoSasi, se valida en el
+            // SERVIDOR que corresponde a un apoderado REAL del catálogo SASI en el momento de la
+            // actualización. Si SASI está caído, ObtenerApoderadosAsync lanza SasiNoDisponibleException
+            // -> 503 y NO se persiste. El apoderado es OPCIONAL: si no se envía, se conserva sin vínculo.
+            string? usuarioIdApoderado = request.UsuarioIdApoderadoSasi;
+            string? nombreApoderado = request.NombreApoderado;
+
+            if (!string.IsNullOrWhiteSpace(usuarioIdApoderado))
+            {
+                var apoderadosSasi = (await _sasiAuthService.ObtenerApoderadosAsync()).ToList();
+                var apoderadoSasi = apoderadosSasi.FirstOrDefault(a =>
+                    string.Equals(a.UsuarioId, usuarioIdApoderado, StringComparison.OrdinalIgnoreCase));
+
+                if (apoderadoSasi == null)
+                {
+                    throw new ValidationException(new[]
+                    {
+                        new ValidationFailure(nameof(UpdateEstudianteCommand.UsuarioIdApoderadoSasi),
+                            "El apoderado seleccionado no está registrado en el servicio SASI. Verifique el vínculo o guarde sin apoderado.")
+                    });
+                }
+
+                // Se toman los datos del catálogo REAL de SASI, no del cliente.
+                usuarioIdApoderado = apoderadoSasi.UsuarioId;
+                nombreApoderado = apoderadoSasi.NombreCompleto;
+            }
+
             var e = new Estudiante
             {
                 Id = request.Id
@@ -53,8 +82,8 @@ namespace AulaComite.Application.Estudiantes.Handlers
                 request.Nombres,
                 request.ApellidoPaterno,
                 request.ApellidoMaterno,
-                request.UsuarioIdApoderadoSasi,
-                request.NombreApoderado,
+                usuarioIdApoderado,
+                nombreApoderado,
                 request.TelefonoApoderado);
 
             return await _repository.ActualizarEstudianteAsync(e);
