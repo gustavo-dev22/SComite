@@ -340,7 +340,14 @@
 
         <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
           <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
-          <button type="submit" [disabled]="pagoForm.invalid || registrandoPago()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black text-white rounded-xl shadow-xs disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed">Guardar Pago</button>
+          <button type="submit" [disabled]="pagoForm.invalid || registrandoPago()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black text-white rounded-xl shadow-xs disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1">
+            @if (registrandoPago()) {
+              <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+              <span>Guardando...</span>
+            } @else {
+              <span>Guardar Pago</span>
+            }
+          </button>
         </div>
       </form>
     </div>

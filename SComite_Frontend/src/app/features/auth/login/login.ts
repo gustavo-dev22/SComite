@@ -1,10 +1,15 @@
 ﻿import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import Swal from 'sweetalert2';
+
+interface LoginForm {
+  userName: FormControl<string>;
+  password: FormControl<string>;
+}
 
 @Component({
   selector: 'app-login',
@@ -16,7 +21,7 @@ import Swal from 'sweetalert2';
 })
 export class LoginComponent {
   private destroyRef = inject(DestroyRef);
-  private fb = inject(FormBuilder);
+  private fb = inject(FormBuilder).nonNullable;
   private router = inject(Router);
   private authService = inject(AuthService);
 
@@ -24,9 +29,9 @@ export class LoginComponent {
   mostrarPassword = signal<boolean>(false);
   errorMensaje = signal<string | null>(null);
 
-  loginForm: FormGroup = this.fb.group({
-    userName: ['', [Validators.required]],
-    password: ['', [Validators.required, Validators.minLength(6)]]
+  loginForm: FormGroup<LoginForm> = this.fb.group({
+    userName: this.fb.control('', [Validators.required]),
+    password: this.fb.control('', [Validators.required, Validators.minLength(6)])
   });
 
   toggleMostrarPassword(): void {
@@ -53,7 +58,7 @@ export class LoginComponent {
       }
     });
 
-    this.authService.login(this.loginForm.value).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.authService.login(this.loginForm.getRawValue()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.cargando.set(false);
         

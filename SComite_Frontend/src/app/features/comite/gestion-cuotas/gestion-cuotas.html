@@ -353,7 +353,14 @@
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
-            <button type="submit" [disabled]="cuotaForm.invalid || guardandoCuota()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Guardar Cuota</button>
+            <button type="submit" [disabled]="cuotaForm.invalid || guardandoCuota()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1">
+              @if (guardandoCuota()) {
+                <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                <span>Guardando...</span>
+              } @else {
+                <span>Guardar Cuota</span>
+              }
+            </button>
           </div>
         </form>
       }
@@ -398,7 +405,14 @@
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <button type="button" (click)="cerrarModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
-            <button type="submit" [disabled]="cuotaMensualForm.invalid || guardandoCuota()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed">Programar Cuotas</button>
+            <button type="submit" [disabled]="cuotaMensualForm.invalid || guardandoCuota()" class="px-4 py-2 text-xs font-bold bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-xl shadow-xs transition cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1">
+              @if (guardandoCuota()) {
+                <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                <span>Programando...</span>
+              } @else {
+                <span>Programar Cuotas</span>
+              }
+            </button>
           </div>
         </form>
       }

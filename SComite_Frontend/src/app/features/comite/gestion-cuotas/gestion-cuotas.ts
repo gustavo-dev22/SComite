@@ -1,7 +1,7 @@
 ﻿import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
 import { Cuota, EstudianteExoneradoCuota, EstudiantePendienteCuota } from '../../../core/models/cuota.model';
 import { Aula } from '../../../core/models/aula.model';
@@ -17,6 +17,21 @@ import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
 import { formatearFechaLocal } from '../../../core/utils/fecha.util';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 
+interface CuotaForm {
+  actividadId: FormControl<number | null>;
+  concepto: FormControl<string>;
+  montoIndividual: FormControl<number>;
+  fechaVencimiento: FormControl<string>;
+  observacion: FormControl<string>;
+}
+
+interface CuotaMensualForm {
+  conceptoBase: FormControl<string>;
+  montoMensual: FormControl<number>;
+  mesInicio: FormControl<number>;
+  diaVencimiento: FormControl<number>;
+}
+
 @Component({
   selector: 'app-gestion-cuotas',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,7 +41,7 @@ import { BasePeriodosComponent } from '../../../core/base/base-periodos.componen
 })
 export class GestionCuotasComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
-  private fb = inject(FormBuilder);
+  private fb = inject(FormBuilder).nonNullable;
   private cuotaService = inject(CuotaService);
   private actividadService = inject(ActividadService);
   private pdfExporter = inject(PdfExporterService);
@@ -64,19 +79,19 @@ export class GestionCuotasComponent extends BasePeriodosComponent implements OnI
     return lista.filter(c => c.tipoCuota === filtro);
   });
 
-  cuotaForm: FormGroup = this.fb.group({
-    actividadId: [null],
-    concepto: ['', [Validators.required, Validators.maxLength(150)]],
-    montoIndividual: [0, [Validators.required, Validators.min(1)]],
-    fechaVencimiento: ['', Validators.required],
-    observacion: ['']
+  cuotaForm: FormGroup<CuotaForm> = this.fb.group({
+    actividadId: this.fb.control<number | null>(null),
+    concepto: this.fb.control('', [Validators.required, Validators.maxLength(150)]),
+    montoIndividual: this.fb.control(0, [Validators.required, Validators.min(1)]),
+    fechaVencimiento: this.fb.control('', [Validators.required]),
+    observacion: this.fb.control('')
   });
 
-  cuotaMensualForm: FormGroup = this.fb.group({
-    conceptoBase: ['Aporte Fondo de Caja Chica', [Validators.required, Validators.maxLength(100)]],
-    montoMensual: [10, [Validators.required, Validators.min(1)]],
-    mesInicio: [3, [Validators.required, Validators.min(3), Validators.max(12)]],
-    diaVencimiento: [10, [Validators.required, Validators.min(1), Validators.max(28)]]
+  cuotaMensualForm: FormGroup<CuotaMensualForm> = this.fb.group({
+    conceptoBase: this.fb.control('Aporte Fondo de Caja Chica', [Validators.required, Validators.maxLength(100)]),
+    montoMensual: this.fb.control(10, [Validators.required, Validators.min(1)]),
+    mesInicio: this.fb.control(3, [Validators.required, Validators.min(3), Validators.max(12)]),
+    diaVencimiento: this.fb.control(10, [Validators.required, Validators.min(1), Validators.max(28)])
   });
 
   modalMorososAbierto = signal<boolean>(false);
@@ -281,7 +296,7 @@ export class GestionCuotasComponent extends BasePeriodosComponent implements OnI
     const anio = periodoObj ? periodoObj.anio : new Date().getFullYear();
 
     const payload = {
-      ...this.cuotaMensualForm.value,
+      ...this.cuotaMensualForm.getRawValue(),
       aulaId: aulaId,
       anioLectivo: anio
     };

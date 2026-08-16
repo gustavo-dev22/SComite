@@ -2,7 +2,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subject, takeUntil } from 'rxjs';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GastoService } from '../../../core/services/gasto.service';
 import { Aula } from '../../../core/models/aula.model';
 import { GastoComite, ResumenCajaAula } from '../../../core/models/gasto.model';
@@ -16,6 +16,18 @@ const MAX_COMPROBANTE_MB = 5;
 const TIPOS_COMPROBANTE_MIME_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const EXTENSIONES_COMPROBANTE_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
 
+interface GastoForm {
+  concepto: FormControl<string>;
+  categoria: FormControl<string>;
+  monto: FormControl<number>;
+  fechaGasto: FormControl<string>;
+  tipoComprobante: FormControl<string>;
+  numeroComprobante: FormControl<string>;
+  proveedor: FormControl<string>;
+  observacion: FormControl<string>;
+  urlComprobante: FormControl<string>;
+}
+
 @Component({
   selector: 'app-registro-gastos',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,7 +37,7 @@ const EXTENSIONES_COMPROBANTE_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp', 'pdf']
 })
 export class RegistroGastosComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
-  private fb = inject(FormBuilder);
+  private fb = inject(FormBuilder).nonNullable;
   private gastoService = inject(GastoService);
 
   constructor() {
@@ -76,16 +88,16 @@ export class RegistroGastosComponent extends BasePeriodosComponent implements On
   guardando = signal<boolean>(false);
   archivoSeleccionadoNombre = signal<string>('');
 
-  gastoForm: FormGroup = this.fb.group({
-    concepto: ['', [Validators.required, Validators.maxLength(150)]],
-    categoria: ['MATERIALES', Validators.required],
-    monto: [0, [Validators.required, Validators.min(0.10)]],
-    fechaGasto: [hoyLocal(), Validators.required],
-    tipoComprobante: ['BOLETA', Validators.required],
-    numeroComprobante: [''],
-    proveedor: [''],
-    observacion: [''],
-    urlComprobante: ['']
+  gastoForm: FormGroup<GastoForm> = this.fb.group({
+    concepto: this.fb.control('', [Validators.required, Validators.maxLength(150)]),
+    categoria: this.fb.control('MATERIALES', [Validators.required]),
+    monto: this.fb.control(0, [Validators.required, Validators.min(0.10)]),
+    fechaGasto: this.fb.control(hoyLocal(), [Validators.required]),
+    tipoComprobante: this.fb.control('BOLETA', [Validators.required]),
+    numeroComprobante: this.fb.control(''),
+    proveedor: this.fb.control(''),
+    observacion: this.fb.control(''),
+    urlComprobante: this.fb.control('')
   });
 
   ngOnInit(): void {
@@ -176,7 +188,7 @@ export class RegistroGastosComponent extends BasePeriodosComponent implements On
     if (this.guardando()) return;
     this.guardando.set(true);
 
-    const payload = { ...this.gastoForm.value, aulaId };
+    const payload = { ...this.gastoForm.getRawValue(), aulaId };
 
     const request: Observable<unknown> = this.esEdicion()
       ? this.gastoService.actualizar(this.gastoEditarId()!, { ...payload, id: this.gastoEditarId()! })

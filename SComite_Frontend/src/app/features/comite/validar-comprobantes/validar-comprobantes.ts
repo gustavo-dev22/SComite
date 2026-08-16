@@ -2,7 +2,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuotaService } from '../../../core/services/cuota.service';
 import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { normalizarTelefonoPeru } from '../../../core/utils/whatsapp.util';
@@ -10,6 +10,11 @@ import { Aula } from '../../../core/models/aula.model';
 import { Cuota, CuotaEstudianteCobro, EstadoPago } from '../../../core/models/cuota.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
+
+interface PagoForm {
+  montoAbonado: FormControl<number>;
+  formaPago: FormControl<string>;
+}
 
 @Component({
   selector: 'app-validar-comprobantes',
@@ -20,7 +25,7 @@ import Swal from 'sweetalert2';
 })
 export class ValidarComprobantesComponent extends BasePeriodosComponent implements OnInit {
   private reiniciarCarga$ = new Subject<void>();
-  private fb = inject(FormBuilder);
+  private fb = inject(FormBuilder).nonNullable;
   private cuotaService = inject(CuotaService);
 
   constructor() {
@@ -66,9 +71,9 @@ export class ValidarComprobantesComponent extends BasePeriodosComponent implemen
   cantidadPagados = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'COMPLETO').length);
   cantidadExonerados = computed(() => this.cobrosEstudiantes().filter(c => c.estadoPago === 'EXONERADO').length);
 
-  pagoForm: FormGroup = this.fb.group({
-    montoAbonado: [0, [Validators.required, Validators.min(0.10)]],
-    formaPago: ['YAPE', Validators.required]
+  pagoForm: FormGroup<PagoForm> = this.fb.group({
+    montoAbonado: this.fb.control(0, [Validators.required, Validators.min(0.10)]),
+    formaPago: this.fb.control('YAPE', [Validators.required])
   });
 
   // 🚀 Obtener la cuota seleccionada actualmente para conocer su estado
@@ -207,12 +212,12 @@ export class ValidarComprobantesComponent extends BasePeriodosComponent implemen
       formaPago: 'YAPE' 
     });
 
-    this.pagoForm.controls['montoAbonado'].setValidators([
+    this.pagoForm.controls.montoAbonado.setValidators([
       Validators.required,
       Validators.min(Math.min(0.10, saldoPendiente)),
       Validators.max(saldoPendiente) // 👈 No permite superar el saldo restante
     ]);
-    this.pagoForm.controls['montoAbonado'].updateValueAndValidity();
+    this.pagoForm.controls.montoAbonado.updateValueAndValidity();
 
     this.mostrarModalPago.set(true);
   }
@@ -225,8 +230,8 @@ export class ValidarComprobantesComponent extends BasePeriodosComponent implemen
 
     this.cuotaService.registrarPagoManual({
       cuotaDetalleId: comp.cuotaDetalleId,
-      montoAbonado: this.pagoForm.value.montoAbonado,
-      formaPago: this.pagoForm.value.formaPago
+      montoAbonado: this.pagoForm.getRawValue().montoAbonado,
+      formaPago: this.pagoForm.getRawValue().formaPago
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.registrandoPago.set(false);

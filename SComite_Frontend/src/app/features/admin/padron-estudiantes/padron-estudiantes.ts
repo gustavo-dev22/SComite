@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, takeUntil } from 'rxjs';
 import { EstudianteService } from '../../../core/services/estudiante.service';
 import { ComiteService } from '../../../core/services/comite.service';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { Estudiante } from '../../../core/models/estudiante.model';
@@ -20,6 +20,19 @@ const EXTENSIONES_EXCEL_PERMITIDAS = ['xlsx'];
 const TIPOS_MIME_EXCEL_PERMITIDOS = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 ];
+
+interface EstudianteForm {
+  id: FormControl<number>;
+  aulaId: FormControl<number>;
+  tipoDocumento: FormControl<string>;
+  numeroDocumento: FormControl<string>;
+  nombres: FormControl<string>;
+  apellidoPaterno: FormControl<string>;
+  apellidoMaterno: FormControl<string>;
+  usuarioIdApoderadoSasi: FormControl<string>;
+  nombreApoderado: FormControl<string>;
+  telefonoApoderado: FormControl<string>;
+}
 
 interface FilaEstudianteExcel {
   tipoDocumento: string;
@@ -116,7 +129,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   private reiniciarCarga$ = new Subject<void>();
   private estudianteService = inject(EstudianteService);
   private comiteService = inject(ComiteService);
-  private fb = inject(FormBuilder);
+  private fb = inject(FormBuilder).nonNullable;
 
   aulas = signal<Aula[]>([]);
   estudiantes = signal<Estudiante[]>([]);
@@ -129,18 +142,19 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   cargandoDetalle = signal<boolean>(false);
   modalAbierto = signal<boolean>(false);
   esEdicion = signal<boolean>(false);
+  guardando = signal<boolean>(false);
 
-  estudianteForm: FormGroup = this.fb.group({
-    id: [0],
-    aulaId: [0],
-    tipoDocumento: ['DNI', [Validators.required]],
-    numeroDocumento: ['', [Validators.required, Validators.pattern('^[0-9]{8,12}$')]],
-    nombres: ['', [Validators.required]],
-    apellidoPaterno: ['', [Validators.required]],
-    apellidoMaterno: ['', [Validators.required]],
-    usuarioIdApoderadoSasi: [''],
-    nombreApoderado: [''],
-    telefonoApoderado: ['']
+  estudianteForm: FormGroup<EstudianteForm> = this.fb.group({
+    id: this.fb.control(0),
+    aulaId: this.fb.control(0),
+    tipoDocumento: this.fb.control('DNI', [Validators.required]),
+    numeroDocumento: this.fb.control('', [Validators.required, Validators.pattern('^[0-9]{8,12}$')]),
+    nombres: this.fb.control('', [Validators.required]),
+    apellidoPaterno: this.fb.control('', [Validators.required]),
+    apellidoMaterno: this.fb.control('', [Validators.required]),
+    usuarioIdApoderadoSasi: this.fb.control(''),
+    nombreApoderado: this.fb.control(''),
+    telefonoApoderado: this.fb.control('')
   });
 
   modalCargaMasivaAbierto = signal<boolean>(false);
@@ -259,7 +273,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
     this.esEdicion.set(false);
     this.estudianteForm.reset({
       id: 0,
-      aulaId: this.aulaSeleccionada(),
+      aulaId: this.aulaSeleccionada() ?? 0,
       tipoDocumento: 'DNI',
       numeroDocumento: '',
       nombres: '',
@@ -313,33 +327,49 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   }
 
   guardarEstudiante(): void {
+    if (this.guardando()) return;
     if (this.estudianteForm.invalid) {
       this.estudianteForm.markAllAsTouched();
       return;
     }
 
+    const aulaId = this.aulaSeleccionada();
+    if (!aulaId) {
+      Swal.fire('Atención', 'Debe seleccionar un aula.', 'warning');
+      return;
+    }
+    this.guardando.set(true);
+
     const payload = {
-      ...this.estudianteForm.value,
-      aulaId: this.aulaSeleccionada()
+      ...this.estudianteForm.getRawValue(),
+      aulaId
     };
 
     if (this.esEdicion()) {
       this.estudianteService.actualizarEstudiante(payload.id, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
+          this.guardando.set(false);
           Swal.fire({ icon: 'success', title: '¡Actualizado!', text: 'Estudiante modificado.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();
           this.cargarEstudiantes(this.aulaSeleccionada()!);
         },
-        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error')
+        error: (err) => {
+          this.guardando.set(false);
+          Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error');
+        }
       });
     } else {
       this.estudianteService.crearEstudiante(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
+          this.guardando.set(false);
           Swal.fire({ icon: 'success', title: '¡Registrado!', text: 'Estudiante agregado al padrón.', timer: 1500, showConfirmButton: false });
           this.cerrarModal();
           this.cargarEstudiantes(this.aulaSeleccionada()!);
         },
-        error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar.', 'error')
+        error: (err) => {
+          this.guardando.set(false);
+          Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar.', 'error');
+        }
       });
     }
   }
