@@ -13,6 +13,6 @@ namespace AulaComite.Application.Common.Dto
     {
         public string UsuarioId { get; set; } = string.Empty;
         public string NombreCompleto { get; set; } = string.Empty;
-        public string CorreoElectronico { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
     }
 }

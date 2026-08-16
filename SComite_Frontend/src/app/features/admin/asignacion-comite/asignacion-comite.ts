@@ -99,7 +99,6 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
           (err as { status?: number } | null)?.status === 503 ||
           (err as { status?: number } | null)?.status === 0;
 
-        this.apoderadosSasi.set([]);
         this.sasiDisponible.set(!esSasiNoDisponible);
 
         manejarErrorHttp(err, 'No se pudieron cargar los apoderados de SASI.');
@@ -141,6 +140,12 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
       return;
     }
     this.comiteForm.reset({ cargo: '', usuarioIdSasi: '' });
+
+    // 🛡️ SASI-DOWN: se re-consulta el catálogo de apoderados en el momento de asignar
+    // (no solo al cargar la página). Así, si SASI se cayó después de entrar al sistema,
+    // el usuario recibe el aviso automáticamente al abrir el modal, sin recargar.
+    this.cargarApoderadosSasi();
+
     this.modalAbierto.set(true);
   }
 

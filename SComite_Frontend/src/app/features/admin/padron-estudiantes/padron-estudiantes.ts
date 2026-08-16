@@ -234,7 +234,6 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
           (err as { status?: number } | null)?.status === 503 ||
           (err as { status?: number } | null)?.status === 0;
 
-        this.apoderadosSasi.set([]);
         this.sasiDisponible.set(!esSasiNoDisponible);
 
         manejarErrorHttp(err, 'No se pudieron cargar los apoderados de SASI.');
@@ -304,6 +303,11 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       nombreApoderado: '',
       telefonoApoderado: ''
     });
+
+    // 🛡️ SASI-DOWN: se re-consulta el catálogo de apoderados al abrir el modal (no solo
+    // al cargar la página), de modo que si SASI cayó después, el aviso aparece al instante.
+    this.cargarApoderadosSasi();
+
     this.modalAbierto.set(true);
   }
 
@@ -323,6 +327,11 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       nombreApoderado: e.nombreApoderado || '',
       telefonoApoderado: e.telefonoApoderado || ''
     });
+
+    // 🛡️ SASI-DOWN: se re-consulta el catálogo de apoderados al abrir el modal para
+    // detectar una caída de SASI ocurrida después de cargar la página.
+    this.cargarApoderadosSasi();
+
     this.modalAbierto.set(true);
 
     // 🛡️ La fila de la tabla trae el documento/teléfono ENMASCARADOS (***).

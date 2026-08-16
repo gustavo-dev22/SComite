@@ -41,7 +41,7 @@ namespace AulaComite.Api.Controllers
             {
                 UsuarioId = a.UsuarioId,
                 NombreCompleto = a.NombreCompleto,
-                CorreoElectronico = a.Email
+                Email = a.Email
             });
 
             return Ok(resultado);
