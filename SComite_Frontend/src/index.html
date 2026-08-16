@@ -1,11 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <title>Sistema de Comité de Aula</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline' https://unpkg.com;
+    font-src 'self' data: https://unpkg.com https://fonts.gstatic.com;
+    img-src 'self' data: blob: https: http:;
+    connect-src 'self' https: http:;
+    media-src 'self' data: blob:;
+    worker-src 'self' blob:;
+    object-src 'none';
+    base-uri 'self';
+  ">
   <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/primeicons@8.0.0/primeicons.css" integrity="sha384-QMbiFEdhSZrdLCIbF8Gop94kxaLZQc3nyP8Qf2IMP69GEEZ3bnBhF2YU+UJvX6Cz" crossorigin="anonymous">
 </head>
 <body>

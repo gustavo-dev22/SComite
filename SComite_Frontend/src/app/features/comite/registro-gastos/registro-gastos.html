@@ -30,8 +30,9 @@
     
     <!-- Selector 1: Año Lectivo -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
+      <label for="anioLectivo" class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
       <select 
+        id="anioLectivo"
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
         class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm cursor-pointer transition">
@@ -44,8 +45,9 @@
 
     <!-- Selector 2: Aula - Sección -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
+      <label for="aulaSeccion" class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
+        id="aulaSeccion"
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
@@ -68,8 +70,9 @@
 
     <!-- Selector 3: Mes de Corte / Balance -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">3. Mes de Balance / Corte</label>
+      <label for="mesBalance" class="block text-xs font-bold text-slate-700 uppercase mb-1">3. Mes de Balance / Corte</label>
       <select 
+        id="mesBalance"
         [value]="mesSeleccionado()" 
         (change)="onMesChange($event)"
         [disabled]="!tieneAulaSeleccionada()"
@@ -301,8 +304,9 @@
 
       <form [formGroup]="gastoForm" (ngSubmit)="guardarGasto()" class="p-5 space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto del Gasto *</label>
+          <label for="concepto" class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto del Gasto *</label>
           <input 
+            id="concepto"
             type="text" 
             formControlName="concepto" 
             class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 font-semibold outline-none focus:ring-2 focus:ring-slate-900 transition" 
@@ -311,8 +315,8 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Categoría *</label>
-            <select formControlName="categoria" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
+            <label for="categoria" class="block text-xs font-bold text-slate-700 uppercase mb-1">Categoría *</label>
+            <select id="categoria" formControlName="categoria" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
               <option value="MATERIALES">Materiales</option>
               <option value="MANTENIMIENTO">Mantenimiento</option>
               <option value="ACTIVIDADES_EVENTOS">Actividades / Eventos</option>
@@ -322,8 +326,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
+            <label for="monto" class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
             <input 
+              id="monto"
               type="number" 
               formControlName="monto" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition" 
@@ -333,16 +338,17 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha del Gasto *</label>
+            <label for="fechaGasto" class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha del Gasto *</label>
             <input 
+              id="fechaGasto"
               type="date" 
               formControlName="fechaGasto" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Comprobante *</label>
-            <select formControlName="tipoComprobante" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
+            <label for="tipoComprobante" class="block text-xs font-bold text-slate-700 uppercase mb-1">Comprobante *</label>
+            <select id="tipoComprobante" formControlName="tipoComprobante" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
               <option value="BOLETA">Boleta de Venta</option>
               <option value="FACTURA">Factura</option>
               <option value="RECIBO_SIMPLE">Recibo Simple</option>
@@ -353,10 +359,11 @@
 
         <!-- ZONA DE ADJUNTO -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Adjuntar Foto / Boleta (Imagen o PDF)</label>
+          <label for="adjuntarFoto" class="block text-xs font-bold text-slate-700 uppercase mb-1">Adjuntar Foto / Boleta (Imagen o PDF)</label>
           
           <div class="border-2 border-dashed border-slate-300 hover:border-slate-800 bg-slate-50/50 hover:bg-slate-50 rounded-xl p-3.5 text-center relative cursor-pointer transition">
             <input 
+              id="adjuntarFoto"
               type="file" 
               accept="image/*, application/pdf" 
               (change)="onFileSelected($event)" 
@@ -374,8 +381,9 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Observación</label>
+          <label for="observacion" class="block text-xs font-bold text-slate-700 uppercase mb-1">Observación</label>
           <textarea 
+            id="observacion"
             formControlName="observacion" 
             rows="2" 
             class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition" 

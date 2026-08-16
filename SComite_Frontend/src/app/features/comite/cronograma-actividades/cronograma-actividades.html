@@ -30,8 +30,9 @@
     
     <!-- Selector 1: Año Lectivo -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
+      <label for="anioLectivo" class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
       <select 
+        id="anioLectivo"
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
         class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm cursor-pointer transition">
@@ -44,8 +45,9 @@
 
     <!-- Selector 2: Aula - Sección -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
+      <label for="aulaSeccion" class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
+        id="aulaSeccion"
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
@@ -209,8 +211,9 @@
 
         <div class="p-5 space-y-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre de la Actividad *</label>
+            <label for="nombreActividad" class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre de la Actividad *</label>
             <input 
+              id="nombreActividad"
               type="text" 
               [ngModel]="formActividad().nombreActividad"
               (ngModelChange)="actualizarCampo('nombreActividad', $event)" 
@@ -219,8 +222,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Descripción / Observaciones</label>
+            <label for="descripcion" class="block text-xs font-bold text-slate-700 uppercase mb-1">Descripción / Observaciones</label>
             <textarea 
+              id="descripcion"
               [ngModel]="formActividad().descripcion"
               (ngModelChange)="actualizarCampo('descripcion', $event)" 
               rows="2" 
@@ -230,8 +234,9 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha Programada *</label>
+              <label for="fechaProgramada" class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha Programada *</label>
               <input 
+                id="fechaProgramada"
                 type="date" 
                 [ngModel]="formActividad().fechaProgramada"
                 (ngModelChange)="actualizarCampo('fechaProgramada', $event)" 
@@ -239,8 +244,9 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado</label>
+              <label for="estado" class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado</label>
               <select 
+                id="estado"
                 [ngModel]="formActividad().estado"
                 (ngModelChange)="actualizarCampo('estado', $event)" 
                 class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
@@ -254,8 +260,9 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto Presupuestado (S/.)</label>
+              <label for="montoPresupuestado" class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto Presupuestado (S/.)</label>
               <input 
+                id="montoPresupuestado"
                 type="number" 
                 [ngModel]="formActividad().montoPresupuestado"
                 (ngModelChange)="actualizarCampo('montoPresupuestado', $event)" 
@@ -265,8 +272,9 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cuota Sugerida / Alumno (S/.)</label>
+              <label for="cuotaSugeridaPorAlumno" class="block text-xs font-bold text-slate-700 uppercase mb-1">Cuota Sugerida / Alumno (S/.)</label>
               <input 
+                id="cuotaSugeridaPorAlumno"
                 type="number" 
                 [ngModel]="formActividad().cuotaSugeridaPorAlumno"
                 (ngModelChange)="actualizarCampo('cuotaSugeridaPorAlumno', $event)" 

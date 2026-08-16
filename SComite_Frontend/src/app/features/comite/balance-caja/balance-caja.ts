@@ -274,7 +274,7 @@ export class BalanceCajaComponent extends BasePeriodosComponent implements OnIni
       seccionStr = aula.seccion.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
     }
 
-    let nombreArchivo = '';
+    let nombreArchivo: string;
     if (mesVal === 0) {
       nombreArchivo = `Rendicion_Todo_el_Año_(Acumulado)_${nivelStr}_${gradoStr}_${seccionStr}.pdf`;
     } else {

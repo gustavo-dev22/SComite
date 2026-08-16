@@ -28,8 +28,9 @@
   <!-- FILTRO SUPERIOR CONTEXTUAL 1 -> 2 -->
   <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
+      <label for="anioLectivo" class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
       <select 
+        id="anioLectivo"
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
         class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm cursor-pointer transition">
@@ -41,8 +42,9 @@
     </div>
 
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
+      <label for="aulaSeccion" class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
+        id="aulaSeccion"
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
@@ -215,8 +217,9 @@
         <div class="p-5 space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Código / N° de Acta *</label>
+              <label for="numeroActa" class="block text-xs font-bold text-slate-700 uppercase mb-1">Código / N° de Acta *</label>
               <input 
+                id="numeroActa"
                 type="text" 
 [ngModel]="formActa().numeroActa"
                 (ngModelChange)="actualizarCampo('numeroActa', $event)"
@@ -226,8 +229,9 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Asamblea *</label>
+              <label for="fechaReunion" class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Asamblea *</label>
               <input 
+                id="fechaReunion"
                 type="date" 
                 [ngModel]="formActa().fechaReunion"
                 (ngModelChange)="actualizarCampo('fechaReunion', $event)" 
@@ -236,8 +240,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Título de la Asamblea *</label>
+            <label for="titulo" class="block text-xs font-bold text-slate-700 uppercase mb-1">Título de la Asamblea *</label>
             <input 
+              id="titulo"
               type="text" 
 [ngModel]="formActa().titulo"
               (ngModelChange)="actualizarCampo('titulo', $event)"
@@ -247,21 +252,21 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado del Acta *</label>
-            <select [ngModel]="formActa().estadoActa" (ngModelChange)="actualizarCampo('estadoActa', $event)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
+            <label for="estadoActa" class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado del Acta *</label>
+            <select id="estadoActa" [ngModel]="formActa().estadoActa" (ngModelChange)="actualizarCampo('estadoActa', $event)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer transition">
               <option value="BORRADOR">Borrador (En Redacción / Edición)</option>
               <option value="APROBADA">Aprobada (Oficial y Publicada)</option>
             </select>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Puntos Tratados y Acuerdos *</label>
-            <textarea [ngModel]="formActa().agendaAcuerdos" (ngModelChange)="actualizarCampo('agendaAcuerdos', $event)" rows="5" placeholder="Detalle los puntos de la agenda y acuerdos acordados por los padres..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
+            <label for="agendaAcuerdos" class="block text-xs font-bold text-slate-700 uppercase mb-1">Puntos Tratados y Acuerdos *</label>
+            <textarea id="agendaAcuerdos" [ngModel]="formActa().agendaAcuerdos" (ngModelChange)="actualizarCampo('agendaAcuerdos', $event)" rows="5" placeholder="Detalle los puntos de la agenda y acuerdos acordados por los padres..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL Enlace del Documento PDF / Escaneado</label>
-            <input type="text" [ngModel]="formActa().urlDocumentoPdf" (ngModelChange)="actualizarCampo('urlDocumentoPdf', $event)" placeholder="Ej: https://drive.google.com/file/d/..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
+            <label for="urlDocumentoPdf" class="block text-xs font-bold text-slate-700 uppercase mb-1">URL Enlace del Documento PDF / Escaneado</label>
+            <input id="urlDocumentoPdf" type="text" [ngModel]="formActa().urlDocumentoPdf" (ngModelChange)="actualizarCampo('urlDocumentoPdf', $event)" placeholder="Ej: https://drive.google.com/file/d/..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
         </div>
 

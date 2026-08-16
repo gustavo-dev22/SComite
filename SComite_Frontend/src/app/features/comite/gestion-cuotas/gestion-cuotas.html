@@ -30,8 +30,9 @@
     
     <!-- Selector 1: Periodo Lectivo -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo / Periodo</label>
+      <label for="anioLectivoPeriodo" class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo / Periodo</label>
       <select 
+        id="anioLectivoPeriodo"
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
         class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm cursor-pointer transition">
@@ -46,8 +47,9 @@
 
     <!-- Selector 2: Aula - Sección -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
+      <label for="aulaSeccion" class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
+        id="aulaSeccion"
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
@@ -186,6 +188,8 @@
             @if ((cuota.estudiantesExonerados ?? 0) > 0) {
               <div 
                 (click)="abrirModalExonerados(cuota)"
+                (keydown.enter)="abrirModalExonerados(cuota)"
+                tabindex="0"
                 class="flex items-center justify-between px-3 py-1.5 mb-4 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl cursor-pointer transition">
                 <div class="flex items-center gap-1.5 text-slate-700">
                   <span class="text-xs">🛡️</span>
@@ -288,13 +292,14 @@
         <form [formGroup]="cuotaForm" (ngSubmit)="guardarCuota()" class="space-y-4">
           
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
+            <label for="actividadId" class="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
               Vincular con Actividad del Cronograma (Opcional)
             </label>
             <select 
+              id="actividadId"
               formControlName="actividadId" 
               (change)="onActividadChange($event)"
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50/50 text-slate-800 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold cursor-pointer transition">
@@ -308,8 +313,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto / Motivo *</label>
+            <label for="concepto" class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto / Motivo *</label>
             <input 
+              id="concepto"
               type="text" 
               formControlName="concepto" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-500" 
@@ -318,15 +324,17 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
+              <label for="montoIndividual" class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
               <input 
+                id="montoIndividual"
                 type="number" 
                 formControlName="montoIndividual" 
                 class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-500">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">F. Vencimiento *</label>
+              <label for="fechaVencimiento" class="block text-xs font-bold text-slate-700 uppercase mb-1">F. Vencimiento *</label>
               <input 
+                id="fechaVencimiento"
                 type="date" 
                 formControlName="fechaVencimiento" 
                 class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition disabled:bg-slate-100 disabled:text-slate-500">
@@ -334,8 +342,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Observación</label>
+            <label for="observacion" class="block text-xs font-bold text-slate-700 uppercase mb-1">Observación</label>
             <textarea 
+              id="observacion"
               formControlName="observacion" 
               rows="2" 
               class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition" 
@@ -356,14 +365,14 @@
             Se programarán o reajustarán las cuotas mensuales desde el mes elegido hasta Diciembre.
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto Base *</label>
-            <input type="text" formControlName="conceptoBase" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition">
+            <label for="conceptoBase" class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto Base *</label>
+            <input id="conceptoBase" type="text" formControlName="conceptoBase" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 transition">
           </div>
           
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">A Partir del Mes *</label>
-              <select formControlName="mesInicio" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 cursor-pointer transition">
+              <label for="mesInicio" class="block text-xs font-bold text-slate-700 uppercase mb-1">A Partir del Mes *</label>
+              <select id="mesInicio" formControlName="mesInicio" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm text-slate-800 cursor-pointer transition">
                 <option [value]="3">Marzo</option>
                 <option [value]="4">Abril</option>
                 <option [value]="5">Mayo</option>
@@ -377,14 +386,14 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto Mensual (S/.) *</label>
-              <input type="number" formControlName="montoMensual" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition">
+              <label for="montoMensual" class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto Mensual (S/.) *</label>
+              <input id="montoMensual" type="number" formControlName="montoMensual" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition">
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Día Límite de Pago en el Mes *</label>
-            <input type="number" formControlName="diaVencimiento" min="1" max="28" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition" placeholder="Ej. Día 10">
+            <label for="diaVencimiento" class="block text-xs font-bold text-slate-700 uppercase mb-1">Día Límite de Pago en el Mes *</label>
+            <input id="diaVencimiento" type="number" formControlName="diaVencimiento" min="1" max="28" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-slate-900 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition" placeholder="Ej. Día 10">
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">

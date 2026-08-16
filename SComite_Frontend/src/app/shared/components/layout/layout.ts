@@ -4,7 +4,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import Swal from 'sweetalert2';
 
-const MAPA_ICONOS: { [key: string]: string } = {
+const MAPA_ICONOS: Record<string, string> = {
   'school': 'pi pi-building',
   'user-plus': 'pi pi-user-plus',
   'users': 'pi pi-users',
@@ -36,7 +36,7 @@ export class LayoutComponent {
 
   sidebarAbierto = signal<boolean>(true);
   sidebarMovilAbierto = signal<boolean>(false);
-  menuDesplegado = signal<{ [key: number]: boolean }>({});
+  menuDesplegado = signal<Record<number, boolean>>({});
 
   // 🚀 Re-inicializa los submenús abiertos cada vez que cambia el árbol de menú (rol/sesión),
   // en lugar del setTimeout(100) sucio que dependía de carreras de detección de cambios.
@@ -52,7 +52,7 @@ export class LayoutComponent {
   }
 
   private inicializarSubmenusAbiertos(): void {
-    const estadoInicial: { [key: number]: boolean } = {};
+    const estadoInicial: Record<number, boolean> = {};
     this.authService.menuJerarquico().forEach(item => {
       estadoInicial[item.idObjeto] = true;
     });
@@ -94,7 +94,7 @@ export class LayoutComponent {
     });
   }
 
-  getIconClass(icono: string | null, esSubmenu: boolean = false): string {
+  getIconClass(icono: string | null, esSubmenu = false): string {
     if (!icono) {
       return esSubmenu ? 'pi pi-angle-right' : 'pi pi-folder';
     }

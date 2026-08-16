@@ -178,7 +178,6 @@ export class PdfExporterService {
     doc.text(acuerdosLineas, 18, startY + 2);
 
     // 6. Pie de página oficial
-    const totalPages = doc.internal.pages.length - 1;
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(148, 163, 184); // slate-400

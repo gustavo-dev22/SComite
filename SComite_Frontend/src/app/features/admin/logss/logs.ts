@@ -59,7 +59,7 @@ export class LogsComponent implements OnInit {
     this.cargarLogs();
   }
 
-  cargarLogs(pagina: number = 1): void {
+  cargarLogs(pagina = 1): void {
     this.reiniciarCarga$.next();
     this.cargando.set(true);
     this.paginaActual.set(pagina);

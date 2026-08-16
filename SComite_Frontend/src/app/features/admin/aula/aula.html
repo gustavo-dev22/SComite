@@ -27,8 +27,9 @@
   <!-- FILTROS Y BÚSQUEDA -->
   <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200 mb-5 flex items-center gap-4">
     <div class="w-full sm:w-72">
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Filtrar por Periodo</label>
+      <label for="filtrarPorPeriodo" class="block text-xs font-bold text-slate-700 uppercase mb-1">Filtrar por Periodo</label>
       <select 
+        id="filtrarPorPeriodo"
         (change)="filtrarPorPeriodo($event)"
         class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-slate-900 outline-none transition cursor-pointer text-slate-800">
         <option value="">-- Todos los Periodos --</option>
@@ -153,8 +154,8 @@
         <form [formGroup]="aulaForm" (ngSubmit)="guardarAula()" class="p-5 space-y-4">
           
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Periodo Lectivo *</label>
-            <select formControlName="periodoId" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm cursor-pointer outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
+            <label for="periodoId" class="block text-xs font-bold text-slate-700 uppercase mb-1">Periodo Lectivo *</label>
+            <select id="periodoId" formControlName="periodoId" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm cursor-pointer outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
               <option [value]="''" disabled selected>-- Seleccione Periodo --</option>
               @for (p of periodos(); track p.id) {
                 <option [value]="p.id">{{ p.nombre }}</option>
@@ -163,8 +164,8 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nivel Educativo *</label>
-            <select formControlName="nivel" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm cursor-pointer outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
+            <label for="nivel" class="block text-xs font-bold text-slate-700 uppercase mb-1">Nivel Educativo *</label>
+            <select id="nivel" formControlName="nivel" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm cursor-pointer outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
               <option value="INICIAL">INICIAL</option>
               <option value="PRIMARIA">PRIMARIA</option>
               <option value="SECUNDARIA">SECUNDARIA</option> 
@@ -172,8 +173,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Grado *</label>
+            <label for="grado" class="block text-xs font-bold text-slate-700 uppercase mb-1">Grado *</label>
             <input 
+              id="grado"
               type="text" 
               formControlName="grado" 
               (input)="onInputToUppercase('grado')"
@@ -182,8 +184,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sección *</label>
+            <label for="seccion" class="block text-xs font-bold text-slate-700 uppercase mb-1">Sección *</label>
             <input 
+              id="seccion"
               type="text" 
               formControlName="seccion" 
               (input)="onInputToUppercase('seccion')"

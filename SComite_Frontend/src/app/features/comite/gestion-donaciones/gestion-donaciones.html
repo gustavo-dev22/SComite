@@ -30,8 +30,9 @@
     
     <!-- Selector 1: Año Lectivo -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
+      <label for="anioLectivo" class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Año Lectivo</label>
       <select 
+        id="anioLectivo"
         [value]="periodoSeleccionadoId() ?? ''" 
         (change)="onPeriodoChange($event)"
         class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 text-xs sm:text-sm cursor-pointer transition">
@@ -44,8 +45,9 @@
 
     <!-- Selector 2: Aula - Sección -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
+      <label for="aulaSeccion" class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula - Sección</label>
       <select 
+        id="aulaSeccion"
         [value]="aulaSeleccionadaId() ?? ''" 
         (change)="onAulaChange($event)"
         [disabled]="!tienePeriodoSeleccionado() || cargandoAulas()"
@@ -67,8 +69,9 @@
 
     <!-- Selector 3: Mes de Consulta -->
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">3. Mes de Consulta</label>
+      <label for="mesConsulta" class="block text-xs font-bold text-slate-700 uppercase mb-1">3. Mes de Consulta</label>
       <select 
+        id="mesConsulta"
         [value]="mesSeleccionado()" 
         (change)="onMesChange($event)"
         [disabled]="!tieneAulaSeleccionada()"
@@ -221,8 +224,9 @@
 
         <div class="p-5 space-y-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Donante / Aportante *</label>
+            <label for="donante" class="block text-xs font-bold text-slate-700 uppercase mb-1">Donante / Aportante *</label>
             <input 
+              id="donante"
               type="text" 
               [ngModel]="formDonacion().donante" 
               (ngModelChange)="actualizarCampo('donante', $event)"
@@ -232,8 +236,9 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto / Motivo *</label>
+            <label for="concepto" class="block text-xs font-bold text-slate-700 uppercase mb-1">Concepto / Motivo *</label>
             <input 
+              id="concepto"
               type="text" 
               [ngModel]="formDonacion().concepto" 
               (ngModelChange)="actualizarCampo('concepto', $event)"
@@ -244,19 +249,19 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
-              <input type="number" [ngModel]="formDonacion().monto" (ngModelChange)="actualizarCampo('monto', $event)" step="1.00" min="1" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
+              <label for="monto" class="block text-xs font-bold text-slate-700 uppercase mb-1">Monto (S/.) *</label>
+              <input id="monto" type="number" [ngModel]="formDonacion().monto" (ngModelChange)="actualizarCampo('monto', $event)" step="1.00" min="1" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Donación *</label>
-              <input type="date" [ngModel]="formDonacion().fechaDonacion" (ngModelChange)="actualizarCampo('fechaDonacion', $event)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
+              <label for="fechaDonacion" class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Donación *</label>
+              <input id="fechaDonacion" type="date" [ngModel]="formDonacion().fechaDonacion" (ngModelChange)="actualizarCampo('fechaDonacion', $event)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition">
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Observaciones</label>
-            <textarea [ngModel]="formDonacion().observacion" (ngModelChange)="actualizarCampo('observacion', $event)" rows="2" placeholder="Opcional..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
+            <label for="observacion" class="block text-xs font-bold text-slate-700 uppercase mb-1">Observaciones</label>
+            <textarea id="observacion" [ngModel]="formDonacion().observacion" (ngModelChange)="actualizarCampo('observacion', $event)" rows="2" placeholder="Opcional..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-900 transition"></textarea>
           </div>
         </div>
 

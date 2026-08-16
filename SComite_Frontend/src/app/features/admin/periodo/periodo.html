@@ -118,8 +118,9 @@
         <form [formGroup]="periodoForm" (ngSubmit)="guardar()" class="p-5 space-y-4">
           
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Año Lectivo *</label>
+            <label for="anio" class="block text-xs font-bold text-slate-700 uppercase mb-1">Año Lectivo *</label>
             <input 
+              id="anio"
               type="number" 
               formControlName="anio" 
               placeholder="Ej: 2026" 
@@ -129,15 +130,17 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha Inicio</label>
+              <label for="fechaInicio" class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha Inicio</label>
               <input 
+                id="fechaInicio"
                 type="date" 
                 formControlName="fechaInicio" 
                 class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha Término</label>
+              <label for="fechaFin" class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha Término</label>
               <input 
+                id="fechaFin"
                 type="date" 
                 formControlName="fechaFin" 
                 class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition" />

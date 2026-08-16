@@ -44,8 +44,9 @@
   <!-- FILTROS DE PERIODO Y AULA -->
   <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200 mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Periodo Lectivo</label>
+      <label for="filtroPeriodo" class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Periodo Lectivo</label>
       <select 
+        id="filtroPeriodo"
         (change)="onPeriodoChange($event)"
         [value]="periodoSeleccionado()"
         class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
@@ -58,8 +59,9 @@
     </div>
 
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula / Sección</label>
+      <label for="filtroAula" class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Aula / Sección</label>
       <select 
+        id="filtroAula"
         (change)="onAulaChange($event)"
         [value]="aulaSeleccionada()"
         class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
@@ -217,21 +219,22 @@
           
           <div class="grid grid-cols-3 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo Doc. *</label>
-              <select formControlName="tipoDocumento" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
+              <label for="tipoDocumento" class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo Doc. *</label>
+              <select id="tipoDocumento" formControlName="tipoDocumento" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white cursor-pointer outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition">
                 <option value="DNI">DNI</option>
                 <option value="CE">CE</option>
               </select>
             </div>
             <div class="col-span-2">
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Número de Documento *</label>
-              <input type="text" formControlName="numeroDocumento" placeholder="Ej: 74839201" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-slate-900 font-semibold text-slate-800 transition" />
+              <label for="numeroDocumento" class="block text-xs font-bold text-slate-700 uppercase mb-1">Número de Documento *</label>
+              <input id="numeroDocumento" type="text" formControlName="numeroDocumento" placeholder="Ej: 74839201" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-slate-900 font-semibold text-slate-800 transition" />
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombres *</label>
+            <label for="nombres" class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombres *</label>
             <input 
+              id="nombres"
               type="text" 
               formControlName="nombres" 
               (input)="onInputToUppercase('nombres')"
@@ -241,8 +244,9 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Apellido Paterno *</label>
+              <label for="apellidoPaterno" class="block text-xs font-bold text-slate-700 uppercase mb-1">Apellido Paterno *</label>
               <input 
+                id="apellidoPaterno"
                 type="text" 
                 formControlName="apellidoPaterno" 
                 (input)="onInputToUppercase('apellidoPaterno')"
@@ -251,8 +255,9 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Apellido Materno *</label>
+              <label for="apellidoMaterno" class="block text-xs font-bold text-slate-700 uppercase mb-1">Apellido Materno *</label>
               <input 
+                id="apellidoMaterno"
                 type="text" 
                 formControlName="apellidoMaterno" 
                 (input)="onInputToUppercase('apellidoMaterno')"
@@ -264,8 +269,8 @@
           <hr class="border-slate-100 my-1" />
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Vincular Apoderado</label>
-            <select formControlName="usuarioIdApoderadoSasi" (change)="onApoderadoSelectChange($event)" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
+            <label for="usuarioIdApoderadoSasi" class="block text-xs font-bold text-slate-700 uppercase mb-1">Vincular Apoderado</label>
+            <select id="usuarioIdApoderadoSasi" formControlName="usuarioIdApoderadoSasi" (change)="onApoderadoSelectChange($event)" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
               <option value="">-- Sin Apoderado Registrado --</option>
               @for (a of apoderadosSasi(); track a.usuarioId) {
                 <option [value]="a.usuarioId">{{ a.nombreCompleto }}</option>
@@ -274,8 +279,8 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Teléfono de Contacto Apoderado</label>
-            <input type="text" formControlName="telefonoApoderado" placeholder="Ej: 987654321" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition" />
+            <label for="telefonoApoderado" class="block text-xs font-bold text-slate-700 uppercase mb-1">Teléfono de Contacto Apoderado</label>
+            <input id="telefonoApoderado" type="text" formControlName="telefonoApoderado" placeholder="Ej: 987654321" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 transition" />
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
@@ -328,7 +333,7 @@
           <div class="border-2 border-dashed border-slate-300 hover:border-slate-800 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer relative">
             <input 
               type="file" 
-              accept=".xlsx, .xls" 
+              accept=".xlsx" 
               (change)="onArchivoSeleccionado($event)" 
               class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
             
@@ -336,9 +341,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
             <span class="text-xs font-bold text-slate-700 block mb-1">
-              {{ nombreArchivoCargado() ? nombreArchivoCargado() : 'Haga clic o arrastre aquí su archivo Excel (.xlsx / .xls)' }}
+              {{ nombreArchivoCargado() ? nombreArchivoCargado() : 'Haga clic o arrastre aquí su archivo Excel (.xlsx)' }}
             </span>
-            <span class="text-[11px] text-slate-400 block">Soporta archivos de Excel nativo (.xlsx, .xls) y CSV</span>
+            <span class="text-[11px] text-slate-400 block">Soporta archivos de Excel nativo (.xlsx)</span>
           </div>
 
           <!-- Vista Previa con Validación SASI en Tiempo Real -->

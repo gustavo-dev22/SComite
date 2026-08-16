@@ -11,32 +11,76 @@ import { UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
-import * as XLSX from 'xlsx';
+import { Workbook, type Cell } from 'exceljs';
 
 const MAX_ARCHIVO_MB = 5;
 const MAX_FILAS_CARGA = 1000;
 const FILAS_POR_PAGINA_PREVIEW = 20;
-const EXTENSIONES_EXCEL_PERMITIDAS = ['xls', 'xlsx'];
+const EXTENSIONES_EXCEL_PERMITIDAS = ['xlsx'];
 const TIPOS_MIME_EXCEL_PERMITIDOS = [
-  'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 ];
 
 interface FilaEstudianteExcel {
-  TipoDocumento?: string;
-  NumeroDocumento?: string;
-  Nombres?: string;
-  ApellidoPaterno?: string;
-  ApellidoMaterno?: string;
-  NombreApoderado?: string;
-  TelefonoApoderado?: string;
-  tipoDocumento?: string;
-  numeroDocumento?: string;
-  nombres?: string;
-  apellidoPaterno?: string;
-  apellidoMaterno?: string;
-  nombreApoderado?: string;
-  telefonoApoderado?: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  nombreApoderado: string;
+  telefonoApoderado: string;
+}
+
+const CAMPOS_PLANTILLA: { campo: keyof FilaEstudianteExcel; encabezado: string }[] = [
+  { campo: 'tipoDocumento', encabezado: 'TipoDocumento' },
+  { campo: 'numeroDocumento', encabezado: 'NumeroDocumento' },
+  { campo: 'nombres', encabezado: 'Nombres' },
+  { campo: 'apellidoPaterno', encabezado: 'ApellidoPaterno' },
+  { campo: 'apellidoMaterno', encabezado: 'ApellidoMaterno' },
+  { campo: 'nombreApoderado', encabezado: 'NombreApoderado' },
+  { campo: 'telefonoApoderado', encabezado: 'TelefonoApoderado' }
+];
+
+const MAPA_CAMPOS_COLUMNA: Record<string, keyof FilaEstudianteExcel> = {
+  tipodocumento: 'tipoDocumento',
+  numerodocumento: 'numeroDocumento',
+  nrodocumento: 'numeroDocumento',
+  numerodedocumento: 'numeroDocumento',
+  dni: 'numeroDocumento',
+  nombres: 'nombres',
+  nombre: 'nombres',
+  apellidopaterno: 'apellidoPaterno',
+  apellidomaterno: 'apellidoMaterno',
+  nombreapoderado: 'nombreApoderado',
+  apoderado: 'nombreApoderado',
+  telefonoapoderado: 'telefonoApoderado',
+  telefonomovil: 'telefonoApoderado'
+};
+
+function normalizarEncabezado(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function valorCeldaComoTexto(celda: Cell): string {
+  const valor = celda.value;
+  if (valor === null || valor === undefined) return '';
+  if (typeof valor === 'string') return valor.trim();
+  if (typeof valor === 'number' || typeof valor === 'boolean') return String(valor);
+  if (valor instanceof Date) return valor.toLocaleDateString('es-PE');
+  if (typeof valor === 'object') {
+    const objeto = valor as { text?: unknown; richText?: { text?: unknown }[] };
+    if (Array.isArray(objeto.richText)) {
+      return objeto.richText.map((fragmento) => String(fragmento.text ?? '')).join('').trim();
+    }
+    if (objeto.text !== undefined && objeto.text !== null) {
+      return String(objeto.text).trim();
+    }
+  }
+  return '';
 }
 
 function escaparHtml(valor: string): string {
@@ -344,30 +388,39 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
 
   // 🚀 1. Generar y Descargar Plantilla Excel (.xlsx) Nativa
   descargarPlantillaExcel(): void {
-    const dataPlantilla = [
-      {
-        TipoDocumento: 'DNI',
-        NumeroDocumento: '00000000',
-        Nombres: 'NOMBRES DEL ESTUDIANTE',
-        ApellidoPaterno: 'APELLIDO PATERNO',
-        ApellidoMaterno: 'APELLIDO MATERNO',
-        NombreApoderado: 'NOMBRE DEL APODERADO',
-        TelefonoApoderado: 'SIN TELEFONO'
-      }
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet('Estudiantes');
+
+    worksheet.addRow(CAMPOS_PLANTILLA.map((col) => col.encabezado));
+    worksheet.addRow([
+      'DNI',
+      '00000000',
+      'NOMBRES DEL ESTUDIANTE',
+      'APELLIDO PATERNO',
+      'APELLIDO MATERNO',
+      'NOMBRE DEL APODERADO',
+      'SIN TELEFONO'
+    ]);
+
+    worksheet.columns = [
+      { width: 15 }, { width: 18 }, { width: 22 }, { width: 20 }, { width: 20 }, { width: 30 }, { width: 18 }
     ];
+    worksheet.getRow(1).font = { bold: true };
 
-    const worksheet = XLSX.utils.json_to_sheet(dataPlantilla);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Estudiantes');
-
-    worksheet['!cols'] = [
-      { wch: 15 }, { wch: 18 }, { wch: 22 }, { wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 18 }
-    ];
-
-    XLSX.writeFile(workbook, 'Plantilla_Importacion_Estudiantes.xlsx');
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Plantilla_Importacion_Estudiantes.xlsx';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
-  // 🚀 2. Lectura y procesamiento de archivos Excel (.xlsx / .xls) y CSV
+  // 🚀 2. Lectura y procesamiento de archivos Excel (.xlsx) y CSV
   onArchivoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -375,7 +428,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
     const file = input.files[0];
     this.nombreArchivoCargado.set(file.name);
 
-    // 🚀 Validar tipo MIME / extensión permitida (Excel .xls / .xlsx)
+    // 🚀 Validar tipo MIME / extensión permitida (Excel .xlsx)
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
     const esExcelValido =
       TIPOS_MIME_EXCEL_PERMITIDOS.includes(file.type) ||
@@ -385,7 +438,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       input.value = '';
       this.nombreArchivoCargado.set('');
       this.registrosPrevios.set([]);
-      Swal.fire('Formato no válido', 'Solo se permiten archivos Excel (.xls o .xlsx).', 'warning');
+      Swal.fire('Formato no válido', 'Solo se permiten archivos Excel (.xlsx).', 'warning');
       return;
     }
 
@@ -399,33 +452,61 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      const result = e.target?.result;
-      if (typeof result === 'string' || !result) return;
-      const data = new Uint8Array(result);
-      const workbook = XLSX.read(data, { type: 'array' });
+    void this.procesarArchivoExcel(file, input);
+  }
 
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      if (!worksheet || !worksheet['!ref']) {
+  private async procesarArchivoExcel(file: File, input: HTMLInputElement): Promise<void> {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = new Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet || worksheet.actualRowCount === 0) {
         this.registrosPrevios.set([]);
         Swal.fire('Archivo sin datos', 'No se encontró contenido válido en la hoja del Excel.', 'warning');
         return;
       }
 
-      // 🚀 Lectura limitada por rango para no congelar el hilo principal
-      const rango = XLSX.utils.decode_range(worksheet['!ref']);
-      const filaMaxLectura = Math.min(rango.e.r, MAX_FILAS_CARGA);
-      const jsonResult = XLSX.utils.sheet_to_json<FilaEstudianteExcel>(worksheet, {
-        defval: '',
-        range: { s: { r: 0, c: rango.s.c }, e: { r: filaMaxLectura, c: rango.e.c } }
+      // 🚀 Mapear encabezados (fila 1) a los campos esperados de la plantilla
+      const campoPorColumna = new Map<number, keyof FilaEstudianteExcel>();
+      worksheet.getRow(1).eachCell({ includeEmpty: true }, (celda, numeroColumna) => {
+        const campo = MAPA_CAMPOS_COLUMNA[normalizarEncabezado(valorCeldaComoTexto(celda))];
+        if (campo) campoPorColumna.set(numeroColumna, campo);
       });
 
-      const apoderadosCatalogo = this.apoderadosSasi();
+      if (campoPorColumna.size === 0) {
+        this.registrosPrevios.set([]);
+        Swal.fire('Plantilla no válida', 'No se reconocieron los encabezados. Descargue la plantilla oficial e intente nuevamente.', 'warning');
+        return;
+      }
 
-      const estudiantesParsed: RegistroPrevioEstudiante[] = jsonResult.map((row: FilaEstudianteExcel) => {
-        const nombreApoderadoExcel = String(row.NombreApoderado || row.nombreApoderado || '').trim();
+      // 🚀 Lectura limitada por filas para no congelar el hilo principal
+      const filaMaxLectura = Math.min(worksheet.actualRowCount, MAX_FILAS_CARGA + 1);
+      const apoderadosCatalogo = this.apoderadosSasi();
+      const estudiantesParsed: RegistroPrevioEstudiante[] = [];
+
+      for (let numeroFila = 2; numeroFila <= filaMaxLectura; numeroFila++) {
+        const fila = worksheet.getRow(numeroFila);
+        const datos: FilaEstudianteExcel = {
+          tipoDocumento: '',
+          numeroDocumento: '',
+          nombres: '',
+          apellidoPaterno: '',
+          apellidoMaterno: '',
+          nombreApoderado: '',
+          telefonoApoderado: ''
+        };
+
+        fila.eachCell({ includeEmpty: false }, (celda, numeroColumna) => {
+          const campo = campoPorColumna.get(numeroColumna);
+          if (campo) datos[campo] = valorCeldaComoTexto(celda);
+        });
+
+        // Saltar filas completamente vacías
+        if (!datos.numeroDocumento && !datos.nombres) continue;
+
+        const nombreApoderadoExcel = datos.nombreApoderado.trim();
         let existeSasi = false;
         let nombreEncontrado = '';
 
@@ -441,32 +522,35 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
           }
         }
 
-        return {
-          tipoDocumento: String(row.TipoDocumento || row.tipoDocumento || 'DNI').trim(),
-          numeroDocumento: String(row.NumeroDocumento || row.numeroDocumento || '').trim(),
-          nombres: String(row.Nombres || row.nombres || '').trim().toUpperCase(),
-          apellidoPaterno: String(row.ApellidoPaterno || row.apellidoPaterno || '').trim().toUpperCase(),
-          apellidoMaterno: String(row.ApellidoMaterno || row.apellidoMaterno || '').trim().toUpperCase(),
+        estudiantesParsed.push({
+          tipoDocumento: datos.tipoDocumento || 'DNI',
+          numeroDocumento: datos.numeroDocumento,
+          nombres: datos.nombres.toUpperCase(),
+          apellidoPaterno: datos.apellidoPaterno.toUpperCase(),
+          apellidoMaterno: datos.apellidoMaterno.toUpperCase(),
           nombreApoderado: nombreApoderadoExcel,
-          telefonoApoderado: String(row.TelefonoApoderado || row.telefonoApoderado || '').trim(),
+          telefonoApoderado: datos.telefonoApoderado,
 
           // 🚀 Banderas para la vista previa
           tieneApoderadoExcel: !!nombreApoderadoExcel,
           existeEnSasi: existeSasi,
           nombreSasiNormalizado: nombreEncontrado
-        };
-      });
+        });
+      }
 
       this.registrosPrevios.set(estudiantesParsed);
       this.previewPagina.set(1);
 
       // 🚀 Avisar si el archivo supera el límite de filas por lote
-      if (rango.e.r > MAX_FILAS_CARGA) {
+      if (worksheet.actualRowCount - 1 > MAX_FILAS_CARGA) {
         Swal.fire('Límite de filas', `El archivo contiene más de ${MAX_FILAS_CARGA} filas. Solo se procesarán los primeros ${MAX_FILAS_CARGA} registros.`, 'warning');
       }
-    };
-
-    reader.readAsArrayBuffer(file);
+    } catch {
+      input.value = '';
+      this.nombreArchivoCargado.set('');
+      this.registrosPrevios.set([]);
+      Swal.fire('Error de lectura', 'No se pudo leer el archivo. Asegúrese de que sea un Excel nativo (.xlsx).', 'error');
+    }
   }
 
   cambiarPaginaPreview(delta: number): void {

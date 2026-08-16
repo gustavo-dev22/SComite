@@ -79,9 +79,10 @@
             <!-- Inputs de Identidad -->
             <div class="md:col-span-2 space-y-3">
               <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre de la Institución Educativa *</label>
+                <label for="nombreInstitucion" class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre de la Institución Educativa *</label>
                 <div class="relative">
                   <input 
+                    id="nombreInstitucion"
                     type="text" 
                     [ngModel]="formDatos().nombreInstitucion"
                     (ngModelChange)="actualizarCampo('nombreInstitucion', $event)"
@@ -105,8 +106,9 @@
           </h2>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Dirección del Colegio</label>
+            <label for="direccion" class="block text-xs font-bold text-slate-600 uppercase mb-1">Dirección del Colegio</label>
             <input 
+              id="direccion"
               type="text" 
               [ngModel]="formDatos().direccion"
               (ngModelChange)="actualizarCampo('direccion', $event)" 

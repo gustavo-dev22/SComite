@@ -29,8 +29,9 @@
   <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200 mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
     
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Seleccionar Periodo Lectivo</label>
+      <label for="seleccionarPeriodoLectivo" class="block text-xs font-bold text-slate-700 uppercase mb-1">1. Seleccionar Periodo Lectivo</label>
       <select 
+        id="seleccionarPeriodoLectivo"
         (change)="onPeriodoChange($event)"
         [value]="periodoSeleccionado()"
         class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
@@ -43,8 +44,9 @@
     </div>
 
     <div>
-      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Seleccionar Aula / Sección</label>
+      <label for="seleccionarAulaSeccion" class="block text-xs font-bold text-slate-700 uppercase mb-1">2. Seleccionar Aula / Sección</label>
       <select 
+        id="seleccionarAulaSeccion"
         (change)="onAulaChange($event)"
         [value]="aulaSeleccionada()"
         class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
@@ -149,8 +151,8 @@
         <form [formGroup]="comiteForm" (ngSubmit)="guardarAsignacion()" class="p-5 space-y-4">
           
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cargo a Asignar *</label>
-            <select formControlName="cargo" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
+            <label for="cargo" class="block text-xs font-bold text-slate-700 uppercase mb-1">Cargo a Asignar *</label>
+            <select id="cargo" formControlName="cargo" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
               <option [value]="''" disabled selected>-- Seleccione Cargo --</option>
               @for (c of cargosDisponibles; track c) {
                 <option [value]="c">{{ c }}</option>
@@ -159,8 +161,8 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Apoderado Elegible *</label>
-            <select formControlName="usuarioIdSasi" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
+            <label for="usuarioIdSasi" class="block text-xs font-bold text-slate-700 uppercase mb-1">Apoderado Elegible *</label>
+            <select id="usuarioIdSasi" formControlName="usuarioIdSasi" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
               <option [value]="''" disabled selected>-- Seleccione Apoderado --</option>
               @for (a of apoderadosSasi(); track a.usuarioId) {
                 <option [value]="a.usuarioId">{{ a.nombreCompleto }} ({{ a.email }})</option>
