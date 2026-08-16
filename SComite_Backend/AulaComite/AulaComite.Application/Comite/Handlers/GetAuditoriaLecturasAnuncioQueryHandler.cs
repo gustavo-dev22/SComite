@@ -29,7 +29,7 @@ namespace AulaComite.Application.Comite.Handlers
         {
             var anuncio = await _repository.ObtenerPorIdAsync(request.AnuncioId);
             if (anuncio == null)
-                throw new UnauthorizedAccessException("El anuncio no existe o no tiene permisos para consultarlo. Acceso denegado.");
+                throw new KeyNotFoundException("No se encontró el comunicado especificado.");
 
             // 🛡️ IDOR mitigación: el usuario debe pertenecer al Aula del anuncio (o ser Administrador Global).
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, anuncio.AulaId);

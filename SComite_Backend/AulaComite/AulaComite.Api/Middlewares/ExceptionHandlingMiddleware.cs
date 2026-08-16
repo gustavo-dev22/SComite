@@ -63,6 +63,24 @@ namespace AulaComite.Api.Middlewares
                     return;
                 }
 
+                // 🛡️ T4: Los handlers lanzan KeyNotFoundException cuando el recurso NO existe
+                // (después de verificar la existencia PRIMERO), distinguiéndolo del 403 que se
+                // reserva para recursos existentes a los que el usuario no tiene acceso.
+                if (ex is KeyNotFoundException)
+                {
+                    context.Response.ContentType = "application/json";
+                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+
+                    var notFoundResponse = new
+                    {
+                        statusCode = context.Response.StatusCode,
+                        mensaje = ex.Message ?? "No se encontró el recurso solicitado."
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(notFoundResponse));
+                    return;
+                }
+
                 // 🛡️ T2.0: Los errores de negocio lanzados desde Stored Procedures (THROW
                 // 50000-59999) son errores esperados de validación del dominio, no fallas
                 // del servidor. Se devuelven como 400 Bad Request sin registrarlos como ERROR.

@@ -32,7 +32,8 @@ namespace AulaComite.Application.Cuotas.Handlers
         {
             // 🛡️ Validar pertenencia: el detalle de cuota debe pertenecer a un Aula asignada al usuario.
             var aulaId = await _cuotaRepository.ObtenerAulaIdPorCuotaDetalleAsync(request.CuotaDetalleId);
-            if (!aulaId.HasValue) return false;
+            if (!aulaId.HasValue)
+                throw new KeyNotFoundException("No se encontró el detalle de cuota del estudiante.");
 
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
 

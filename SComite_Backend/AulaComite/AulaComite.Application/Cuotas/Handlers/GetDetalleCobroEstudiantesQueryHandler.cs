@@ -26,6 +26,9 @@ namespace AulaComite.Application.Cuotas.Handlers
         {
             // 🛡️ IDOR mitigación: se resuelve el Aula de la cuota y se valida que el usuario pertenezca a ella.
             var aulaId = await _repository.ObtenerAulaIdPorCuotaAsync(request.CuotaId);
+            if (!aulaId.HasValue)
+                throw new KeyNotFoundException("No se encontró la cuota especificada.");
+
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
 
             var cobros = await _repository.ObtenerDetalleCobroEstudiantesAsync(request.CuotaId);

@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Application.Common.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using System.Linq;
 using System.Security.Claims;
 
 namespace AulaComite.Infrastructure.Services
@@ -10,10 +13,12 @@ namespace AulaComite.Infrastructure.Services
     public class UserContextService : IUserContextService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly JwtSettings _jwtSettings;
 
-        public UserContextService(IHttpContextAccessor httpContextAccessor)
+        public UserContextService(IHttpContextAccessor httpContextAccessor, IOptions<JwtSettings> jwtSettings)
         {
             _httpContextAccessor = httpContextAccessor;
+            _jwtSettings = jwtSettings.Value;
         }
 
         public string ObtenerUsuarioActual()
@@ -55,7 +60,26 @@ namespace AulaComite.Infrastructure.Services
             var user = httpContext.User;
             if (user?.Identity?.IsAuthenticated != true) return false;
 
-            return user.IsInRole("Administrador") || user.IsInRole("Administrador Global");
+            // 🛡️ T4.6 Hardening: SOLO se confía en los claims de ROL estándar
+            // (ClaimTypes.Role = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+            // emitidos por el token JWT propio firmado por JwtTokenService. Se evita IsInRole()
+            // (que depende del RoleClaimType configurado y podría considerar claims de rol de
+            // otras fuentes) y se exige que el claim declare el issuer del token (o el default
+            // "LOCAL AUTHORITY" de JwtBearer), descartando roles de emisores externos.
+            foreach (var claim in user.FindAll(ClaimTypes.Role))
+            {
+                if (!string.IsNullOrWhiteSpace(claim.Issuer)
+                    && !string.Equals(claim.Issuer, _jwtSettings.Issuer, StringComparison.Ordinal)
+                    && !string.Equals(claim.Issuer, "LOCAL AUTHORITY", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (claim.Value == "Administrador" || claim.Value == "Administrador Global")
+                    return true;
+            }
+
+            return false;
         }
 
         public string ObtenerIpCliente()

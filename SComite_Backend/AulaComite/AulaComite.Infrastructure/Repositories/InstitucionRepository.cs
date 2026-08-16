@@ -34,7 +34,12 @@ namespace AulaComite.Infrastructure.Repositories
                 new
                 {
                     entidad.NombreInstitucion,
+                    entidad.CodigoModular,
+                    entidad.LemaInstitucional,
+                    entidad.NombreDirector,
                     entidad.Direccion,
+                    entidad.Telefono,
+                    entidad.CorreoContacto,
                     entidad.UrlLogo,
                     entidad.UsuarioActualizacion
                 },

@@ -23,14 +23,34 @@ namespace AulaComite.Application.Anuncios.Handlers
 
         public async Task<int> Handle(GuardarAnuncioCommand request, CancellationToken cancellationToken)
         {
-            // 🛡️ Validar pertenencia: el anuncio debe corresponder a un Aula asignada al usuario.
-            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
+            // 🛡️ T4/IDOR: en modo edición (Id > 0) se verifica PRIMERO la existencia y se valida
+            // el AulaId REAL del recurso (nunca el AulaId del cliente) -> 404 si no existe, 403 si es ajeno.
+            int aulaDestino = request.AulaId;
+
+            if (request.Id > 0)
+            {
+                var existente = await _repository.ObtenerPorIdAsync(request.Id);
+                if (existente == null)
+                    throw new KeyNotFoundException("No se encontró el comunicado a editar.");
+
+                await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, existente.AulaId);
+                aulaDestino = existente.AulaId;
+            }
+            else
+            {
+                // Creación: el Aula destino debe estar asignada al usuario.
+                await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
+            }
 
             // Auditoría derivada exclusivamente del token JWT autenticado, nunca del cuerpo JSON.
             string usuarioRegistro = _userContextService.ObtenerUsuarioActual();
 
+            // 🛡️ M3: sanitizar Titulo/Contenido como texto plano para prevenir XSS almacenado.
+            var tituloSanitizado = XssSanitizer.SanitizarTextoPlano(request.Titulo);
+            var contenidoSanitizado = XssSanitizer.SanitizarTextoPlano(request.Contenido);
+
             return await _repository.GuardarAsync(
-                request.Id, request.AulaId, request.Titulo, request.Contenido,
+                request.Id, aulaDestino, tituloSanitizado, contenidoSanitizado,
                 request.Categoria, request.EsFijado, request.UrlAdjunto, usuarioRegistro
             );
         }

@@ -23,10 +23,16 @@ namespace AulaComite.Application.ActasAsamblea.Handlers
 
         public async Task<bool> Handle(EliminarActaCommand request, CancellationToken cancellationToken)
         {
-            // 🛡️ Validar pertenencia: el acta debe pertenecer a un Aula asignada al usuario.
-            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
+            // 🛡️ T4/IDOR: se verifica PRIMERO la existencia del recurso. Si no existe -> 404 (false).
+            var acta = await _repository.ObtenerPorIdAsync(request.Id);
+            if (acta == null)
+                return false;
 
-            return await _repository.EliminarAsync(request.Id, request.AulaId);
+            // 🛡️ Se valida el AulaId REAL del recurso (nunca el AulaId enviado por el cliente),
+            // de modo que un usuario sin acceso al Aula del acta reciba 403.
+            await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, acta.AulaId);
+
+            return await _repository.EliminarAsync(request.Id, acta.AulaId);
         }
     }
 }

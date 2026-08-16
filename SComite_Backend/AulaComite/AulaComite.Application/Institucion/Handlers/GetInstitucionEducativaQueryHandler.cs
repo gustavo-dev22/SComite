@@ -27,7 +27,12 @@ namespace AulaComite.Application.Institucion.Handlers
             {
                 Id = institucion.Id,
                 NombreInstitucion = institucion.NombreInstitucion,
+                CodigoModular = institucion.CodigoModular,
+                LemaInstitucional = institucion.LemaInstitucional,
+                NombreDirector = institucion.NombreDirector,
                 Direccion = institucion.Direccion,
+                Telefono = institucion.Telefono,
+                CorreoContacto = institucion.CorreoContacto,
                 UrlLogo = institucion.UrlLogo,
                 FechaActualizacion = institucion.FechaActualizacion,
                 UsuarioActualizacion = institucion.UsuarioActualizacion

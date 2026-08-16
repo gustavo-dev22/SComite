@@ -50,13 +50,17 @@ namespace AulaComite.Application.Estudiantes.Handlers
                 ? $"{aula.Nivel} - {aula.Grado}° \"{aula.Seccion}\""
                 : $"Aula ID #{request.AulaId}";
 
-            // 🚀 2. Armar el mensaje legible con el Apoderado y el Aula
-            string mensajeLegible = $"Se registró al estudiante {request.ApellidoPaterno} {request.ApellidoMaterno}, {request.Nombres} ({request.TipoDocumento}: {request.NumeroDocumento}) con apoderado \"{request.NombreApoderado}\" en el Aula {aulaDisplay}.";
+            // 🚀 2. Armar el mensaje legible con el Apoderado y el Aula.
+            // 🛡️ M7/PII: el documento se registra ENMASCARADO (nunca completo) en el log.
+            string mensajeLegible = $"Se registró al estudiante {request.ApellidoPaterno} {request.ApellidoMaterno}, {request.Nombres} ({request.TipoDocumento}: {PiiMasker.EnmascararDocumento(request.NumeroDocumento)}) con apoderado \"{request.NombreApoderado}\" en el Aula {aulaDisplay}.";
 
             int id = await _connectionFactory.ExecuteInTransactionAsync(async (connection, transaction) =>
             {
                 return await _repository.CrearEstudianteAsync(e, transaction);
             });
+
+            // Identificador del registro para trazabilidad sin exponer el documento completo.
+            mensajeLegible += $" | EstudianteId: {id}";
 
             // 🛡️ M13: El log se registra de forma independiente, fuera de la transacción de negocio.
             await _logRepository.RegistrarAsync(

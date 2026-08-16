@@ -1,5 +1,6 @@
 ﻿using AulaComite.Application.Comite.Commands;
 using AulaComite.Application.Comite.Queries;
+using AulaComite.Application.Common.Dto;
 using AulaComite.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,11 +30,21 @@ namespace AulaComite.Api.Controllers
         }
 
         [HttpGet("apoderados-sasi")]
-        [Authorize(Policy = "GestionEscolar")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> GetApoderadosSasi()
         {
+            // 🛡️ T4.6: Solo se expone el subconjunto mínimo de datos (ID, nombre completo y
+            // correo) requerido para asociar un apoderado a un estudiante; nunca campos
+            // internos o sensibles de la cuenta SASI.
             var apoderados = await _sasiAuthService.ObtenerApoderadosAsync();
-            return Ok(apoderados);
+            var resultado = apoderados.Select(a => new ApoderadoSasiMinDto
+            {
+                UsuarioId = a.UsuarioId,
+                NombreCompleto = a.NombreCompleto,
+                CorreoElectronico = a.Email
+            });
+
+            return Ok(resultado);
         }
 
         [HttpPost]

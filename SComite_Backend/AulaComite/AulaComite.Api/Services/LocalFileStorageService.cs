@@ -25,7 +25,8 @@ public class LocalFileStorageService : IFileStorageService
         if (contenido == null)
             throw new ArgumentException("No se ha proporcionado un archivo válido.");
 
-        ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null);
+        // 🛡️ Incluye la verificación de magic bytes cuando el stream permite rewind.
+        ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null, contenido);
 
         var folderPath = ObtenerRutaCarpeta();
 

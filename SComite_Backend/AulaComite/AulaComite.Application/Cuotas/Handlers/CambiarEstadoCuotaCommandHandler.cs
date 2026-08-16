@@ -37,7 +37,8 @@ namespace AulaComite.Application.Cuotas.Handlers
 
             // 🛡️ Validar pertenencia: la cuota debe pertenecer a un Aula asignada al usuario.
             var aulaId = await _cuotaRepository.ObtenerAulaIdPorCuotaAsync(request.CuotaId);
-            if (!aulaId.HasValue) return false;
+            if (!aulaId.HasValue)
+                throw new KeyNotFoundException("No se encontró la cuota especificada.");
 
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, aulaId);
 

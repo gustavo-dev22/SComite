@@ -27,6 +27,13 @@ namespace AulaComite.Infrastructure.Repositories
             );
         }
 
+        public async Task<ActaAsambleaComite?> ObtenerPorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var sql = "SELECT * FROM ActasAsambleaComite WHERE Id = @Id";
+            return await connection.QueryFirstOrDefaultAsync<ActaAsambleaComite>(sql, new { Id = id });
+        }
+
         public async Task<int> GuardarAsync(int id, int aulaId, string numeroActa, string titulo, DateTime fechaReunion, string agendaAcuerdos, string estadoActa, string? urlDocumentoPdf, string usuarioRegistro)
         {
             using var connection = _connectionFactory.CreateConnection();

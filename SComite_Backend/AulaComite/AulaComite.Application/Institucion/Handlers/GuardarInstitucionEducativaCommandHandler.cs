@@ -27,7 +27,12 @@ namespace AulaComite.Application.Institucion.Handlers
             var entidad = new InstitucionEducativa
             {
                 NombreInstitucion = request.NombreInstitucion,
+                CodigoModular = request.CodigoModular,
+                LemaInstitucional = request.LemaInstitucional,
+                NombreDirector = request.NombreDirector,
                 Direccion = request.Direccion,
+                Telefono = request.Telefono,
+                CorreoContacto = request.CorreoContacto,
                 UrlLogo = request.UrlLogo,
                 UsuarioActualizacion = usuarioActualizacion
             };

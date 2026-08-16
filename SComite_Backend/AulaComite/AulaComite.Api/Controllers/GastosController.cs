@@ -85,12 +85,13 @@ namespace AulaComite.Api.Controllers
 
             try
             {
-                // 🛡️ Validación de tamaño máximo (5 MB) y tipo MIME permitido.
-                ComprobanteFileValidator.Validar(archivo.ContentType, archivo.FileName, archivo.Length);
-
                 // 🚀 Streaming directo: se transmite el IFormFile hacia el servicio de
                 // almacenamiento sin cargar el buffer completo en arreglos byte[].
                 using var stream = archivo.OpenReadStream();
+
+                // 🛡️ Validación de tamaño máximo (5 MB), tipo MIME y FORMATO REAL (magic bytes):
+                // un archivo renombrado a .pdf/.jpg se rechaza porque su contenido no coincide.
+                ComprobanteFileValidator.Validar(archivo.ContentType, archivo.FileName, archivo.Length, stream);
 
                 var command = new SubirComprobanteGastoCommand(stream, archivo.FileName);
                 var urlComprobante = await _mediator.Send(command);
