@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   # ==========================================
@@ -18,6 +19,11 @@ jobs:
   # (error 550 "Could not access file"). La solución es subir un archivo
   # app_offline.htm ANTES del deploy (IIS detiene la app y libera los locks) y
   # eliminarlo DESPUÉS (IIS reinicia la app automáticamente).
+  #
+  # ⚠️ El filtro incluye el propio workflow: un fix del CI re-despliega el backend.
+  # Sin esto, si un commit de backend falló en el deploy previo (p. ej. error 550),
+  # un commit posterior que solo toca deploy.yml NO re-desplegaba el backend, dejando
+  # producción con un binario desactualizado (problema real observado).
   # ==========================================
   deploy-backend:
     runs-on: ubuntu-latest
@@ -25,7 +31,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Verifica si hubo cambios en la carpeta del backend
+    # Verifica si hubo cambios en la carpeta del backend (o en el workflow de deploy)
     - name: Check for Backend changes
       id: backend-changes
       uses: dorny/paths-filter@v3
@@ -33,6 +39,7 @@ jobs:
         filters: |
           src:
             - 'SComite_Backend/**'
+            - '.github/workflows/deploy.yml'
 
     - name: Setup .NET
       if: steps.backend-changes.outputs.src == 'true'
@@ -104,7 +111,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Verifica si hubo cambios en la carpeta del frontend
+    # Verifica si hubo cambios en la carpeta del frontend (o en el workflow de deploy)
     - name: Check for Frontend changes
       id: frontend-changes
       uses: dorny/paths-filter@v3
@@ -112,6 +119,7 @@ jobs:
         filters: |
           src:
             - 'SComite_Frontend/**'
+            - '.github/workflows/deploy.yml'
 
     - name: Setup Node.js
       if: steps.frontend-changes.outputs.src == 'true'
