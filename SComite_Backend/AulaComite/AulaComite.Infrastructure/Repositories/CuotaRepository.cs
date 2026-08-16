@@ -188,7 +188,7 @@ namespace AulaComite.Infrastructure.Repositories
                         UPDATE CuotaDetalleEstudiante
                         SET EstadoPago = @NuevoEstado,
                             MotivoExoneracion = @Motivo,
-                            FechaModificacionEstado = GETDATE()
+                            FechaModificacionEstado = DATEADD(HOUR, -5, GETUTCDATE())
                         WHERE Id = @Id;";
 
             var filasAfectadas = await connection.ExecuteAsync(sql, new

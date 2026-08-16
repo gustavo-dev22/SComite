@@ -35,8 +35,9 @@ public class CloudinaryFileStorageService : IFileStorageService
         if (contenido == null)
             throw new ArgumentException("No se ha proporcionado un archivo válido.");
 
-        // 🛡️ Incluye la verificación de magic bytes cuando el stream permite rewind.
-        ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null, contenido);
+        // 🛡️ Incluye la verificación de magic bytes incluso si el stream no permite rewind
+        // (internamente copia a un MemoryStream seguro y devuelve el stream a almacenar).
+        var streamAAlmacenar = ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null, contenido);
 
         var extension = Path.GetExtension(nombreOriginal).ToLowerInvariant();
         var publicId = $"Comprobante_{Guid.NewGuid()}";
@@ -48,7 +49,7 @@ public class CloudinaryFileStorageService : IFileStorageService
         {
             var uploadParams = new RawUploadParams
             {
-                File = new FileDescription(nombreOriginal, contenido),
+                File = new FileDescription(nombreOriginal, streamAAlmacenar),
                 Folder = "comprobantes_comite",
                 PublicId = publicId,
                 // 🛡️ Acceso AUTHENTICATED: el comprobante NO queda público irrestrictamente.
@@ -64,7 +65,7 @@ public class CloudinaryFileStorageService : IFileStorageService
         {
             var uploadParams = new ImageUploadParams
             {
-                File = new FileDescription(nombreOriginal, contenido),
+                File = new FileDescription(nombreOriginal, streamAAlmacenar),
                 Folder = "comprobantes_comite",
                 PublicId = publicId,
                 AccessMode = "authenticated",

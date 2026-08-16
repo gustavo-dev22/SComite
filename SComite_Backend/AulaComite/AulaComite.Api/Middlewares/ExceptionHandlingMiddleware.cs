@@ -1,7 +1,7 @@
-﻿using System.Net;
-using System.Text.Json;
+﻿using System.Text.Json;
 using AulaComite.Application.Common.Interfaces;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
 namespace AulaComite.Api.Middlewares
@@ -27,39 +27,26 @@ namespace AulaComite.Api.Middlewares
             {
                 if (ex is ValidationException validationException)
                 {
-                    context.Response.ContentType = "application/json";
-                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-
-                    var primerError = validationException.Errors.FirstOrDefault()?.ErrorMessage;
-
-                    var mensaje = !string.IsNullOrWhiteSpace(primerError) ? primerError
-                        : !string.IsNullOrWhiteSpace(validationException.Message) ? validationException.Message
-                        : "La solicitud no es válida.";
-
-                    var validationResponse = new
-                    {
-                        statusCode = context.Response.StatusCode,
-                        mensaje = mensaje,
-                        errores = validationException.Errors
-                            .Select(e => new { campo = e.PropertyName, mensaje = e.ErrorMessage })
-                    };
-
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(validationResponse));
+                    await EscribirProblemDetailsAsync(
+                        context,
+                        StatusCodes.Status400BadRequest,
+                        "La solicitud no es válida.",
+                        validationException.Message,
+                        extensions: new Dictionary<string, object?>
+                        {
+                            ["errores"] = validationException.Errors
+                                .Select(e => new { campo = e.PropertyName, mensaje = e.ErrorMessage })
+                        });
                     return;
                 }
 
                 if (ex is UnauthorizedAccessException)
                 {
-                    context.Response.ContentType = "application/json";
-                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-
-                    var forbiddenResponse = new
-                    {
-                        statusCode = context.Response.StatusCode,
-                        mensaje = ex.Message ?? "No tiene permisos para realizar esta operación."
-                    };
-
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(forbiddenResponse));
+                    await EscribirProblemDetailsAsync(
+                        context,
+                        StatusCodes.Status403Forbidden,
+                        "Acceso denegado.",
+                        ex.Message ?? "No tiene permisos para realizar esta operación.");
                     return;
                 }
 
@@ -68,16 +55,11 @@ namespace AulaComite.Api.Middlewares
                 // reserva para recursos existentes a los que el usuario no tiene acceso.
                 if (ex is KeyNotFoundException)
                 {
-                    context.Response.ContentType = "application/json";
-                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-
-                    var notFoundResponse = new
-                    {
-                        statusCode = context.Response.StatusCode,
-                        mensaje = ex.Message ?? "No se encontró el recurso solicitado."
-                    };
-
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(notFoundResponse));
+                    await EscribirProblemDetailsAsync(
+                        context,
+                        StatusCodes.Status404NotFound,
+                        "No se encontró el recurso solicitado.",
+                        ex.Message ?? "No se encontró el recurso solicitado.");
                     return;
                 }
 
@@ -86,16 +68,11 @@ namespace AulaComite.Api.Middlewares
                 // del servidor. Se devuelven como 400 Bad Request sin registrarlos como ERROR.
                 if (ex is SqlException sqlEx && sqlEx.Number >= 50000 && sqlEx.Number < 60000)
                 {
-                    context.Response.ContentType = "application/json";
-                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-
-                    var businessResponse = new
-                    {
-                        statusCode = context.Response.StatusCode,
-                        mensaje = sqlEx.Message ?? "La operación no cumple con las reglas de negocio."
-                    };
-
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(businessResponse));
+                    await EscribirProblemDetailsAsync(
+                        context,
+                        StatusCodes.Status400BadRequest,
+                        "La operación no cumple con las reglas de negocio.",
+                        sqlEx.Message ?? "La operación no cumple con las reglas de negocio.");
                     return;
                 }
 
@@ -104,9 +81,51 @@ namespace AulaComite.Api.Middlewares
                 // 1. Persistir el log de error en SQL Server vía Stored Procedure
                 await RegistrarLogErrorEnBdAsync(context, logRepository, ex);
 
-                // 2. Responder al cliente de forma estándar
-                await HandleExceptionAsync(context, ex);
+                // 2. Responder al cliente de forma estándar (sin exponer trazas internas)
+                await EscribirProblemDetailsAsync(
+                    context,
+                    StatusCodes.Status500InternalServerError,
+                    "Ha ocurrido un error interno en el servidor.",
+                    "Ha ocurrido un error interno en el servidor.");
             }
+        }
+
+        /// <summary>
+        /// 🛡️ T4.6: Escribe la respuesta de error como <see cref="ProblemDetails"/> (RFC 7807)
+        /// con <c>status</c>, <c>title</c>, <c>detail</c>, <c>instance</c> y <c>traceId</c>.
+        /// Nunca expone stack traces ni detalles internos al cliente.
+        /// </summary>
+        private static async Task EscribirProblemDetailsAsync(
+            HttpContext context,
+            int status,
+            string title,
+            string detail,
+            IReadOnlyDictionary<string, object?>? extensions = null)
+        {
+            context.Response.ContentType = "application/problem+json";
+            context.Response.StatusCode = status;
+
+            var problemDetails = new ProblemDetails
+            {
+                Status = status,
+                Title = title,
+                Detail = detail,
+                Instance = context.Request.Path.HasValue ? context.Request.Path.Value : null,
+                Extensions =
+                {
+                    ["traceId"] = context.TraceIdentifier
+                }
+            };
+
+            if (extensions != null)
+            {
+                foreach (var kvp in extensions)
+                {
+                    problemDetails.Extensions[kvp.Key] = kvp.Value;
+                }
+            }
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
         }
 
         private static async Task RegistrarLogErrorEnBdAsync(HttpContext context, ILogRepository logRepository, Exception ex)
@@ -136,20 +155,6 @@ namespace AulaComite.Api.Middlewares
             {
                 // Evitar que falle el middleware si la BD está inaccesible
             }
-        }
-
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
-        {
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-            var response = new
-            {
-                statusCode = context.Response.StatusCode,
-                mensaje = "Ha ocurrido un error interno en el servidor."
-            };
-
-            return context.Response.WriteAsync(JsonSerializer.Serialize(response));
         }
     }
 }

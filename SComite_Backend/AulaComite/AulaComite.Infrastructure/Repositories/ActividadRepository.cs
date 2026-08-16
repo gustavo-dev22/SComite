@@ -4,6 +4,7 @@ using System.Text;
 using System.Data;
 using AulaComite.Application.Actividades.Dtos;
 using AulaComite.Application.Common.Interfaces;
+using AulaComite.Domain.Entities;
 using Dapper;
 
 namespace AulaComite.Infrastructure.Repositories
@@ -25,6 +26,13 @@ namespace AulaComite.Infrastructure.Repositories
                 new { AulaId = aulaId, AnioLectivo = anioLectivo },
                 commandType: CommandType.StoredProcedure
             );
+        }
+
+        public async Task<ActividadComite?> ObtenerPorIdAsync(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var sql = "SELECT * FROM ActividadesComite WHERE Id = @Id";
+            return await connection.QueryFirstOrDefaultAsync<ActividadComite>(sql, new { Id = id });
         }
 
         public async Task<int> GuardarAsync(int id, int aulaId, string nombreActividad, string? descripcion, DateTime fechaProgramada, decimal montoPresupuestado, decimal cuotaSugeridaPorAlumno, string estado)

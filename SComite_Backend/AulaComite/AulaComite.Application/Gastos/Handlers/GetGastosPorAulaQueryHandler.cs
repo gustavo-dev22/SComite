@@ -7,12 +7,13 @@ using MediatR;
 namespace AulaComite.Application.Gastos.Handlers
 {
     /// <summary>
-    /// 🚀 T3.5: Listado de gastos por aula. Soporte volumétrico actual:
-    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
-    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// 🚀 T3.5: Listado de gastos por aula. Límite defensivo de 200 registros
+    /// para evitar sobrecarga de memoria (OOM) en respuestas masivas.
     /// </summary>
     public class GetGastosPorAulaQueryHandler : IRequestHandler<GetGastosPorAulaQuery, IEnumerable<GastoComiteDto>>
     {
+        private const int LimiteMaximoRegistros = 200;
+
         private readonly IGastoRepository _repository;
         private readonly IComiteRepository _comiteRepository;
         private readonly IUserContextService _userContextService;
@@ -34,7 +35,8 @@ namespace AulaComite.Application.Gastos.Handlers
 
             var gastos = await _repository.ObtenerPorAulaAsync(request.AulaId);
 
-            return gastos.Select(g => new GastoComiteDto
+            // 🚀 T5: Límite defensivo de volumen para prevenir OOM en listados masivos.
+            return gastos.Take(LimiteMaximoRegistros).Select(g => new GastoComiteDto
             {
                 Id = g.Id,
                 AulaId = g.AulaId,

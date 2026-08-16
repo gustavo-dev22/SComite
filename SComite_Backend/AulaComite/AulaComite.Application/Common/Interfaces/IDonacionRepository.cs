@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using AulaComite.Application.Donaciones.Dtos;
+using AulaComite.Domain.Entities;
 
 namespace AulaComite.Application.Common.Interfaces
 {
     public interface IDonacionRepository
     {
         Task<IEnumerable<DonacionDto>> ObtenerPorAulaAsync(int aulaId, int anioLectivo, int? mes);
+        Task<DonacionComite?> ObtenerPorIdAsync(int id);
         Task<int> GuardarAsync(int id, int aulaId, string donante, decimal monto, DateTime fechaDonacion, string concepto, string? observacion);
         Task<bool> EliminarAsync(int id, int aulaId);
     }

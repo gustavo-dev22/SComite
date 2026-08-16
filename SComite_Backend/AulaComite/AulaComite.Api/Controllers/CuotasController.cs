@@ -58,7 +58,16 @@ namespace AulaComite.Api.Controllers
         public async Task<IActionResult> AnularPago([FromBody] AnularPagoEstudianteCommand command)
         {
             bool exito = await _mediator.Send(command);
-            return Ok(new { exito, mensaje = "El pago ha sido anulado y marcado como PENDIENTE." });
+            if (!exito)
+            {
+                return BadRequest(new
+                {
+                    exito = false,
+                    mensaje = "No se pudo anular el pago. Verifique que exista un pago activo en el detalle de cuota y que la cuota no se encuentre cerrada."
+                });
+            }
+
+            return Ok(new { exito, mensaje = "El último abono ha sido anulado y el saldo recalculado." });
         }
 
         [HttpGet("{cuotaId}/pendientes")]

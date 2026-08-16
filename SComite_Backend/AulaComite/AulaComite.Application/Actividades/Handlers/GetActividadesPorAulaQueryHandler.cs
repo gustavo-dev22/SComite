@@ -10,12 +10,13 @@ using MediatR;
 namespace AulaComite.Application.Actividades.Handlers
 {
     /// <summary>
-    /// 🚀 T3.5: Listado de actividades por aula. Soporte volumétrico actual:
-    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
-    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// 🚀 T3.5: Listado de actividades por aula. Límite defensivo de 200 registros
+    /// para evitar sobrecarga de memoria (OOM) en respuestas masivas.
     /// </summary>
     public class GetActividadesPorAulaQueryHandler : IRequestHandler<GetActividadesPorAulaQuery, IEnumerable<ActividadComiteDto>>
     {
+        private const int LimiteMaximoRegistros = 200;
+
         private readonly IActividadRepository _repository;
         private readonly IComiteRepository _comiteRepository;
         private readonly IUserContextService _userContextService;
@@ -35,7 +36,9 @@ namespace AulaComite.Application.Actividades.Handlers
             // 🛡️ IDOR mitigación: el usuario debe pertenecer al Aula consultada (o ser Administrador Global).
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
 
-            return await _repository.ObtenerPorAulaAsync(request.AulaId, request.AnioLectivo);
+            // 🚀 T5: Límite defensivo de volumen para prevenir OOM en listados masivos.
+            var actividades = await _repository.ObtenerPorAulaAsync(request.AulaId, request.AnioLectivo);
+            return actividades.Take(LimiteMaximoRegistros);
         }
     }
 }

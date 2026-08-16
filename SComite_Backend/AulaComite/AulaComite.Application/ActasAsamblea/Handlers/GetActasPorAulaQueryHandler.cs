@@ -7,12 +7,13 @@ using MediatR;
 namespace AulaComite.Application.ActasAsamblea.Handlers
 {
     /// <summary>
-    /// 🚀 T3.5: Listado de actas de asamblea por aula. Soporte volumétrico actual:
-    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
-    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// 🚀 T3.5: Listado de actas de asamblea por aula. Límite defensivo de 200 registros
+    /// para evitar sobrecarga de memoria (OOM) en respuestas masivas.
     /// </summary>
     public class GetActasPorAulaQueryHandler : IRequestHandler<GetActasPorAulaQuery, IEnumerable<ActaAsambleaComiteDto>>
     {
+        private const int LimiteMaximoRegistros = 200;
+
         private readonly IActaAsambleaRepository _repository;
         private readonly IComiteRepository _comiteRepository;
         private readonly IUserContextService _userContextService;
@@ -34,7 +35,8 @@ namespace AulaComite.Application.ActasAsamblea.Handlers
 
             var actas = await _repository.ObtenerPorAulaAsync(request.AulaId, request.AnioLectivo);
 
-            return actas.Select(a => new ActaAsambleaComiteDto
+            // 🚀 T5: Límite defensivo de volumen para prevenir OOM en listados masivos.
+            return actas.Take(LimiteMaximoRegistros).Select(a => new ActaAsambleaComiteDto
             {
                 Id = a.Id,
                 AulaId = a.AulaId,

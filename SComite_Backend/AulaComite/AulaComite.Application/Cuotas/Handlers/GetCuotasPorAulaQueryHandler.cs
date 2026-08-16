@@ -7,12 +7,13 @@ using MediatR;
 namespace AulaComite.Application.Cuotas.Handlers
 {
     /// <summary>
-    /// 🚀 T3.5: Listado de cuotas por aula. Soporte volumétrico actual:
-    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
-    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// 🚀 T3.5: Listado de cuotas por aula. Límite defensivo de 200 registros
+    /// para evitar sobrecarga de memoria (OOM) en respuestas masivas.
     /// </summary>
     public class GetCuotasPorAulaQueryHandler : IRequestHandler<GetCuotasPorAulaQuery, IEnumerable<CuotaDto>>
     {
+        private const int LimiteMaximoRegistros = 200;
+
         private readonly ICuotaRepository _repository;
         private readonly IComiteRepository _comiteRepository;
         private readonly IUserContextService _userContextService;
@@ -32,7 +33,9 @@ namespace AulaComite.Application.Cuotas.Handlers
             // 🛡️ IDOR mitigación: el usuario debe pertenecer al Aula consultada (o ser Administrador Global).
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, request.AulaId);
 
-            return await _repository.ObtenerPorAulaAsync(request.AulaId);
+            // 🚀 T5: Límite defensivo de volumen para prevenir OOM en listados masivos.
+            var cuotas = await _repository.ObtenerPorAulaAsync(request.AulaId);
+            return cuotas.Take(LimiteMaximoRegistros);
         }
     }
 }

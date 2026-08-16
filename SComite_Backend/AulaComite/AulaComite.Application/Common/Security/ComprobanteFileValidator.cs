@@ -60,48 +60,75 @@ namespace AulaComite.Application.Common.Security
         /// <summary>
         /// 🛡️ Validación completa de comprobante (tamaño, MIME, extensión) + verificación del
         /// FORMATO REAL mediante magic bytes del contenido, de modo que no baste con renombrar
-        /// un archivo a .pdf/.jpg para que sea aceptado. Requiere un <see cref="Stream"/> con
-        /// capacidad de rewind (<see cref="Stream.CanSeek"/>); si no lo permite, se conserva la
-        /// validación por extensión/MIME como red de seguridad. Se restaura la posición original.
+        /// un archivo a .pdf/.jpg para que sea aceptado.
         /// </summary>
-        public static void Validar(string? contentType, string? nombreOriginal, long? longitud, Stream contenido)
+        /// <remarks>
+        /// Devuelve el <see cref="Stream"/> que debe usarse para el almacenamiento posterior:
+        /// <list type="bullet">
+        /// <item>Si el stream original permite rewind (<see cref="Stream.CanSeek"/>), se valida
+        /// su contenido y se devuelve el MISMO stream con su posición original restaurada.</item>
+        /// <item>Si el stream NO permite rewind, sus primeros bytes no pueden leerse sin
+        /// consumirlos, por lo que se copia a un <see cref="MemoryStream"/> seguro y se valida
+        /// sobre esa copia. El <see cref="MemoryStream"/> resultante (posicionado en 0) es el
+        /// que debe transmitirse al almacenamiento, garantizando que la validación binaria
+        /// NUNCA se omita.</item>
+        /// </list>
+        /// </remarks>
+        public static Stream Validar(string? contentType, string? nombreOriginal, long? longitud, Stream contenido)
         {
             Validar(contentType, nombreOriginal, longitud);
 
             if (contenido == null)
                 throw new ValidationException("No se ha proporcionado un archivo válido.");
 
-            // Solo se puede inspeccionar el contenido si el stream permite retroceder (rewind).
+            // Stream sin capacidad de rewind: copiar a un búfer seguro para poder inspeccionar
+            // los magic bytes sin perder datos (los bytes leídos no pueden devolverse).
             if (!contenido.CanSeek)
-                return;
+            {
+                var buffer = new MemoryStream();
+                contenido.CopyTo(buffer);
+                buffer.Position = 0;
+
+                VerificarMagicBytes(buffer, nombreOriginal!);
+
+                buffer.Position = 0;
+                return buffer;
+            }
 
             var posicionOriginal = contenido.Position;
 
             try
             {
                 contenido.Position = 0;
-
-                // Se lee hasta 12 bytes: suficiente para todas las firmas (PDF=4, JPEG=3, PNG=8, WEBP=12).
-                var cabecera = new byte[12];
-                var totalLeidos = 0;
-                while (totalLeidos < cabecera.Length)
-                {
-                    var leidos = contenido.Read(cabecera, totalLeidos, cabecera.Length - totalLeidos);
-                    if (leidos <= 0) break;
-                    totalLeidos += leidos;
-                }
-
-                var formatoReal = DetectarFormatoReal(cabecera, totalLeidos);
-// nombreOriginal ya fue validado como no nulo por la validación base (lanza si es nulo).
-                var extension = Path.GetExtension(nombreOriginal!).ToLowerInvariant();
-
-                if (formatoReal == null || !FormatoCoincideConExtension(formatoReal, extension))
-                    throw new ValidationException("El contenido del archivo no coincide con el formato declarado. Solo se aceptan imágenes (JPG, PNG, WEBP) o PDF.");
+                VerificarMagicBytes(contenido, nombreOriginal!);
             }
             finally
             {
                 contenido.Position = posicionOriginal;
             }
+
+            return contenido;
+        }
+
+        private static void VerificarMagicBytes(Stream contenido, string nombreOriginal)
+        {
+            // Se lee hasta 12 bytes: suficiente para todas las firmas (PDF=4, JPEG=3, PNG=8, WEBP=12).
+            var cabecera = new byte[12];
+            var totalLeidos = 0;
+            while (totalLeidos < cabecera.Length)
+            {
+                var leidos = contenido.Read(cabecera, totalLeidos, cabecera.Length - totalLeidos);
+                if (leidos <= 0) break;
+                totalLeidos += leidos;
+            }
+
+            var formatoReal = DetectarFormatoReal(cabecera, totalLeidos);
+
+            // nombreOriginal ya fue validado como no nulo por la validación base (lanza si es nulo).
+            var extension = Path.GetExtension(nombreOriginal).ToLowerInvariant();
+
+            if (formatoReal == null || !FormatoCoincideConExtension(formatoReal, extension))
+                throw new ValidationException("El contenido del archivo no coincide con el formato declarado. Solo se aceptan imágenes (JPG, PNG, WEBP) o PDF.");
         }
 
         /// <summary>

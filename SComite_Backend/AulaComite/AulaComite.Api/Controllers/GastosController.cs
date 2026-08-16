@@ -91,9 +91,11 @@ namespace AulaComite.Api.Controllers
 
                 // 🛡️ Validación de tamaño máximo (5 MB), tipo MIME y FORMATO REAL (magic bytes):
                 // un archivo renombrado a .pdf/.jpg se rechaza porque su contenido no coincide.
-                ComprobanteFileValidator.Validar(archivo.ContentType, archivo.FileName, archivo.Length, stream);
+                // El método devuelve el stream que debe almacenarse (copia segura si el original
+                // no permite rewind), garantizando que la validación binaria nunca se omita.
+                using var streamAAlmacenar = ComprobanteFileValidator.Validar(archivo.ContentType, archivo.FileName, archivo.Length, stream);
 
-                var command = new SubirComprobanteGastoCommand(stream, archivo.FileName);
+                var command = new SubirComprobanteGastoCommand(streamAAlmacenar, archivo.FileName);
                 var urlComprobante = await _mediator.Send(command);
 
                 return Ok(new { urlComprobante });

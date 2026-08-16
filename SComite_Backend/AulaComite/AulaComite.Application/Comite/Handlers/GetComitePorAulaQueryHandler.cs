@@ -7,12 +7,13 @@ using MediatR;
 namespace AulaComite.Application.Comite.Handlers
 {
     /// <summary>
-    /// 🚀 T3.5: Listado de integrantes del comité por aula. Soporte volumétrico actual:
-    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
-    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// 🚀 T3.5: Listado de integrantes del comité por aula. Límite defensivo de 200
+    /// registros para evitar sobrecarga de memoria (OOM) en respuestas masivas.
     /// </summary>
     public class GetComitePorAulaQueryHandler : IRequestHandler<GetComitePorAulaQuery, IEnumerable<ComiteIntegranteDto>>
     {
+        private const int LimiteMaximoRegistros = 200;
+
         private readonly IComiteRepository _repository;
         private readonly IUserContextService _userContextService;
 
@@ -31,7 +32,8 @@ namespace AulaComite.Application.Comite.Handlers
 
             var integrantes = await _repository.ObtenerPorAulaAsync(request.AulaId);
 
-            return integrantes.Select(i => new ComiteIntegranteDto
+            // 🚀 T5: Límite defensivo de volumen para prevenir OOM en listados masivos.
+            return integrantes.Take(LimiteMaximoRegistros).Select(i => new ComiteIntegranteDto
             {
                 Id = i.Id,
                 AulaId = i.AulaId,

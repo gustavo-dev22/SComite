@@ -37,19 +37,29 @@ namespace AulaComite.Application.Estudiantes.Handlers
             // del estudiante puede ver el detalle (con PII completa) para edición.
             await AulaAccessValidator.ValidarAccesoAulaAsync(_comiteRepository, _userContextService, estudiante.AulaId);
 
+            // 🛡️ T4.7: La PII (DNI y teléfono del apoderado) se ENMASCARA por defecto y solo
+            // se revela completa cuando el solicitante cuenta con privilegios administrativos
+            // (Administrador Global). El Comité de Aula puede acceder al detalle (validado
+            // arriba) pero recibe los datos enmascarados para minimizar la exposición.
+            var esAdministrador = _userContextService.EsAdministradorGlobal();
+
             return new EstudianteDto
             {
                 Id = estudiante.Id,
                 AulaId = estudiante.AulaId,
                 TipoDocumento = estudiante.TipoDocumento,
-                NumeroDocumento = estudiante.NumeroDocumento,
+                NumeroDocumento = esAdministrador
+                    ? estudiante.NumeroDocumento
+                    : PiiMasker.EnmascararDocumento(estudiante.NumeroDocumento),
                 Nombres = estudiante.Nombres,
                 ApellidoPaterno = estudiante.ApellidoPaterno,
                 ApellidoMaterno = estudiante.ApellidoMaterno,
                 NombreCompleto = estudiante.NombreCompleto,
                 UsuarioIdApoderadoSasi = estudiante.UsuarioIdApoderadoSasi,
                 NombreApoderado = estudiante.NombreApoderado,
-                TelefonoApoderado = estudiante.TelefonoApoderado,
+                TelefonoApoderado = esAdministrador
+                    ? estudiante.TelefonoApoderado
+                    : PiiMasker.EnmascararTelefono(estudiante.TelefonoApoderado),
                 Estado = estudiante.Estado,
                 FechaRegistro = estudiante.FechaRegistro
             };

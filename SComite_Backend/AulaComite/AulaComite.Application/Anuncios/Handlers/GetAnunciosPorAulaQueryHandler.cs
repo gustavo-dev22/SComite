@@ -7,12 +7,13 @@ using MediatR;
 namespace AulaComite.Application.Anuncios.Handlers
 {
     /// <summary>
-    /// 🚀 T3.5: Listado de anuncios del muro por aula. Soporte volumétrico actual:
-    /// &lt;100 registros por aula (se devuelve IEnumerable sin paginar). El DTO queda
-    /// preparado para migrar a una paginación futura (PagedResultDto&lt;T&gt;).
+    /// 🚀 T3.5: Listado de anuncios del muro por aula. Límite defensivo de 200 registros
+    /// para evitar sobrecarga de memoria (OOM) en respuestas masivas.
     /// </summary>
     public class GetAnunciosPorAulaQueryHandler : IRequestHandler<GetAnunciosPorAulaQuery, IEnumerable<AnuncioComiteDto>>
     {
+        private const int LimiteMaximoRegistros = 200;
+
         private readonly IAnuncioRepository _repository;
         private readonly IComiteRepository _comiteRepository;
         private readonly IUserContextService _userContextService;
@@ -34,7 +35,8 @@ namespace AulaComite.Application.Anuncios.Handlers
 
             var anuncios = await _repository.ObtenerPorAulaAsync(request.AulaId, request.AnioLectivo);
 
-            return anuncios.Select(a => new AnuncioComiteDto
+            // 🚀 T5: Límite defensivo de volumen para prevenir OOM en listados masivos.
+            return anuncios.Take(LimiteMaximoRegistros).Select(a => new AnuncioComiteDto
             {
                 Id = a.Id,
                 AulaId = a.AulaId,

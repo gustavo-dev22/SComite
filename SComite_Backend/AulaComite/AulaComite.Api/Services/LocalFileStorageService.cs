@@ -25,8 +25,9 @@ public class LocalFileStorageService : IFileStorageService
         if (contenido == null)
             throw new ArgumentException("No se ha proporcionado un archivo válido.");
 
-        // 🛡️ Incluye la verificación de magic bytes cuando el stream permite rewind.
-        ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null, contenido);
+        // 🛡️ Incluye la verificación de magic bytes incluso si el stream no permite rewind
+        // (internamente copia a un MemoryStream seguro y devuelve el stream a almacenar).
+        var streamAAlmacenar = ComprobanteFileValidator.Validar(null, nombreOriginal, contenido.CanSeek ? contenido.Length : (long?)null, contenido);
 
         var folderPath = ObtenerRutaCarpeta();
 
@@ -42,7 +43,7 @@ public class LocalFileStorageService : IFileStorageService
         // 🚀 Streaming directo: nunca se carga el buffer completo del archivo en memoria.
         await using (var fileStream = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
         {
-            await contenido.CopyToAsync(fileStream, cancellationToken);
+            await streamAAlmacenar.CopyToAsync(fileStream, cancellationToken);
         }
 
         // Identificador servido exclusivamente por el endpoint protegido [Authorize].
