@@ -40,7 +40,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           ? error
           : new HttpErrorResponse({ error, status: 0, statusText: 'Error' });
 
-      // 🛡️ Status 0 = error de red / backend caído / sin conexión con el servidor.
+      // Status 0 = error de red / backend caído / sin conexión con el servidor.
       // Se informa al usuario con una alerta global única (el sistema está caído),
       // en lugar de mostrar mensajes por recurso que inducen a error.
       if (httpError.status === 0) {
@@ -52,7 +52,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       } else if (!esSolicitudLogin && httpError.status === 429) {
         manejarDemasiadasPeticiones();
       } else if (!esSolicitudLogin && httpError.status >= 500 && httpError.status <= 504) {
-        // 🛡️ Se prioriza el mensaje del backend (p. ej. SASI no disponible con 503)
+        // Se prioriza el mensaje del backend (p. ej. SASI no disponible con 503)
         // para que el usuario reciba el detalle específico en lugar de un texto genérico.
         const cuerpo = httpError.error as { mensaje?: string; detail?: string } | null;
         const mensajeBackend = cuerpo?.mensaje ?? cuerpo?.detail;
@@ -65,7 +65,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 /**
- * 🛡️ Alerta global cuando NO se puede alcanzar el servidor (status 0):
+ *  Alerta global cuando NO se puede alcanzar el servidor (status 0):
  * backend detenido, red caída, CORS bloqueado o servidor apagado. Se muestra una
  * sola vez (bandera) para no acumular múltiples alertas por cada petición fallida.
  */

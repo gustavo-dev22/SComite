@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { InstitucionService } from '../../../core/services/institucion.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 
 const MAX_LOGO_MB = 1;
@@ -53,7 +54,7 @@ export class IeComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los datos de la institución.');
       }
     });
   }
@@ -65,14 +66,14 @@ export class IeComponent implements OnInit {
 
     const file = input.files[0];
 
-    // 🚀 Validar tipo MIME permitido
+    // Validar tipo MIME permitido
     if (!TIPOS_LOGO_PERMITIDOS.includes(file.type)) {
       input.value = '';
       Swal.fire('Formato no válido', 'Solo se permiten imágenes PNG, JPG o WEBP.', 'warning');
       return;
     }
 
-    // 🚀 Validar tamaño máximo (evita strings base64 gigantes y errores HTTP 413)
+    // Validar tamaño máximo (evita strings base64 gigantes y errores HTTP 413)
     const maxBytes = MAX_LOGO_MB * 1024 * 1024;
     if (file.size > maxBytes) {
       input.value = '';
@@ -117,7 +118,7 @@ export class IeComponent implements OnInit {
       next: (res) => {
         this.guardando.set(false);
 
-        // 🚀 Actualizar la fecha y usuario de la UI inmediatamente
+        // Actualizar la fecha y usuario de la UI inmediatamente
         this.formDatos.update(f => ({
           ...f,
           usuarioActualizacion: nombreUsuario,
@@ -129,7 +130,7 @@ export class IeComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo guardar la configuración.', 'error');
+        manejarErrorHttp(err, 'No se pudo guardar la configuración.');
       }
     });
   }

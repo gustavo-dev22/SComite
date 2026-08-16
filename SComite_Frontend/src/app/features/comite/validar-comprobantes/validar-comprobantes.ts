@@ -77,13 +77,13 @@ export class ValidarComprobantesComponent extends BasePeriodosComponent implemen
     formaPago: this.fb.control('YAPE', [Validators.required])
   });
 
-  // 🚀 Obtener la cuota seleccionada actualmente para conocer su estado
+  // Obtener la cuota seleccionada actualmente para conocer su estado
   cuotaActual = computed(() => {
     const id = this.cuotaSeleccionadaId();
     return this.cuotas().find(c => c.id === id) || null;
   });
 
-  // 🚀 Saber si la cuota seleccionada está CERRADA / Saneada
+  // Saber si la cuota seleccionada está CERRADA / Saneada
   cuotaEstaCerrada = computed(() => {
     return this.cuotaActual()?.estado === 'CERRADA';
   });
@@ -216,7 +216,7 @@ export class ValidarComprobantesComponent extends BasePeriodosComponent implemen
     this.pagoForm.controls.montoAbonado.setValidators([
       Validators.required,
       Validators.min(Math.min(0.10, saldoPendiente)),
-      Validators.max(saldoPendiente) // 👈 No permite superar el saldo restante
+      Validators.max(saldoPendiente) // No permite superar el saldo restante
     ]);
     this.pagoForm.controls.montoAbonado.updateValueAndValidity();
 

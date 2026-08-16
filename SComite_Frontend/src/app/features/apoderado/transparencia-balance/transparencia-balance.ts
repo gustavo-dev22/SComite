@@ -43,14 +43,14 @@ export class TransparenciaBalanceComponent implements OnInit {
   });
 
   // Métricas computadas del balance
-  // 🚀 Obtiene los datos del mes seleccionado si el filtro está activo
+  // Obtiene los datos del mes seleccionado si el filtro está activo
   mesSeleccionadoData = computed(() => {
     const mesNum = this.mesFiltroSeleccionado();
     if (!mesNum || !this.balance()) return null;
     return this.balance()?.desgloseMensual.find(m => m.mesNum === mesNum) || null;
   });
 
-  // 🚀 Métricas computadas dinámicas (Reaccionan al filtro de mes o muestran el acumulado anual)
+  // Métricas computadas dinámicas (Reaccionan al filtro de mes o muestran el acumulado anual)
   totalIngresos = computed(() => {
     const mes = this.mesSeleccionadoData();
     return mes ? mes.totalIngresosMes : (this.balance()?.totalIngresos || 0);

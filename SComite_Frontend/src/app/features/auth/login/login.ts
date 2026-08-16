@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { extraerMensajeError } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 
 interface LoginForm {
@@ -80,12 +81,12 @@ export class LoginComponent {
       error: (err) => {
         this.cargando.set(false);
 
-        // 🛡️ Status 0 = error de red / backend caído. Se informa con claridad
+        // Status 0 = error de red / backend caído. Se informa con claridad
         // que no se pudo conectar con el servidor, en lugar de un mensaje genérico.
         const esErrorDeConexion = err instanceof HttpErrorResponse && err.status === 0;
         const mensajeError = esErrorDeConexion
           ? 'No se pudo conectar con el servidor. Verifique su conexión o intente nuevamente.'
-          : err.error?.mensaje || 'Ocurrió un error al intentar iniciar sesión.';
+          : extraerMensajeError(err, 'Ocurrió un error al intentar iniciar sesión.');
 
         this.errorMensaje.set(mensajeError);
         Swal.fire({

@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { PeriodoService } from '../../../core/services/periodo.service';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
@@ -116,7 +117,7 @@ export class PeriodoComponent extends BasePeriodosComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || (this.esEdicion() ? 'No se pudo actualizar.' : 'No se pudo crear.'), 'error');
+        manejarErrorHttp(err, this.esEdicion() ? 'No se pudo actualizar.' : 'No se pudo crear.');
       }
     });
   }

@@ -13,7 +13,7 @@ const BADGES_ESTADO_EVENTO: Record<string, string> = {
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { EventoCronogramaApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
-import Swal from 'sweetalert2';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 
 @Component({
   selector: 'app-cronograma-eventos',
@@ -79,7 +79,7 @@ export class CronogramaEventosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoHijos.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar tus hijos.');
       }
     });
   }
@@ -97,7 +97,7 @@ export class CronogramaEventosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoEventos.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los eventos.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los eventos.');
       }
     });
   }

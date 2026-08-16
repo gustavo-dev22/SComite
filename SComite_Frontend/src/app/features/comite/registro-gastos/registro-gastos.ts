@@ -297,7 +297,7 @@ export class RegistroGastosComponent extends BasePeriodosComponent implements On
 
     const file = input.files[0];
 
-    // 🚀 Validar tipo MIME / extensión permitida (JPG, PNG, WEBP, PDF)
+    // Validar tipo MIME / extensión permitida (JPG, PNG, WEBP, PDF)
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
     const esFormatoValido =
       TIPOS_COMPROBANTE_MIME_PERMITIDOS.includes(file.type) ||
@@ -310,7 +310,7 @@ export class RegistroGastosComponent extends BasePeriodosComponent implements On
       return;
     }
 
-    // 🚀 Validar tamaño máximo (evita archivos gigantes y errores HTTP 413)
+    // Validar tamaño máximo (evita archivos gigantes y errores HTTP 413)
     const maxBytes = MAX_COMPROBANTE_MB * 1024 * 1024;
     if (file.size > maxBytes) {
       input.value = '';
@@ -346,7 +346,7 @@ export class RegistroGastosComponent extends BasePeriodosComponent implements On
       fullUrl = `${backendBaseUrl}${urlLimpia}`;
     }
 
-    // 🚀 CACHE-BUSTING: Agrega un timestamp único a la URL
+    // CACHE-BUSTING: Agrega un timestamp único a la URL
     const timestamp = new Date().getTime();
     const separator = fullUrl.includes('?') ? '&' : '?';
     const urlConCacheBuster = `${fullUrl}${separator}_t=${timestamp}`;

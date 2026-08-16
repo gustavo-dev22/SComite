@@ -16,6 +16,7 @@ import { ResumenGeneralCajasConsolidadas } from '../../../core/models/auditoria.
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -69,7 +70,7 @@ export class ResumenGeneralCajasComponent extends BasePeriodosComponent implemen
       next: (data) => {
         if (data) this.institucion.set(data);
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los datos de la institución educativa.')
     });
   }
 
@@ -86,7 +87,7 @@ export class ResumenGeneralCajasComponent extends BasePeriodosComponent implemen
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo cargar el resumen general de cajas.', 'error');
+        manejarErrorHttp(err, 'No se pudo cargar el resumen general de cajas.');
       }
     });
   }

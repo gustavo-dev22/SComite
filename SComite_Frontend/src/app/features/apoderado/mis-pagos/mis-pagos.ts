@@ -37,7 +37,7 @@ export class MisPagosComponent implements OnInit {
 
   anioLectivoActual = signal<number>(new Date().getFullYear());
 
-  // 🚀 Hijo actualmente activo
+  // Hijo actualmente activo
   hijoActual = computed(() => {
     const id = this.estudianteSeleccionadoId();
     return this.hijos().find(h => h.estudianteId === id) || null;

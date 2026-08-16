@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { SistemaService } from '../../../core/services/sistema.service';
+import { extraerMensajeError, manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
@@ -48,7 +49,7 @@ export class MantenimientoSistemaComponent {
       },
       error: (err) => {
         this.descargandoBackup.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo generar el backup.', 'error');
+        manejarErrorHttp(err, 'No se pudo generar el backup.');
       }
     });
   }
@@ -66,7 +67,7 @@ export class MantenimientoSistemaComponent {
       },
       error: (err) => {
         this.procesandoReset.set(false);
-        this.mensajeResultado.set(err.error?.mensaje || 'Error al intentar reiniciar la base de datos.');
+        this.mensajeResultado.set(extraerMensajeError(err, 'Error al intentar reiniciar la base de datos.'));
       }
     });
   }

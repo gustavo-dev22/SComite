@@ -82,7 +82,7 @@ export class AuthService {
     );
   }
 
-  // 🚀 Cambiar de Rol en tiempo real y redirigir
+  // Cambiar de Rol en tiempo real y redirigir
   cambiarRol(idRol: number): void {
     const nuevoRol = this.rolesDisponibles().find(r => r.idRol === idRol);
     if (!nuevoRol) return;

@@ -153,7 +153,7 @@
                 <!-- Badge de Estado de Cuota -->
                 @if (cuota.estado === 'CERRADA') {
                   <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-2xs">
-                    🔒 Saneada / Cerrada
+                     Saneada / Cerrada
                   </span>
                 }
               </div>
@@ -194,12 +194,12 @@
                 aria-label="Ver lista de estudiantes exonerados"
                 class="flex items-center justify-between px-3 py-1.5 mb-4 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl cursor-pointer transition">
                 <div class="flex items-center gap-1.5 text-slate-700">
-                  <span class="text-xs">🛡️</span>
+                  <span class="text-xs"></span>
                   <span class="text-xs font-bold">
                     {{ cuota.estudiantesExonerados }} {{ cuota.estudiantesExonerados === 1 ? 'Exonerado / No Aplica' : 'Exonerados / No Aplican' }}
                   </span>
                 </div>
-                <span class="text-[11px] font-bold text-indigo-600 hover:underline">Ver lista →</span>
+                <span class="text-[11px] font-bold text-indigo-600 hover:underline">Ver lista </span>
               </div>
             }
           </div>
@@ -236,14 +236,14 @@
                   (click)="onCambiarEstadoCuota(cuota)"
                   [disabled]="cambiandoEstado()"
                   class="w-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
-                  🔓 Reabrir Cobranza
+                   Reabrir Cobranza
                 </button>
               } @else if (cuota.estado === 'EN COBRO') {
                 <button 
                   (click)="onCambiarEstadoCuota(cuota)"
                   [disabled]="cambiandoEstado()"
                   class="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-1.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs disabled:cursor-not-allowed disabled:opacity-60">
-                  🔒 Cerrar y Sanear Cuota
+                   Cerrar y Sanear Cuota
                 </button>
               }
             </div>
@@ -520,7 +520,7 @@
                         (click)="abrirDialogoExonerar(item)"
                         class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-xs"
                         title="Exonerar de esta cuota por ingreso tardío o no participación">
-                        🛡️ Exonerar
+                         Exonerar
                       </button>
                     </td>
                   </tr>
@@ -542,7 +542,7 @@
 }
 
 <!-- ======================================================= -->
-<!-- 🚀 MODAL / SPINNER DE DESCARGA PDF DE MOROSOS -->
+<!-- MODAL / SPINNER DE DESCARGA PDF DE MOROSOS -->
 <!-- ======================================================= -->
 @if (descargandoPdfMorosos()) {
   <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;" role="status" aria-live="polite" aria-label="Generando PDF de lista de pendientes">
@@ -565,7 +565,7 @@
           <h3 class="font-bold text-sm sm:text-base leading-snug">{{ cuotaSeleccionadaExonerados()?.concepto }}</h3>
         </div>
         <span class="text-xs font-bold bg-slate-700 px-2.5 py-1 rounded-lg text-slate-200 border border-slate-600">
-          🛡️ {{ estudiantesExonerados().length }} {{ estudiantesExonerados().length === 1 ? 'Alumno' : 'Alumnos' }}
+           {{ estudiantesExonerados().length }} {{ estudiantesExonerados().length === 1 ? 'Alumno' : 'Alumnos' }}
         </span>
       </div>
 
@@ -607,7 +607,7 @@
                       </span>
                       @if (item.fechaExoneracion) {
                         <span class="block text-[10px] text-slate-400 font-mono">
-                          📅 {{ item.fechaExoneracion | date:'dd/MM/yyyy HH:mm' }}
+                           {{ item.fechaExoneracion | date:'dd/MM/yyyy HH:mm' }}
                         </span>
                       }
                     </td>
@@ -616,7 +616,7 @@
                         (click)="revertirExoneracion(item)"
                         class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-lg transition cursor-pointer shadow-xs"
                         title="Revertir exoneración y volver a marcar como pendiente">
-                        ↩️ Revertir
+                         Revertir
                       </button>
                     </td>
                   </tr>

@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 const STATUS_MANEJADOS_GLOBALMENTE = [0, 401, 403, 429];
 
 /**
- * 🛡️ Extrae el mensaje legible de una respuesta de error HTTP. Compatible con el
+ *  Extrae el mensaje legible de una respuesta de error HTTP. Compatible con el
  * contrato propio (campo `mensaje`) y con ProblemDetails RFC 7807 (campo `detail`)
  * emitido por el ExceptionHandlingMiddleware del backend.
  */

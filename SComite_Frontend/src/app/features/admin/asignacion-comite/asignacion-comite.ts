@@ -39,7 +39,7 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
   aulas = signal<Aula[]>([]);
   integrantes = signal<ComiteIntegrante[]>([]);
   apoderadosSasi = signal<UsuarioSasi[]>([]);
-  // 🛡️ SASI-DOWN: indica si el catálogo de apoderados de SASI está disponible.
+  // SASI-DOWN: indica si el catálogo de apoderados de SASI está disponible.
   sasiDisponible = signal<boolean>(true);
 
   periodoSeleccionado = signal<number | null>(null);
@@ -93,7 +93,7 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
         this.sasiDisponible.set(true);
       },
       error: (err) => {
-        // 🛡️ SASI-DOWN: si SASI no está disponible (503) o hubo error de conexión (0),
+        // SASI-DOWN: si SASI no está disponible (503) o hubo error de conexión (0),
         // se avisa de forma amigable y se bloquea la asignación de integrantes.
         const esSasiNoDisponible =
           (err as { status?: number } | null)?.status === 503 ||
@@ -141,7 +141,7 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
     }
     this.comiteForm.reset({ cargo: '', usuarioIdSasi: '' });
 
-    // 🛡️ SASI-DOWN: se re-consulta el catálogo de apoderados en el momento de asignar
+    // SASI-DOWN: se re-consulta el catálogo de apoderados en el momento de asignar
     // (no solo al cargar la página). Así, si SASI se cayó después de entrar al sistema,
     // el usuario recibe el aviso automáticamente al abrir el modal, sin recargar.
     this.cargarApoderadosSasi();
@@ -161,7 +161,7 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
     if (this.guardando()) return;
     this.guardando.set(true);
 
-    // 🛡️ SASI-DOWN (CRÍTICO): se re-consulta el catálogo de SASI en el MOMENTO de guardar,
+    // SASI-DOWN (CRÍTICO): se re-consulta el catálogo de SASI en el MOMENTO de guardar,
     // en lugar de confiar en la señal cacheada de cuando se abrió el modal. Así, si SASI se
     // cayó mientras el modal estaba abierto, la asignación se bloquea con mensaje amigable.
     this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

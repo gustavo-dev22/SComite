@@ -15,7 +15,7 @@
         (click)="descargarPdfDirecto()" 
         [disabled]="!tieneAulaSeleccionada() || descargandoPdf()"
         class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg shadow transition cursor-pointer">
-        <span>{{ descargandoPdf() ? '⏳ Generando PDF...' : '📥 Descargar PDF' }}</span>
+        <span>{{ descargandoPdf() ? '⏳ Generando PDF...' : ' Descargar PDF' }}</span>
       </button>
     </div>
 
@@ -94,7 +94,7 @@
 
     @if (!tieneAulaSeleccionada()) {
       <div class="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
-        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">📊</div>
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold"></div>
         <h3 class="text-slate-700 font-semibold mb-1">Seleccione los Filtros Superiores</h3>
         <p class="text-slate-400 text-sm">Elija el Año, Aula y Mes para generar la hoja de balance oficial.</p>
       </div>
@@ -116,7 +116,7 @@
           </p>
         </div>
 
-        <!-- 🚩 OCULTO TEMPORALMENTE: card de Cumplimiento Total. Se mantiene en el código por si se desea reactivar más adelante. -->
+        <!-- OCULTO TEMPORALMENTE: card de Cumplimiento Total. Se mantiene en el código por si se desea reactivar más adelante. -->
         <div class="hidden bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 min-w-[240px]">
           <div class="flex justify-between text-xs font-bold mb-1">
             <span>Cumplimiento Total</span>
@@ -186,7 +186,7 @@
               <span class="font-bold text-slate-800 text-sm">S/. {{ consolidado().ingresosExtraordinarios | number:'1.2-2' }}</span>
             </div>
 
-            <!-- 🚀 NUEVO ITEM: DONACIONES Y APORTES VOLUNTARIOS -->
+            <!-- NUEVO ITEM: DONACIONES Y APORTES VOLUNTARIOS -->
             <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
               <div>
                 <span class="block font-semibold text-xs text-amber-800">Donaciones / Aportes Voluntarios</span>
@@ -227,7 +227,7 @@
   </div>
 
   <!-- ======================================================= -->
-  <!-- 🚀 MODAL / SPINNER DE DESCARGA (SOLO SE MUESTRA AL PULSAR BOTÓN) -->
+  <!-- MODAL / SPINNER DE DESCARGA (SOLO SE MUESTRA AL PULSAR BOTÓN) -->
   <!-- ======================================================= -->
   @if (descargandoPdf()) {
     <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;" role="status" aria-live="polite" aria-label="Procesando y descargando PDF">

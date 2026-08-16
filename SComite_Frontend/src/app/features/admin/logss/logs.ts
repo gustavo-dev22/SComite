@@ -4,8 +4,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { LogService } from '../../../core/services/log.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LogSistema, PagedResult } from '../../../core/models/log.model';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { CommonModule } from '@angular/common';
-import Swal from 'sweetalert2';
 import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
 @Component({
@@ -81,7 +81,7 @@ export class LogsComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los registros.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los registros.');
       }
     });
   }

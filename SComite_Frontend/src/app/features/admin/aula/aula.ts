@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import Swal from 'sweetalert2';
 import { Aula } from '../../../core/models/aula.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import { CommonModule } from '@angular/common';
 import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
 
@@ -62,7 +63,7 @@ export class AulaComponent extends BasePeriodosComponent implements OnInit {
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las aulas.');
       }
     });
   }
@@ -129,7 +130,7 @@ export class AulaComponent extends BasePeriodosComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'Error al guardar.', 'error');
+        manejarErrorHttp(err, 'Error al guardar.');
       }
     });
   }
@@ -153,7 +154,7 @@ export class AulaComponent extends BasePeriodosComponent implements OnInit {
             Swal.fire('¡Desactivada!', 'El aula ha sido desactivada.', 'success');
             this.cargarAulas();
           },
-          error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo desactivar.', 'error')
+          error: (err) => manejarErrorHttp(err, 'No se pudo desactivar.')
         });
       }
     });

@@ -38,14 +38,14 @@ export class LayoutComponent {
   sidebarMovilAbierto = signal<boolean>(false);
   menuDesplegado = signal<Record<number, boolean>>({});
 
-  // 🚀 Re-inicializa los submenús abiertos cada vez que cambia el árbol de menú (rol/sesión),
+  // Re-inicializa los submenús abiertos cada vez que cambia el árbol de menú (rol/sesión),
   // en lugar del setTimeout(100) sucio que dependía de carreras de detección de cambios.
   private _efectoMenu = effect(() => {
     this.authService.menuJerarquico();
     this.inicializarSubmenusAbiertos();
   });
 
-  // 🚀 Evento para alternar de rol
+  // Evento para alternar de rol
   onRolChange(event: Event): void {
     const idRol = Number((event.target as HTMLSelectElement).value);
     this.authService.cambiarRol(idRol);

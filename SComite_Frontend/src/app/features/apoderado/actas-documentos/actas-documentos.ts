@@ -8,6 +8,7 @@ import { InstitucionService } from '../../../core/services/institucion.service';
 import { ActaApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
 import { InstitucionEducativa } from '../../../core/models/institucion.model';
 import { PdfExporterService } from '../../../core/services/pdf-exporter.service';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -71,7 +72,7 @@ export class ActasDocumentosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoHijos.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar tus hijos.');
       }
     });
   }
@@ -81,7 +82,7 @@ export class ActasDocumentosComponent implements OnInit {
       next: (data) => {
         if (data) this.institucion.set(data);
       },
-      error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos de la institución educativa.', 'error')
+      error: (err) => manejarErrorHttp(err, 'No se pudieron cargar los datos de la institución educativa.')
     });
   }
 
@@ -98,7 +99,7 @@ export class ActasDocumentosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoActas.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las actas.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar las actas.');
       }
     });
   }

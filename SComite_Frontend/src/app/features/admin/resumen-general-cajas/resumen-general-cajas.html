@@ -32,7 +32,7 @@
         (click)="exportarPdf()" 
         [disabled]="cargando() || !dataConsolidada()"
         class="inline-flex items-center gap-2 bg-slate-900 hover:bg-black text-white text-sm font-bold px-4 py-2 rounded-xl transition shadow-md disabled:bg-slate-300 cursor-pointer">
-        <span>📥 Exportar Consolidado PDF</span>
+        <span> Exportar Consolidado PDF</span>
       </button>
     </div>
   </div>
@@ -67,10 +67,10 @@
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
         <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Estado de Auditoría</span>
         <div class="flex items-center gap-2 text-xs font-bold mt-1">
-          <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg">✅ {{ dataConsolidada()?.aulasAlDia }} Al Día</span>
-          <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg">⚪ {{ dataConsolidada()?.aulasSinMovimiento }} Sin Mov.</span>
+          <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg"> {{ dataConsolidada()?.aulasAlDia }} Al Día</span>
+          <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg"> {{ dataConsolidada()?.aulasSinMovimiento }} Sin Mov.</span>
           @if ((dataConsolidada()?.aulasEnAlerta || 0) > 0) {
-            <span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-lg">⚠️ {{ dataConsolidada()?.aulasEnAlerta }} Alerta</span>
+            <span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-lg"> {{ dataConsolidada()?.aulasEnAlerta }} Alerta</span>
           }
         </div>
       </div>
@@ -107,7 +107,7 @@
                 <td class="p-3.5 text-right font-bold text-slate-900">S/. {{ aula.saldoNeto | number:'1.2-2' }}</td>
                 <td class="p-3.5 text-center">
                   <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase" [ngClass]="getEstadoBadgeClass(aula.estadoFinanciero)">
-                    {{ aula.estadoFinanciero === 'AL_DIA' ? '✅ Al Día' : (aula.estadoFinanciero === 'SIN_MOVIMIENTO' ? '⚪ Sin Movimiento' : '🚨 En Rojo') }}
+                    {{ aula.estadoFinanciero === 'AL_DIA' ? ' Al Día' : (aula.estadoFinanciero === 'SIN_MOVIMIENTO' ? ' Sin Movimiento' : ' En Rojo') }}
                   </span>
                 </td>
               </tr>

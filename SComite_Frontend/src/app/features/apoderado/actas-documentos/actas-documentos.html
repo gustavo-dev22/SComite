@@ -45,7 +45,7 @@
                 {{ a.numeroActa }}
               </span>
               <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase bg-emerald-100 text-emerald-800 border-emerald-200">
-                ✅ APROBADA
+                 APROBADA
               </span>
             </div>
 
@@ -54,14 +54,14 @@
                 (click)="descargarPdfActa(a)" 
                 title="Descargar Acta en PDF"
                 class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer shadow-xs">
-                <span>📥 Descargar PDF Oficial</span>
+                <span> Descargar PDF Oficial</span>
               </button>
             </div>
           </div>
 
           <div class="py-4">
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
-              <span>📅 Fecha de Asamblea: {{ a.fechaReunion | date:'dd/MM/yyyy' }}</span>
+              <span> Fecha de Asamblea: {{ a.fechaReunion | date:'dd/MM/yyyy' }}</span>
             </div>
             <h2 class="text-lg font-bold text-slate-800 mb-3">{{ a.titulo }}</h2>
 
@@ -74,7 +74,7 @@
           @if (a.urlDocumentoPdf) {
             <div class="mb-4">
               <a [href]="a.urlDocumentoPdf" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl transition">
-                📄 Ver Documento Escaneado con Firmas (PDF / Drive)
+                 Ver Documento Escaneado con Firmas (PDF / Drive)
               </a>
             </div>
           }

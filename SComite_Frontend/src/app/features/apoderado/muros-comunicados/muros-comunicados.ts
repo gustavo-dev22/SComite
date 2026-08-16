@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApoderadoService } from '../../../core/services/apoderado.service';
 import { AulaService } from '../../../core/services/aula.service';
 import { AnuncioApoderado, HijoApoderado } from '../../../core/models/apoderado.model';
-import Swal from 'sweetalert2';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 
 const BADGES_CATEGORIA_ANUNCIO: Record<string, string> = {
   'URGENTE': 'bg-rose-100 text-rose-700 border-rose-200',
@@ -66,7 +66,7 @@ export class MurosComunicadosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoHijos.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar tus hijos.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar tus hijos.');
       }
     });
   }
@@ -83,7 +83,7 @@ export class MurosComunicadosComponent implements OnInit {
       },
       error: (err) => {
         this.cargandoAnuncios.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los comunicados.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los comunicados.');
       }
     });
   }
@@ -93,7 +93,7 @@ export class MurosComunicadosComponent implements OnInit {
     this.cargarAnuncios();
   }
 
-  // 🚀 Al interactuar con la tarjeta, si no ha sido leído, marca la vista en la BD
+  // Al interactuar con la tarjeta, si no ha sido leído, marca la vista en la BD
   marcarComoLeido(anuncio: AnuncioApoderado): void {
     if (anuncio.leido || this.lecturasEnCurso.has(anuncio.id)) return;
 
@@ -115,7 +115,7 @@ export class MurosComunicadosComponent implements OnInit {
       },
       error: (err) => {
         this.lecturasEnCurso.delete(anuncio.id);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar la lectura del comunicado.', 'error');
+        manejarErrorHttp(err, 'No se pudo registrar la lectura del comunicado.');
       }
     });
   }

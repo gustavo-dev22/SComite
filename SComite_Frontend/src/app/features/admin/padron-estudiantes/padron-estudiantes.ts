@@ -135,7 +135,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   aulas = signal<Aula[]>([]);
   estudiantes = signal<Estudiante[]>([]);
   apoderadosSasi = signal<UsuarioSasi[]>([]);
-  // 🛡️ SASI-DOWN: indica si el catálogo de apoderados de SASI está disponible.
+  // SASI-DOWN: indica si el catálogo de apoderados de SASI está disponible.
   // Permite avisar al usuario y bloquear el guardado cuando el vínculo con un
   // apoderado es obligatorio y SASI no responde.
   sasiDisponible = signal<boolean>(true);
@@ -227,7 +227,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
         this.sasiDisponible.set(true);
       },
       error: (err) => {
-        // 🛡️ SASI-DOWN: si el servicio SASI no está disponible (503) o hubo un error de
+        // SASI-DOWN: si el servicio SASI no está disponible (503) o hubo un error de
         // conexión (status 0), se informa de forma amigable y se desactiva el vínculo de
         // apoderados para que el usuario no registre alumnos con datos incompletos.
         const esSasiNoDisponible =
@@ -304,7 +304,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       telefonoApoderado: ''
     });
 
-    // 🛡️ SASI-DOWN: se re-consulta el catálogo de apoderados al abrir el modal (no solo
+    // SASI-DOWN: se re-consulta el catálogo de apoderados al abrir el modal (no solo
     // al cargar la página), de modo que si SASI cayó después, el aviso aparece al instante.
     this.cargarApoderadosSasi();
 
@@ -328,13 +328,13 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       telefonoApoderado: e.telefonoApoderado || ''
     });
 
-    // 🛡️ SASI-DOWN: se re-consulta el catálogo de apoderados al abrir el modal para
+    // SASI-DOWN: se re-consulta el catálogo de apoderados al abrir el modal para
     // detectar una caída de SASI ocurrida después de cargar la página.
     this.cargarApoderadosSasi();
 
     this.modalAbierto.set(true);
 
-    // 🛡️ La fila de la tabla trae el documento/teléfono ENMASCARADOS (***).
+    // La fila de la tabla trae el documento/teléfono ENMASCARADOS (***).
     // Consultamos el detalle para traer los datos reales y recién ahí
     // rellenamos el formulario de edición.
     this.estudianteService.getEstudiante(e.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -369,7 +369,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       return;
     }
 
-    // 🛡️ SASI-DOWN (CRÍTICO): solo se re-consulta SASI si el usuario está vinculando un
+    // SASI-DOWN (CRÍTICO): solo se re-consulta SASI si el usuario está vinculando un
     // apoderado. Si SASI se cayó mientras el modal estaba abierto, la señal cacheada ya no
     // es fiable, por lo que se valida en el MOMENTO de guardar contra el catálogo real.
     const vinculandoApoderado =
@@ -513,7 +513,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
     this.registrosPrevios.set([]);
   }
 
-  // 🚀 1. Generar y Descargar Plantilla Excel (.xlsx) Nativa
+  // 1. Generar y Descargar Plantilla Excel (.xlsx) Nativa
   async descargarPlantillaExcel(): Promise<void> {
     const { Workbook } = await import('exceljs');
     const workbook = new Workbook();
@@ -548,7 +548,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
     });
   }
 
-  // 🚀 2. Lectura y procesamiento de archivos Excel (.xlsx) y CSV
+  // 2. Lectura y procesamiento de archivos Excel (.xlsx) y CSV
   onArchivoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -556,7 +556,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
     const file = input.files[0];
     this.nombreArchivoCargado.set(file.name);
 
-    // 🚀 Validar tipo MIME / extensión permitida (Excel .xlsx)
+    // Validar tipo MIME / extensión permitida (Excel .xlsx)
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
     const esExcelValido =
       TIPOS_MIME_EXCEL_PERMITIDOS.includes(file.type) ||
@@ -570,7 +570,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       return;
     }
 
-    // 🚀 Validar tamaño máximo del archivo (evita strings/base64 gigantes y congelamientos)
+    // Validar tamaño máximo del archivo (evita strings/base64 gigantes y congelamientos)
     const maxBytes = MAX_ARCHIVO_MB * 1024 * 1024;
     if (file.size > maxBytes) {
       input.value = '';
@@ -597,7 +597,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
         return;
       }
 
-      // 🚀 Mapear encabezados (fila 1) a los campos esperados de la plantilla
+      // Mapear encabezados (fila 1) a los campos esperados de la plantilla
       const campoPorColumna = new Map<number, keyof FilaEstudianteExcel>();
       worksheet.getRow(1).eachCell({ includeEmpty: true }, (celda, numeroColumna) => {
         const campo = MAPA_CAMPOS_COLUMNA[normalizarEncabezado(valorCeldaComoTexto(celda))];
@@ -610,7 +610,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
         return;
       }
 
-      // 🚀 Lectura limitada por filas para no congelar el hilo principal
+      // Lectura limitada por filas para no congelar el hilo principal
       const filaMaxLectura = Math.min(worksheet.actualRowCount, MAX_FILAS_CARGA + 1);
       const apoderadosCatalogo = this.apoderadosSasi();
       const estudiantesParsed: RegistroPrevioEstudiante[] = [];
@@ -660,7 +660,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
           nombreApoderado: nombreApoderadoExcel,
           telefonoApoderado: datos.telefonoApoderado,
 
-          // 🚀 Banderas para la vista previa
+          // Banderas para la vista previa
           tieneApoderadoExcel: !!nombreApoderadoExcel,
           existeEnSasi: existeSasi,
           nombreSasiNormalizado: nombreEncontrado
@@ -670,7 +670,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       this.registrosPrevios.set(estudiantesParsed);
       this.previewPagina.set(1);
 
-      // 🚀 Avisar si el archivo supera el límite de filas por lote
+      // Avisar si el archivo supera el límite de filas por lote
       if (worksheet.actualRowCount - 1 > MAX_FILAS_CARGA) {
         Swal.fire('Límite de filas', `El archivo contiene más de ${MAX_FILAS_CARGA} filas. Solo se procesarán los primeros ${MAX_FILAS_CARGA} registros.`, 'warning');
       }
@@ -690,7 +690,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   }
 
 
-  // 🚀 3. Envío al backend y despliegue del Reporte de Resultados SWAL
+  // 3. Envío al backend y despliegue del Reporte de Resultados SWAL
   procesarCargaMasiva(): void {
     const lista = this.registrosPrevios();
     if (lista.length === 0 || !this.aulaSeleccionada()) return;
@@ -730,7 +730,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       },
       error: (err) => {
         this.procesandoArchivo.set(false);
-        // 🛡️ El interceptor muestra la alerta global (p. ej. SASI no disponible 503)
+        // El interceptor muestra la alerta global (p. ej. SASI no disponible 503)
         // y se reutiliza manejarErrorHttp para no duplicar ni perder el detalle.
         manejarErrorHttp(err, 'No se pudo completar la carga masiva.');
       }

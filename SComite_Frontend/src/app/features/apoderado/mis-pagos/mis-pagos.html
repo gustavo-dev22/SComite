@@ -134,15 +134,15 @@
                 <td class="p-3.5 sm:p-4 text-center whitespace-nowrap">
                   @if (cuota.estadoVisual === 'EXONERADO') {
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase bg-slate-100 text-slate-700 border-slate-300">
-                      🛡️ Exento / No Aplica
+                       Exento / No Aplica
                     </span>
                   } @else if (cuota.estadoVisual === 'PAGADO') {
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase bg-emerald-100 text-emerald-800 border-emerald-200">
-                      ✓ Pagado
+                       Pagado
                     </span>
                   } @else if (cuota.estadoVisual === 'VENCIDO') {
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase bg-rose-100 text-rose-800 border-rose-200">
-                      🚨 Vencido
+                       Vencido
                     </span>
                   } @else {
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase bg-amber-100 text-amber-800 border-amber-200">
@@ -159,7 +159,7 @@
                     </span>
                   } @else if (cuota.estadoVisual === 'PAGADO') {
                     <span class="inline-flex items-center gap-1 text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                      ✓ Validado
+                       Validado
                     </span>
                   } @else {
                     <button 

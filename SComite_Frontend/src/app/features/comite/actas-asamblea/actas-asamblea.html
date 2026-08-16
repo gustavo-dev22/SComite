@@ -94,7 +94,7 @@
                 {{ a.numeroActa }}
               </span>
               <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase" [ngClass]="getEstadoClass(a.estadoActa)">
-                {{ a.estadoActa === 'APROBADA' ? '✓ APROBADA' : 'BORRADOR' }}
+                {{ a.estadoActa === 'APROBADA' ? ' APROBADA' : 'BORRADOR' }}
               </span>
             </div>
 
@@ -109,7 +109,7 @@
                 <span>Exportar PDF</span>
               </button>
 
-              <!-- 🚀 BOTÓN EDITAR CON TOOLTIP FLOTANTE -->
+              <!-- BOTÓN EDITAR CON TOOLTIP FLOTANTE -->
               <div class="relative group inline-block">
                 <button 
                   (click)="abrirModalEditar(a)" 
@@ -128,7 +128,7 @@
                 </div>
               </div>
 
-              <!-- 🚀 BOTÓN ELIMINAR CON TOOLTIP FLOTANTE -->
+              <!-- BOTÓN ELIMINAR CON TOOLTIP FLOTANTE -->
               <div class="relative group inline-block">
                 <button 
                   (click)="eliminarActa(a.id)" 
@@ -290,7 +290,7 @@
 </div>
 
 <!-- ======================================================= -->
-<!-- 🚀 MODAL / SPINNER DE DESCARGA PDF -->
+<!-- MODAL / SPINNER DE DESCARGA PDF -->
 <!-- ======================================================= -->
 @if (descargandoPdf()) {
   <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
