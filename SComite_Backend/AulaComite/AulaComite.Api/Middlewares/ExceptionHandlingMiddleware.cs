@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using AulaComite.Application.Common.Exceptions;
 using AulaComite.Application.Common.Interfaces;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -73,6 +74,19 @@ namespace AulaComite.Api.Middlewares
                         StatusCodes.Status400BadRequest,
                         "La operación no cumple con las reglas de negocio.",
                         sqlEx.Message ?? "La operación no cumple con las reglas de negocio.");
+                    return;
+                }
+
+                // 🛡️ SASI-DOWN: El servicio de autenticación externo no está disponible.
+                // Se responde 503 (Service Unavailable) con un mensaje amigable sin exponer
+                // detalles internos de la falla de conexión.
+                if (ex is SasiNoDisponibleException)
+                {
+                    await EscribirProblemDetailsAsync(
+                        context,
+                        StatusCodes.Status503ServiceUnavailable,
+                        "Servicio no disponible.",
+                        ex.Message ?? "El servicio de autenticación no está disponible. Intente nuevamente en unos minutos.");
                     return;
                 }
 

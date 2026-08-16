@@ -14,6 +14,7 @@ import { PeriodoLectivo } from '../../../core/models/periodoLectivo.model';
 import { Aula } from '../../../core/models/aula.model';
 import { ComiteIntegrante, UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { ModalA11yDirective } from '../../../shared/directives/modal-a11y.directive';
@@ -38,6 +39,8 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
   aulas = signal<Aula[]>([]);
   integrantes = signal<ComiteIntegrante[]>([]);
   apoderadosSasi = signal<UsuarioSasi[]>([]);
+  // 🛡️ SASI-DOWN: indica si el catálogo de apoderados de SASI está disponible.
+  sasiDisponible = signal<boolean>(true);
 
   periodoSeleccionado = signal<number | null>(null);
   aulaSeleccionada = signal<number | null>(null);
@@ -76,17 +79,32 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
         this.aulaSeleccionada.set(null);
         this.integrantes.set([]);
       }
-    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error'));
+    }, (err) => manejarErrorHttp(err, 'No se pudieron cargar las aulas.'));
   }
 
   cargarApoderadosSasi(): void {
-    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
-      const ordenados = [...data].sort((a, b) => 
-        a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
-      );
+    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        const ordenados = [...data].sort((a, b) =>
+          a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
+        );
 
-      this.apoderadosSasi.set(ordenados);
-    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los apoderados de SASI.', 'error'));
+        this.apoderadosSasi.set(ordenados);
+        this.sasiDisponible.set(true);
+      },
+      error: (err) => {
+        // 🛡️ SASI-DOWN: si SASI no está disponible (503) o hubo error de conexión (0),
+        // se avisa de forma amigable y se bloquea la asignación de integrantes.
+        const esSasiNoDisponible =
+          (err as { status?: number } | null)?.status === 503 ||
+          (err as { status?: number } | null)?.status === 0;
+
+        this.apoderadosSasi.set([]);
+        this.sasiDisponible.set(!esSasiNoDisponible);
+
+        manejarErrorHttp(err, 'No se pudieron cargar los apoderados de SASI.');
+      }
+    });
   }
 
   cargarComiteAula(aulaId: number): void {
@@ -98,7 +116,7 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los integrantes del comité.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los integrantes del comité.');
       }
     });
   }
@@ -136,6 +154,19 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
       return;
     }
     if (this.guardando()) return;
+
+    // 🛡️ SASI-DOWN: sin el catálogo de apoderados no es posible asignar integrantes.
+    if (!this.sasiDisponible()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'SASI no disponible',
+        text: 'No se pudo cargar el catálogo de apoderados del servicio SASI. No puede asignar integrantes al comité en este momento. Intente nuevamente en unos minutos.',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
     this.guardando.set(true);
 
     const apoderado = this.apoderadosSasi().find(a => a.usuarioId === this.comiteForm.value.usuarioIdSasi);
@@ -167,7 +198,7 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
       },
       error: (err) => {
         this.guardando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'Error al asignar.', 'error');
+        manejarErrorHttp(err, 'Error al asignar.');
       }
     });
   }
@@ -191,7 +222,7 @@ export class AsignacionComiteComponent extends BasePeriodosComponent implements 
             Swal.fire('Removido', 'El integrante ha sido removido.', 'success');
             this.cargarComiteAula(this.aulaSeleccionada()!);
           },
-          error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo remover.', 'error')
+          error: (err) => manejarErrorHttp(err, 'No se pudo remover.')
         });
       }
     });

@@ -52,7 +52,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       } else if (!esSolicitudLogin && httpError.status === 429) {
         manejarDemasiadasPeticiones();
       } else if (!esSolicitudLogin && httpError.status >= 500 && httpError.status <= 504) {
-        manejarServicioNoDisponible();
+        // 🛡️ Se prioriza el mensaje del backend (p. ej. SASI no disponible con 503)
+        // para que el usuario reciba el detalle específico en lugar de un texto genérico.
+        const cuerpo = httpError.error as { mensaje?: string; detail?: string } | null;
+        const mensajeBackend = cuerpo?.mensaje ?? cuerpo?.detail;
+        manejarServicioNoDisponible(mensajeBackend);
       }
 
       return throwError(() => error);
@@ -130,14 +134,14 @@ function manejarDemasiadasPeticiones(): void {
   });
 }
 
-function manejarServicioNoDisponible(): void {
+function manejarServicioNoDisponible(mensajeBackend?: string): void {
   if (servicioNoDisponibleAlertaEnCurso) return;
   servicioNoDisponibleAlertaEnCurso = true;
 
   void Swal.fire({
     icon: 'error',
     title: 'Servicio no disponible',
-    text: 'Servicio no disponible temporalmente. Intente nuevamente en unos minutos.',
+    text: mensajeBackend ?? 'Servicio no disponible temporalmente. Intente nuevamente en unos minutos.',
     confirmButtonColor: '#2563eb',
     confirmButtonText: 'Entendido'
   }).then(() => {

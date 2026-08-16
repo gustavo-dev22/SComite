@@ -45,6 +45,18 @@ describe('manejarErrorHttp', () => {
     expect(swalSpy).toHaveBeenCalledWith('Error', 'No se encontró el recurso.', 'error');
   });
 
+  it('lee el campo detail de ProblemDetails RFC 7807 cuando no hay mensaje propio', () => {
+    const err = new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      error: { detail: 'El monto abonado excede la deuda pendiente.' }
+    });
+
+    manejarErrorHttp(err, 'Mensaje de respaldo.');
+
+    expect(swalSpy).toHaveBeenCalledWith('Error', 'El monto abonado excede la deuda pendiente.', 'error');
+  });
+
   it('usa el mensaje de respaldo cuando no hay mensaje del backend (p. ej. 400 sin cuerpo)', () => {
     const err = new HttpErrorResponse({ status: 400, statusText: 'Bad Request' });
 

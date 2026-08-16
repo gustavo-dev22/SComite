@@ -9,6 +9,7 @@ import { Aula } from '../../../core/models/aula.model';
 import { Estudiante } from '../../../core/models/estudiante.model';
 import { UsuarioSasi } from '../../../core/models/comiteIntegrante.model';
 import { BasePeriodosComponent } from '../../../core/base/base-periodos.component';
+import { manejarErrorHttp } from '../../../core/utils/http-error.util';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import type { Cell } from 'exceljs';
@@ -134,6 +135,10 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   aulas = signal<Aula[]>([]);
   estudiantes = signal<Estudiante[]>([]);
   apoderadosSasi = signal<UsuarioSasi[]>([]);
+  // 🛡️ SASI-DOWN: indica si el catálogo de apoderados de SASI está disponible.
+  // Permite avisar al usuario y bloquear el guardado cuando el vínculo con un
+  // apoderado es obligatorio y SASI no responde.
+  sasiDisponible = signal<boolean>(true);
 
   periodoSeleccionado = signal<number | null>(null);
   aulaSeleccionada = signal<number | null>(null);
@@ -208,17 +213,33 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
         this.aulaSeleccionada.set(null);
         this.estudiantes.set([]);
       }
-    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar las aulas.', 'error'));
+    }, (err) => manejarErrorHttp(err, 'No se pudieron cargar las aulas.'));
   }
 
   cargarApoderadosSasi(): void {
-    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
-      const ordenados = [...data].sort((a, b) => 
-        a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
-      );
+    this.comiteService.getApoderadosSasi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        const ordenados = [...data].sort((a, b) =>
+          a.nombreCompleto.localeCompare(b.nombreCompleto, 'es', { sensitivity: 'base' })
+        );
 
-      this.apoderadosSasi.set(ordenados);
-    }, (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los apoderados de SASI.', 'error'));
+        this.apoderadosSasi.set(ordenados);
+        this.sasiDisponible.set(true);
+      },
+      error: (err) => {
+        // 🛡️ SASI-DOWN: si el servicio SASI no está disponible (503) o hubo un error de
+        // conexión (status 0), se informa de forma amigable y se desactiva el vínculo de
+        // apoderados para que el usuario no registre alumnos con datos incompletos.
+        const esSasiNoDisponible =
+          (err as { status?: number } | null)?.status === 503 ||
+          (err as { status?: number } | null)?.status === 0;
+
+        this.apoderadosSasi.set([]);
+        this.sasiDisponible.set(!esSasiNoDisponible);
+
+        manejarErrorHttp(err, 'No se pudieron cargar los apoderados de SASI.');
+      }
+    });
   }
 
   cargarEstudiantes(aulaId: number): void {
@@ -238,7 +259,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       },
       error: (err) => {
         this.cargando.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los estudiantes.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los estudiantes.');
       }
     });
   }
@@ -317,7 +338,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       },
       error: (err) => {
         this.cargandoDetalle.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudieron cargar los datos reales del estudiante.', 'error');
+        manejarErrorHttp(err, 'No se pudieron cargar los datos reales del estudiante.');
       }
     });
   }
@@ -338,6 +359,24 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       Swal.fire('Atención', 'Debe seleccionar un aula.', 'warning');
       return;
     }
+
+    // 🛡️ SASI-DOWN: si el usuario intenta vincular un apoderado y SASI no está disponible,
+    // se le advierte ANTES de guardar para evitar registrar alumnos con vínculo incompleto.
+    const vinculandoApoderado =
+      !!this.estudianteForm.value.usuarioIdApoderadoSasi ||
+      !!this.estudianteForm.value.nombreApoderado?.trim();
+
+    if (!this.sasiDisponible() && vinculandoApoderado) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'SASI no disponible',
+        text: 'No se pudo cargar el catálogo de apoderados del servicio SASI. No puede vincular un apoderado en este momento. Puede guardar el estudiante sin apoderado y vincularlo más tarde.',
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
     this.guardando.set(true);
 
     const payload = {
@@ -355,7 +394,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
         },
         error: (err) => {
           this.guardando.set(false);
-          Swal.fire('Error', err.error?.mensaje || 'No se pudo actualizar.', 'error');
+          manejarErrorHttp(err, 'No se pudo actualizar.');
         }
       });
     } else {
@@ -368,7 +407,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
         },
         error: (err) => {
           this.guardando.set(false);
-          Swal.fire('Error', err.error?.mensaje || 'No se pudo registrar.', 'error');
+          manejarErrorHttp(err, 'No se pudo registrar.');
         }
       });
     }
@@ -392,7 +431,7 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
             Swal.fire('Inactivo', 'El estudiante fue desactivado.', 'success');
             this.cargarEstudiantes(this.aulaSeleccionada()!);
           },
-          error: (err) => Swal.fire('Error', err.error?.mensaje || 'No se pudo desactivar.', 'error')
+          error: (err) => manejarErrorHttp(err, 'No se pudo desactivar.')
         });
       }
     });
@@ -633,7 +672,9 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
       },
       error: (err) => {
         this.procesandoArchivo.set(false);
-        Swal.fire('Error', err.error?.mensaje || 'No se pudo completar la carga masiva.', 'error');
+        // 🛡️ El interceptor muestra la alerta global (p. ej. SASI no disponible 503)
+        // y se reutiliza manejarErrorHttp para no duplicar ni perder el detalle.
+        manejarErrorHttp(err, 'No se pudo completar la carga masiva.');
       }
     });
   }

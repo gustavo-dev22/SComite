@@ -163,6 +163,11 @@
 
           <div>
             <label for="usuarioIdSasi" class="block text-xs font-bold text-slate-700 uppercase mb-1">Apoderado Elegible *</label>
+            @if (!sasiDisponible()) {
+              <div class="mb-2 px-3 py-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
+                ⚠️ El servicio SASI no está disponible. No se pueden cargar los apoderados elegibles para asignar cargos.
+              </div>
+            }
             <select id="usuarioIdSasi" formControlName="usuarioIdSasi" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm bg-white focus:ring-2 focus:ring-slate-900 outline-none text-slate-800 transition cursor-pointer">
               <option [value]="''" disabled selected>-- Seleccione Apoderado --</option>
               @for (a of apoderadosSasi(); track a.usuarioId) {

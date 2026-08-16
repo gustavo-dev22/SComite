@@ -1,4 +1,5 @@
 ﻿using AulaComite.Application.Common.Dto;
+using AulaComite.Application.Common.Exceptions;
 using AulaComite.Application.Common.Interfaces;
 using AulaComite.Application.Common.Models;
 using Microsoft.Extensions.Configuration;
@@ -112,10 +113,16 @@ namespace AulaComite.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                // 🛡️ T2.5: Sin catch vacío: se registra el fallo de integración y se
-                // retorna lista vacía para no derrumbar el flujo de carga si SASI no responde.
-                _logger.LogWarning(ex, "No se pudo obtener los apoderados desde SASI: {Message}", ex.Message);
-                return new List<UsuarioSasiDto>();
+                // 🛡️ T2.5/SASI-DOWN: NO se devuelve lista vacía silenciosamente. Si SASI está
+                // caído, la operación que depende de su catálogo (registro de estudiante,
+                // asignación de comité, carga masiva) debe notificarlo de forma explícita y
+                // amigable, evitando que el usuario confunda "sin apoderados" con "SASI caído".
+                _logger.LogWarning(ex, "SASI no disponible al obtener apoderados: {Message}", ex.Message);
+
+                throw new SasiNoDisponibleException(
+                    "El servicio de autenticación (SASI) no está disponible en este momento. " +
+                    "No se pudieron cargar los apoderados. Intente nuevamente en unos minutos.",
+                    ex);
             }
         }
     }

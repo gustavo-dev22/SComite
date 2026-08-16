@@ -94,6 +94,31 @@ describe('errorInterceptor', () => {
     });
   });
 
+  it('muestra el mensaje del backend en la alerta cuando SASI responde 503 no disponible', async () => {
+    await TestBed.runInInjectionContext(async () => {
+      const req = new HttpRequest<unknown>('GET', '/api/Comite/apoderados-sasi');
+      const errorSasi = new HttpErrorResponse({
+        status: 503,
+        statusText: 'Service Unavailable',
+        error: {
+          title: 'Servicio no disponible.',
+          detail: 'El servicio de autenticación (SASI) no está disponible en este momento.'
+        }
+      });
+
+      await firstValueFrom(
+        errorInterceptor(req, () => throwError(() => errorSasi))
+      ).catch(() => void 0);
+
+      expect(swalSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Servicio no disponible',
+          text: 'El servicio de autenticación (SASI) no está disponible en este momento.'
+        })
+      );
+    });
+  });
+
   it('no bloquea las respuestas exitosas', async () => {
     await TestBed.runInInjectionContext(async () => {
       const req = new HttpRequest<unknown>('GET', '/api/Aulas/periodos');
