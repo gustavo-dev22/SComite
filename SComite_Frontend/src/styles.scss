@@ -15,6 +15,11 @@ body {
     box-sizing: inherit;
 }
 
+/* Impedir que el usuario redimensione los textareas */
+textarea {
+    resize: none;
+}
+
 /* ===================================================
    ESTILOS OFICIALES PARA IMPRESIÓN / PDF (1 HOJA A4)
    =================================================== */
