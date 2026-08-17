@@ -47,6 +47,7 @@ namespace AulaComite.Application.Common.Models
     {
         public int IdRol { get; set; }
         public string NombreRol { get; set; } = string.Empty;
+        public bool Activo { get; set; }
         public bool EsPrincipal { get; set; }
         public List<SasiObjetoMenu> Objetos { get; set; } = new();
     }

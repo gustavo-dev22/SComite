@@ -16,6 +16,7 @@ export interface MenuObjeto {
 export interface RolComite {
   idRol: number;
   nombreRol: string;
+  activo?: boolean;
   esPrincipal: boolean;
   objetos: MenuObjeto[];
 }

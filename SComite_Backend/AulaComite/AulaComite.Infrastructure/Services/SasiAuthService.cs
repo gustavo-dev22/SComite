@@ -100,6 +100,21 @@ namespace AulaComite.Infrastructure.Services
                     return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Respuesta inválida de SASI." };
                 }
 
+                // 🛡️ ROLES CON TOGGLE ACTIVADO: SASI envía todos los roles asignados
+                // (activos e inactivos). Los roles desactivados (activo=false) no deben
+                // entregarse al frontend ni emitirse como claims del JWT local.
+                sistemaComite.Roles = sistemaComite.Roles.Where(r => r.Activo).ToList();
+
+                if (sistemaComite.Roles.Count == 0)
+                {
+                    return new AuthResultDto
+                    {
+                        Exito = false,
+                        Bloqueado = false,
+                        Mensaje = "Acceso denegado: Tu usuario no tiene un rol activo en el sistema 'Comité de Aula' en SASI."
+                    };
+                }
+
                 // Emitir un JWT propio de la aplicación, firmado con la clave local
                 // (JwtSettings), para que los endpoints [Authorize] lo acepten.
                 var tokenLocal = _jwtTokenService.GenerarToken(sasiResult.Usuario, sistemaComite);

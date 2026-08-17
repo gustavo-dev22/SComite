@@ -65,8 +65,10 @@ export class AuthService {
           sessionStorage.setItem('token_aula', res.token);
           sessionStorage.setItem('usuario_nombre', res.nombreUsuario);
 
-          // 1. Guardar la lista completa de roles entregados por SASI
-          const roles = res.sistemaComite.roles;
+          // 1. Guardar solo los roles ACTIVOS entregados por SASI (los desactivados
+          //    en el toggle de SASI no deben aparecer en el selector de rol)
+          const roles = AuthService.filtrarRolesActivos(res.sistemaComite.roles);
+          if (roles.length === 0) return;
           sessionStorage.setItem('roles_aula', JSON.stringify(roles));
 
           // 2. Establecer por defecto el rol principal (o el primero)
@@ -157,12 +159,19 @@ export class AuthService {
     if (!raw) return [];
     try {
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      const roles = Array.isArray(parsed) ? parsed : [];
+      return AuthService.filtrarRolesActivos(roles);
     } catch {
       sessionStorage.removeItem('roles_aula');
       sessionStorage.removeItem('rol_activo_id');
       return [];
     }
+  }
+
+  // 🛡️ Los roles desactivados en SASI (activo=false) no deben mostrarse en el
+  // selector de rol. Filtra también roles que vengan sin el campo (compatibilidad).
+  private static filtrarRolesActivos(roles: RolComite[]): RolComite[] {
+    return roles.filter(r => r.activo !== false);
   }
 
   private obtenerRolActivoInicial(): number | null {
