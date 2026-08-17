@@ -1,11 +1,14 @@
-﻿using AulaComite.Application.Common.Dto;
+﻿using System.Collections.Concurrent;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using AulaComite.Application.Common.Dto;
 using AulaComite.Application.Common.Exceptions;
 using AulaComite.Application.Common.Interfaces;
 using AulaComite.Application.Common.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 
 namespace AulaComite.Infrastructure.Services
 {
@@ -17,6 +20,11 @@ namespace AulaComite.Infrastructure.Services
         private readonly IJwtTokenService _jwtTokenService;
         private readonly ISasiTokenStore _sasiTokenStore;
         private readonly IUserContextService _userContextService;
+
+        // 🛡️ SASI rota el refresh token de forma atómica (de un solo uso). Un lock por
+        // usuario evita que dos consultas concurrentes refresquen a la vez con el mismo
+        // refresh token y una de ellas falle (401).
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locksRefresco = new(StringComparer.OrdinalIgnoreCase);
 
         public SasiAuthService(
             HttpClient httpClient,
@@ -98,10 +106,11 @@ namespace AulaComite.Infrastructure.Services
 
                 // 🛡️ SASI-DOWN/FIX: El catálogo de apoderados vive en un endpoint de SASI
                 // protegido por JWT ([Authorize]). Guardamos el token emitido por SASI en el
-                // login para autenticar (Bearer) las llamadas backend-a-backend posteriores.
-                if (!string.IsNullOrWhiteSpace(sasiResult.Token) && sasiResult.Usuario != null)
+                // login (y su refresh token) para autenticar (Bearer) y renovar las llamadas
+                // backend-a-backend posteriores sin obligar al usuario a volver a iniciar sesión.
+                if (sasiResult.Usuario != null && !string.IsNullOrWhiteSpace(sasiResult.Token))
                 {
-                    _sasiTokenStore.Guardar(sasiResult.Usuario.Id, sasiResult.Token);
+                    _sasiTokenStore.Guardar(sasiResult.Usuario.Id, sasiResult.Token, sasiResult.RefreshToken);
                 }
 
                 return new AuthResultDto
@@ -128,33 +137,46 @@ namespace AulaComite.Infrastructure.Services
                 // 🛡️ SASI-DOWN/FIX: El endpoint de SASI está protegido con JWT. Se envía el
                 // token emitido por SASI en el login (guardado por usuario) como Bearer.
                 var usuarioId = _userContextService.ObtenerUsuarioId();
-                var tokenSasi = !string.IsNullOrWhiteSpace(usuarioId)
+                var credenciales = !string.IsNullOrWhiteSpace(usuarioId)
                     ? _sasiTokenStore.Obtener(usuarioId)
                     : null;
 
-                var request = new HttpRequestMessage(HttpMethod.Get,
-                    $"sistemas/por-sistema-y-rol?sistemaId={_sistemaIdTarget}&rolNombre=Apoderado");
+                var tokenSasi = credenciales?.Token;
 
-                if (!string.IsNullOrWhiteSpace(tokenSasi))
+                // 🔄 Si el access token expiró (SASI los emite por 8h), renovarlo con el
+                // refresh token antes de cada consulta.
+                if (!string.IsNullOrWhiteSpace(tokenSasi) && TokenExpirado(tokenSasi))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenSasi);
+                    tokenSasi = null;
                 }
 
-                using var response = await _httpClient.SendAsync(request);
-
-                if (!response.IsSuccessStatusCode)
+                if (string.IsNullOrWhiteSpace(tokenSasi)
+                    && !string.IsNullOrWhiteSpace(usuarioId)
+                    && !string.IsNullOrWhiteSpace(credenciales?.RefreshToken))
                 {
-                    // 🛡️ T2.5/SASI-DOWN: si SASI responde 401 (token ausente/expirado) o 5xx,
-                    // no se devuelve lista vacía silenciosamente: se notifica de forma explícita.
-                    _logger.LogWarning("SASI respondió {Status} al obtener apoderados.", (int)response.StatusCode);
-                    throw new SasiNoDisponibleException(
-                        "El servicio de autenticación (SASI) no está disponible en este momento. " +
-                        "No se pudieron cargar los apoderados. Intente nuevamente en unos minutos.");
+                    tokenSasi = await RefrescarTokenAsync(usuarioId, credenciales.RefreshToken);
                 }
 
-                var sasiResult = await response.Content.ReadFromJsonAsync<SasiResponseDto<List<UsuarioSasiDto>>>();
+                var response = await EnviarSolicitudApoderadosAsync(tokenSasi);
+                using (response)
+                {
+                    // 🔄 Reintento automático: si SASI responde 401 (token expirado/inválido),
+                    // se refresca el token una vez y se reenvía la consulta.
+                    if (response.StatusCode == HttpStatusCode.Unauthorized
+                        && !string.IsNullOrWhiteSpace(usuarioId)
+                        && !string.IsNullOrWhiteSpace(credenciales?.RefreshToken))
+                    {
+                        var tokenRenovado = await RefrescarTokenAsync(usuarioId, credenciales.RefreshToken);
 
-                return sasiResult?.Datos ?? new List<UsuarioSasiDto>();
+                        if (!string.IsNullOrWhiteSpace(tokenRenovado))
+                        {
+                            using var reintento = await EnviarSolicitudApoderadosAsync(tokenRenovado);
+                            return await ProcesarRespuestaApoderadosAsync(reintento);
+                        }
+                    }
+
+                    return await ProcesarRespuestaApoderadosAsync(response);
+                }
             }
             catch (SasiNoDisponibleException)
             {
@@ -172,6 +194,102 @@ namespace AulaComite.Infrastructure.Services
                     "El servicio de autenticación (SASI) no está disponible en este momento. " +
                     "No se pudieron cargar los apoderados. Intente nuevamente en unos minutos.",
                     ex);
+            }
+        }
+
+        private async Task<HttpResponseMessage> EnviarSolicitudApoderadosAsync(string? tokenSasi)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "sistemas/por-sistema-y-rol")
+            {
+                Content = JsonContent.Create(new { sistemaId = _sistemaIdTarget, rolNombre = "Apoderado" })
+            };
+
+            if (!string.IsNullOrWhiteSpace(tokenSasi))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenSasi);
+            }
+
+            return await _httpClient.SendAsync(request);
+        }
+
+        private async Task<IEnumerable<UsuarioSasiDto>> ProcesarRespuestaApoderadosAsync(HttpResponseMessage response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                // 🛡️ T2.5/SASI-DOWN: si SASI responde 401 (token ausente/expirado) o 5xx,
+                // no se devuelve lista vacía silenciosamente: se notifica de forma explícita.
+                _logger.LogWarning("SASI respondió {Status} al obtener apoderados.", (int)response.StatusCode);
+                throw new SasiNoDisponibleException(
+                    "El servicio de autenticación (SASI) no está disponible en este momento. " +
+                    "No se pudieron cargar los apoderados. Intente nuevamente en unos minutos.");
+            }
+
+            var sasiResult = await response.Content.ReadFromJsonAsync<SasiResponseDto<List<UsuarioSasiDto>>>();
+
+            return sasiResult?.Datos ?? new List<UsuarioSasiDto>();
+        }
+
+        private async Task<string?> RefrescarTokenAsync(string usuarioId, string refreshToken)
+        {
+            var semaforo = _locksRefresco.GetOrAdd(usuarioId, _ => new SemaphoreSlim(1, 1));
+
+            if (!await semaforo.WaitAsync(TimeSpan.FromSeconds(5)))
+            {
+                _logger.LogWarning("Timeout al adquirir lock de refresco de token SASI para {UsuarioId}.", usuarioId);
+                return null;
+            }
+
+            try
+            {
+                // 🔄 Rotación atómica de SASI: otro request pudo renovar mientras esperábamos
+                // el lock. Si el token actual ya es válido, reutilizarlo.
+                var actuales = _sasiTokenStore.Obtener(usuarioId);
+                if (actuales != null && !string.IsNullOrWhiteSpace(actuales.Token) && !TokenExpirado(actuales.Token))
+                {
+                    return actuales.Token;
+                }
+
+                var response = await _httpClient.PostAsJsonAsync("Auth/refresh", new { refreshToken });
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("SASI respondió {Status} al refrescar token.", (int)response.StatusCode);
+                    return null;
+                }
+
+                var resultado = await response.Content.ReadFromJsonAsync<SasiRefreshResponse>();
+
+                if (resultado == null || !resultado.Success || string.IsNullOrWhiteSpace(resultado.Token))
+                {
+                    _logger.LogWarning("SASI no devolvió un token válido al refrescar.");
+                    return null;
+                }
+
+                _sasiTokenStore.Guardar(usuarioId, resultado.Token, resultado.RefreshToken);
+
+                return resultado.Token;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error al refrescar token SASI: {Message}", ex.Message);
+                return null;
+            }
+            finally
+            {
+                semaforo.Release();
+            }
+        }
+
+        private static bool TokenExpirado(string token)
+        {
+            try
+            {
+                var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+                return jwt.ValidTo <= DateTime.UtcNow.AddMinutes(1);
+            }
+            catch
+            {
+                return true;
             }
         }
     }

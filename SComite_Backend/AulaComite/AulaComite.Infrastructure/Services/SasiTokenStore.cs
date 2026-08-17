@@ -5,14 +5,14 @@ namespace AulaComite.Infrastructure.Services
 {
     public class SasiTokenStore : ISasiTokenStore
     {
-        private readonly ConcurrentDictionary<string, string> _tokens = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, SasiTokenInfo> _tokens = new(StringComparer.OrdinalIgnoreCase);
 
-        public void Guardar(string usuarioId, string token)
+        public void Guardar(string usuarioId, string token, string refreshToken)
         {
-            _tokens[usuarioId] = token;
+            _tokens[usuarioId] = new SasiTokenInfo { Token = token, RefreshToken = refreshToken };
         }
 
-        public string? Obtener(string usuarioId)
+        public SasiTokenInfo? Obtener(string usuarioId)
         {
             return _tokens.TryGetValue(usuarioId, out var token) ? token : null;
         }

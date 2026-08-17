@@ -15,7 +15,15 @@ namespace AulaComite.Application.Common.Models
         public bool Success { get; set; }
         public bool Bloqueado { get; set; }
         public string Token { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
         public SasiUsuario? Usuario { get; set; }
+    }
+
+    public class SasiRefreshResponse
+    {
+        public bool Success { get; set; }
+        public string Token { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
     }
 
     public class SasiUsuario
