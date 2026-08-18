@@ -152,5 +152,27 @@ namespace AulaComite.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure
             );
         }
+
+        public async Task<ResultadoMigracionDto> MigrarEstudiantesAsync(int aulaDestinoId, IEnumerable<int> estudianteIds)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var idsCadena = string.Join(",", estudianteIds);
+
+            using var multi = await connection.QueryMultipleAsync(
+                "sp_Estudiantes_MigrarAlumnos",
+                new
+                {
+                    AulaDestinoId = aulaDestinoId,
+                    EstudianteIds = idsCadena
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            var resumen = await multi.ReadFirstOrDefaultAsync<ResultadoMigracionDto>() ?? new ResultadoMigracionDto();
+            var detalles = (await multi.ReadAsync<DetalleOmitidoDto>()).ToList();
+            resumen.Detalles = detalles;
+
+            return resumen;
+        }
     }
 }

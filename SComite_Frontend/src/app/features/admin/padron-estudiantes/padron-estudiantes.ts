@@ -149,6 +149,20 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   esEdicion = signal<boolean>(false);
   guardando = signal<boolean>(false);
 
+  alumnosSeleccionadosIds = signal<number[]>([]);
+
+  todosSeleccionados = computed(() => {
+    const lista = this.estudiantes();
+    return lista.length > 0 && this.alumnosSeleccionadosIds().length === lista.length;
+  });
+
+  modalMigracionAbierto = signal<boolean>(false);
+  periodoDestinoId = signal<number | null>(null);
+  aulaDestinoId = signal<number | null>(null);
+  aulasDestino = signal<Aula[]>([]);
+  cargandoAulasDestino = signal<boolean>(false);
+  migrando = signal<boolean>(false);
+
   estudianteForm: FormGroup<EstudianteForm> = this.fb.group({
     id: this.fb.control(0),
     aulaId: this.fb.control(0),
@@ -244,6 +258,8 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
   cargarEstudiantes(aulaId: number): void {
     this.reiniciarCarga$.next();
     this.cargando.set(true);
+    this.alumnosSeleccionadosIds.set([]);
+
     this.estudianteService.getEstudiantesPorAula(aulaId).pipe(takeUntil(this.reiniciarCarga$), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         const ordenados = [...data].sort((a, b) => {
@@ -273,6 +289,132 @@ export class PadronEstudiantesComponent extends BasePeriodosComponent implements
     const aulaId = Number((event.target as HTMLSelectElement).value);
     this.aulaSeleccionada.set(aulaId);
     this.cargarEstudiantes(aulaId);
+  }
+
+  toggleSeleccionarAlumno(id: number): void {
+    const seleccionados = this.alumnosSeleccionadosIds();
+    if (seleccionados.includes(id)) {
+      this.alumnosSeleccionadosIds.set(seleccionados.filter(item => item !== id));
+    } else {
+      this.alumnosSeleccionadosIds.set([...seleccionados, id]);
+    }
+  }
+
+  toggleSeleccionarTodos(): void {
+    if (this.todosSeleccionados()) {
+      this.alumnosSeleccionadosIds.set([]);
+    } else {
+      this.alumnosSeleccionadosIds.set(this.estudiantes().map(e => e.id));
+    }
+  }
+
+  abrirModalMigracion(): void {
+    if (this.alumnosSeleccionadosIds().length === 0) {
+      Swal.fire('Atención', 'Seleccione al menos un estudiante para migrar.', 'warning');
+      return;
+    }
+
+    this.periodoDestinoId.set(null);
+    this.aulaDestinoId.set(null);
+    this.aulasDestino.set([]);
+    this.modalMigracionAbierto.set(true);
+  }
+
+  cerrarModalMigracion(): void {
+    this.modalMigracionAbierto.set(false);
+  }
+
+  onPeriodoDestinoChange(event: Event): void {
+    const periodoId = Number((event.target as HTMLSelectElement).value) || null;
+    this.periodoDestinoId.set(periodoId);
+    this.aulaDestinoId.set(null);
+    this.aulasDestino.set([]);
+
+    if (periodoId) {
+      this.cargandoAulasDestino.set(true);
+      this.aulaService.getAulas(periodoId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (data) => {
+          this.aulasDestino.set(data);
+          this.cargandoAulasDestino.set(false);
+        },
+        error: (err) => {
+          this.cargandoAulasDestino.set(false);
+          manejarErrorHttp(err, 'No se pudieron cargar las aulas de destino.');
+        }
+      });
+    }
+  }
+
+  ejecutarMigracion(): void {
+    const aulaDestino = this.aulaDestinoId();
+    const ids = this.alumnosSeleccionadosIds();
+
+    if (!aulaDestino || ids.length === 0) {
+      Swal.fire('Atención', 'Seleccione el aula de destino.', 'warning');
+      return;
+    }
+
+    if (aulaDestino === this.aulaSeleccionada()) {
+      Swal.fire('Atención', 'El aula de destino no puede ser la misma de origen.', 'warning');
+      return;
+    }
+
+    this.migrando.set(true);
+    this.estudianteService.migrarEstudiantes({
+      aulaDestinoId: aulaDestino,
+      estudianteIds: ids
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => {
+        this.migrando.set(false);
+        this.cerrarModalMigracion();
+
+        const { solicitados, migrados, omitidos, detalles } = res.datos;
+
+        let htmlDetalles = `
+          <div class="text-left text-xs font-sans mt-3">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3 grid grid-cols-3 text-center">
+              <div>
+                <span class="block text-slate-400 uppercase font-bold text-[10px]">Solicitados</span>
+                <strong class="text-slate-800 text-sm">${solicitados}</strong>
+              </div>
+              <div>
+                <span class="block text-emerald-600 uppercase font-bold text-[10px]">Migrados</span>
+                <strong class="text-emerald-700 text-sm">${migrados}</strong>
+              </div>
+              <div>
+                <span class="block text-rose-500 uppercase font-bold text-[10px]">Omitidos</span>
+                <strong class="text-rose-600 text-sm">${omitidos}</strong>
+              </div>
+            </div>
+        `;
+
+        if (detalles && detalles.length > 0) {
+          htmlDetalles += `
+            <span class="block font-bold text-slate-700 mb-1.5 uppercase text-[11px]">Detalle de alumnos omitidos:</span>
+            <div class="max-h-40 overflow-y-auto bg-slate-100 p-2.5 rounded-xl border border-slate-200 font-mono text-[11px] space-y-1 text-slate-700">
+              ${detalles.map(d => `<div>• <strong>${d.nombreCompleto}</strong>: <span class="text-rose-600">${d.motivo}</span></div>`).join('')}
+            </div>
+          `;
+        }
+
+        htmlDetalles += `</div>`;
+
+        Swal.fire({
+          icon: migrados > 0 ? 'success' : 'warning',
+          title: migrados > 0 ? 'Proceso de Migración Completado' : 'Sin Nuevas Migraciones',
+          html: htmlDetalles,
+          confirmButtonColor: '#2563eb',
+          confirmButtonText: 'Entendido'
+        });
+
+        this.alumnosSeleccionadosIds.set([]);
+        this.cargarEstudiantes(this.aulaSeleccionada()!);
+      },
+      error: (err) => {
+        this.migrando.set(false);
+        manejarErrorHttp(err, 'No se pudo completar la migración de estudiantes.');
+      }
+    });
   }
 
   onApoderadoSelectChange(event: Event): void {

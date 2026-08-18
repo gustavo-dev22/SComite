@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { Estudiante } from '../models/estudiante.model';
+import { Estudiante, RespuestaMigracionApi } from '../models/estudiante.model';
 import { ApiResponse, ResultadoCargaMasivaEstudiantes } from '../models/api-response.model';
 
 @Injectable({
@@ -34,5 +34,9 @@ export class EstudianteService {
 
   cargaMasiva(aulaId: number, estudiantes: Partial<Estudiante>[]): Observable<ResultadoCargaMasivaEstudiantes> {
     return this.http.post<ResultadoCargaMasivaEstudiantes>(`${this.apiUrl}/carga-masiva`, { aulaId, estudiantes });
+  }
+
+  migrarEstudiantes(payload: { aulaDestinoId: number; estudianteIds: number[] }): Observable<RespuestaMigracionApi> {
+    return this.http.post<RespuestaMigracionApi>(`${this.apiUrl}/migrar`, payload);
   }
 }

@@ -13,3 +13,16 @@ export interface Estudiante {
   estado: boolean;
   fechaRegistro: string;
 }
+
+export interface ResultadoMigracion {
+  solicitados: number;
+  migrados: number;
+  omitidos: number;
+  detalles: { nombreCompleto: string; motivo: string }[];
+}
+
+export interface RespuestaMigracionApi {
+  exito: boolean;
+  mensaje: string;
+  datos: ResultadoMigracion;
+}

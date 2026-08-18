@@ -15,5 +15,6 @@ namespace AulaComite.Application.Common.Interfaces
         Task<bool> ActualizarEstudianteAsync(Estudiante estudiante);
         Task<bool> EliminarEstudianteLogicoAsync(int id, IDbTransaction? transaction = null);
         Task<int> CargaMasivaEstudiantesAsync(int aulaId, IEnumerable<EstudianteImportacionItemDto> listaEstudiantes);
+        Task<ResultadoMigracionDto> MigrarEstudiantesAsync(int aulaDestinoId, IEnumerable<int> estudianteIds);
     }
 }

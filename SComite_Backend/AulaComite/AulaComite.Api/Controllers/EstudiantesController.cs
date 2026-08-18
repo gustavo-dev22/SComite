@@ -74,5 +74,20 @@ namespace AulaComite.Api.Controllers
             var result = await _mediator.Send(command);
             return Ok(result);
         }
+
+        [HttpPost("migrar")]
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> MigrarEstudiantes([FromBody] MigrarEstudiantesCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+            return Ok(new
+            {
+                exito = resultado.Migrados > 0,
+                datos = resultado,
+                mensaje = resultado.Migrados > 0
+                    ? $"Se migraron {resultado.Migrados} de {resultado.Solicitados} estudiantes con éxito."
+                    : "No se migró ningún estudiante porque ya existen en el aula de destino."
+            });
+        }
     }
 }
