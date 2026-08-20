@@ -14,6 +14,9 @@ namespace AulaComite.Application.Common.Models
     {
         public bool Success { get; set; }
         public bool Bloqueado { get; set; }
+        public bool Inactivo { get; set; }
+        public string Codigo { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
         public SasiUsuario? Usuario { get; set; }

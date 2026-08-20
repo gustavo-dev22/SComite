@@ -39,8 +39,14 @@ namespace AulaComite.Api.Controllers
             if (!result.Exito)
             {
                 // Respuesta uniforme (M3): no se distingue si el usuario no existe o la
-                // contraseña es errónea; se expone el estado de bloqueo cuando aplique (M4).
-                return BadRequest(new { mensaje = result.Mensaje, bloqueado = result.Bloqueado });
+                // contraseña es errónea; se exponen los estados de bloqueo/inactividad
+                // cuando apliquen (M4) para que el frontend muestre el mensaje correcto.
+                return BadRequest(new
+                {
+                    mensaje = result.Mensaje,
+                    bloqueado = result.Bloqueado,
+                    inactivo = result.Inactivo
+                });
             }
 
             return Ok(result);

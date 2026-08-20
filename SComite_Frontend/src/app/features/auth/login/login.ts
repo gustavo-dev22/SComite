@@ -88,10 +88,19 @@ export class LoginComponent {
           ? 'No se pudo conectar con el servidor. Verifique su conexión o intente nuevamente.'
           : extraerMensajeError(err, 'Ocurrió un error al intentar iniciar sesión.');
 
+        // El backend expone los flags bloqueado/inactivo para titular el error
+        // con el estado real de la cuenta (M4).
+        const cuerpo = err instanceof HttpErrorResponse ? (err.error as { bloqueado?: boolean; inactivo?: boolean } | null) : null;
+        const tituloError = cuerpo?.bloqueado
+          ? 'Cuenta Bloqueada'
+          : cuerpo?.inactivo
+            ? 'Cuenta Inactiva'
+            : 'Acceso Denegado';
+
         this.errorMensaje.set(mensajeError);
         Swal.fire({
           icon: 'error',
-          title: 'Acceso Denegado',
+          title: tituloError,
           text: mensajeError,
           confirmButtonColor: '#2563eb',
           confirmButtonText: 'Entendido'

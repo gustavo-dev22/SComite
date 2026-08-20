@@ -53,6 +53,19 @@ namespace AulaComite.Infrastructure.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     // 🛡️ M3: Respuesta GENÉRICA para no revelar si la cuenta existe o no.
+                    // Si SASI adjunta un detalle (p. ej. bloqueo/inactivo) se propaga.
+                    var sasiError = await LeerRespuestaErrorAsync(response);
+                    if (sasiError != null && !string.IsNullOrWhiteSpace(sasiError.Message))
+                    {
+                        return new AuthResultDto
+                        {
+                            Exito = false,
+                            Bloqueado = sasiError.Bloqueado,
+                            Inactivo = sasiError.Inactivo,
+                            Mensaje = sasiError.Message
+                        };
+                    }
+
                     return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Usuario o contraseña incorrectos." };
                 }
 
@@ -63,20 +76,34 @@ namespace AulaComite.Infrastructure.Services
                     return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "No se pudo procesar la respuesta de autenticación. Inténtelo de nuevo." };
                 }
 
-                // 🛡️ M4: Reflejar el estado de BLOQUEO de la cuenta de forma explícita,
-                // sin ignorarlo en el flujo de login.
-                if (sasiResult.Bloqueado)
-                {
-                    return new AuthResultDto
-                    {
-                        Exito = false,
-                        Bloqueado = true,
-                        Mensaje = "Su cuenta se encuentra bloqueada en el sistema. Contacte al administrador."
-                    };
-                }
-
                 if (!sasiResult.Success)
                 {
+                    // 🛡️ M4: El estado de la cuenta (bloqueado/inactivo) se refleja de
+                    // forma explícita usando el mensaje que entrega SASI (fuente única
+                    // de verdad) para que todos los sistemas integrados muestren el
+                    // mismo texto según el estado del usuario.
+                    if (sasiResult.Bloqueado)
+                    {
+                        return new AuthResultDto
+                        {
+                            Exito = false,
+                            Bloqueado = true,
+                            Mensaje = sasiResult.Message
+                                ?? "Su cuenta se encuentra bloqueada temporalmente por intentos fallidos de inicio de sesión. Contacte al administrador del sistema."
+                        };
+                    }
+
+                    if (sasiResult.Inactivo)
+                    {
+                        return new AuthResultDto
+                        {
+                            Exito = false,
+                            Inactivo = true,
+                            Mensaje = sasiResult.Message
+                                ?? "Su usuario se encuentra inactivo en el sistema. Contacte al administrador para restablecer el acceso."
+                        };
+                    }
+
                     // 🛡️ M3: Respuesta GENÉRICA ante credenciales incorrectas.
                     return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Usuario o contraseña incorrectos." };
                 }
@@ -142,6 +169,19 @@ namespace AulaComite.Infrastructure.Services
             {
                 _logger.LogError(ex, "Error al conectar con el servidor de autenticación SASI: {Message}", ex.Message);
                 return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Error al conectar con el servidor de autenticación. Inténtelo de nuevo." };
+            }
+        }
+
+        private static async Task<SasiLoginResponse?> LeerRespuestaErrorAsync(HttpResponseMessage response)
+        {
+            try
+            {
+                if (response.Content == null) return null;
+                return await response.Content.ReadFromJsonAsync<SasiLoginResponse>();
+            }
+            catch
+            {
+                return null;
             }
         }
 
