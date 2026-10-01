@@ -13,6 +13,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/login/login').then(m => m.LoginComponent)
     },
     {
+        path: 'sso-callback',
+        loadComponent: () => import('./features/auth/sso-callback/sso-callback').then(m => m.SsoCallbackComponent)
+    },
+    {
         path: '',
         loadComponent: () => import('./shared/components/layout/layout').then(m => m.LayoutComponent),
         canActivate: [authGuard],

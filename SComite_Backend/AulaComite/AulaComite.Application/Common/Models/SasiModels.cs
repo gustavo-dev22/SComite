@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace AulaComite.Application.Common.Models
 {
@@ -27,6 +28,37 @@ namespace AulaComite.Application.Common.Models
         public bool Success { get; set; }
         public string Token { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
+    }
+
+    // Petición de canje del authorization code del flujo SSO (OAuth2 + PKCE) de SASI.
+    public class SasiSsoTokenRequest
+    {
+        [JsonPropertyName("grant_type")]
+        public string GrantType { get; set; } = "authorization_code";
+
+        [JsonPropertyName("client_id")]
+        public string ClientId { get; set; } = string.Empty;
+
+        [JsonPropertyName("code")]
+        public string Code { get; set; } = string.Empty;
+
+        [JsonPropertyName("code_verifier")]
+        public string CodeVerifier { get; set; } = string.Empty;
+
+        [JsonPropertyName("redirect_uri")]
+        public string RedirectUri { get; set; } = string.Empty;
+    }
+
+    // Respuesta de error del endpoint de canje (error / error_description).
+    public class SasiSsoErrorResponse
+    {
+        public bool Success { get; set; }
+        public string Error { get; set; } = string.Empty;
+
+        [JsonPropertyName("error_description")]
+        public string? ErrorDescription { get; set; }
+
+        public string Message { get; set; } = string.Empty;
     }
 
     public class SasiUsuario

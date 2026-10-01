@@ -17,6 +17,7 @@ namespace AulaComite.Infrastructure.Services
         private readonly HttpClient _httpClient;
         private readonly ILogger<SasiAuthService> _logger;
         private readonly int _sistemaIdTarget;
+        private readonly string _ssoClientId;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly ISasiTokenStore _sasiTokenStore;
         private readonly IUserContextService _userContextService;
@@ -42,6 +43,10 @@ namespace AulaComite.Infrastructure.Services
             var configVal = configuration["SasiSettings:SistemaId"]
                 ?? throw new InvalidOperationException("SasiSettings:SistemaId no está configurado.");
             _sistemaIdTarget = int.Parse(configVal);
+
+            // Cliente SSO registrado en SASI para este sistema (debe coincidir con
+            // Sso:Clientes:ClientId del appsettings de SASI).
+            _ssoClientId = configuration["SasiSettings:SsoClientId"] ?? "comite";
         }
 
         public async Task<AuthResultDto> AutenticarAsync(LoginRequestDto request)
@@ -76,99 +81,183 @@ namespace AulaComite.Infrastructure.Services
                     return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "No se pudo procesar la respuesta de autenticación. Inténtelo de nuevo." };
                 }
 
-                if (!sasiResult.Success)
-                {
-                    // 🛡️ M4: El estado de la cuenta (bloqueado/inactivo) se refleja de
-                    // forma explícita usando el mensaje que entrega SASI (fuente única
-                    // de verdad) para que todos los sistemas integrados muestren el
-                    // mismo texto según el estado del usuario.
-                    if (sasiResult.Bloqueado)
-                    {
-                        return new AuthResultDto
-                        {
-                            Exito = false,
-                            Bloqueado = true,
-                            Mensaje = sasiResult.Message
-                                ?? "Su cuenta se encuentra bloqueada temporalmente por intentos fallidos de inicio de sesión. Contacte al administrador del sistema."
-                        };
-                    }
-
-                    if (sasiResult.Inactivo)
-                    {
-                        return new AuthResultDto
-                        {
-                            Exito = false,
-                            Inactivo = true,
-                            Mensaje = sasiResult.Message
-                                ?? "Su usuario se encuentra inactivo en el sistema. Contacte al administrador para restablecer el acceso."
-                        };
-                    }
-
-                    // 🛡️ M3: Respuesta GENÉRICA ante credenciales incorrectas.
-                    return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Usuario o contraseña incorrectos." };
-                }
-
-                // 🚀 VALIDACIÓN CRÍTICA: Verificar si tiene acceso al Sistema de Comité de Aula
-                var sistemaComite = sasiResult.Usuario?.Sistemas
-                    .FirstOrDefault(s => (s.Id == _sistemaIdTarget) && s.Activo);
-
-                if (sistemaComite == null)
-                {
-                    return new AuthResultDto
-                    {
-                        Exito = false,
-                        Bloqueado = false,
-                        Mensaje = "Acceso denegado: Tu usuario no tiene asignado el rol/sistema 'Comité de Aula' en SASI."
-                    };
-                }
-
-                if (sasiResult.Usuario == null)
-                {
-                    return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Respuesta inválida de SASI." };
-                }
-
-                // 🛡️ ROLES CON TOGGLE ACTIVADO: SASI envía todos los roles asignados
-                // (activos e inactivos). Los roles desactivados (activo=false) no deben
-                // entregarse al frontend ni emitirse como claims del JWT local.
-                sistemaComite.Roles = sistemaComite.Roles.Where(r => r.Activo).ToList();
-
-                if (sistemaComite.Roles.Count == 0)
-                {
-                    return new AuthResultDto
-                    {
-                        Exito = false,
-                        Bloqueado = false,
-                        Mensaje = "Acceso denegado: Tu usuario no tiene un rol activo en el sistema 'Comité de Aula' en SASI."
-                    };
-                }
-
-                // Emitir un JWT propio de la aplicación, firmado con la clave local
-                // (JwtSettings), para que los endpoints [Authorize] lo acepten.
-                var tokenLocal = _jwtTokenService.GenerarToken(sasiResult.Usuario, sistemaComite);
-
-                // 🛡️ SASI-DOWN/FIX: El catálogo de apoderados vive en un endpoint de SASI
-                // protegido por JWT ([Authorize]). Guardamos el token emitido por SASI en el
-                // login (y su refresh token) para autenticar (Bearer) y renovar las llamadas
-                // backend-a-backend posteriores sin obligar al usuario a volver a iniciar sesión.
-                if (sasiResult.Usuario != null && !string.IsNullOrWhiteSpace(sasiResult.Token))
-                {
-                    _sasiTokenStore.Guardar(sasiResult.Usuario.Id, sasiResult.Token, sasiResult.RefreshToken);
-                }
-
-                return new AuthResultDto
-                {
-                    Exito = true,
-                    Bloqueado = sasiResult.Bloqueado,
-                    Token = tokenLocal,
-                    NombreUsuario = sasiResult.Usuario?.NombreCompleto ?? string.Empty,
-                    Email = sasiResult.Usuario?.Email ?? string.Empty,
-                    SistemaComite = sistemaComite
-                };
+                return ConstruirSesion(sasiResult);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al conectar con el servidor de autenticación SASI: {Message}", ex.Message);
                 return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Error al conectar con el servidor de autenticación. Inténtelo de nuevo." };
+            }
+        }
+
+        // Canjea el authorization code devuelto por el login SSO de SASI y establece
+        // la misma sesión local que el login directo (JWT propio + token SASI).
+        public async Task<AuthResultDto> AutenticarConCodigoSsoAsync(string code, string codeVerifier, string redirectUri)
+        {
+            try
+            {
+                var request = new SasiSsoTokenRequest
+                {
+                    GrantType = "authorization_code",
+                    ClientId = _ssoClientId,
+                    Code = code,
+                    CodeVerifier = codeVerifier,
+                    RedirectUri = redirectUri
+                };
+
+                var response = await _httpClient.PostAsJsonAsync("auth/token", request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var detalle = await LeerDescripcionSsoAsync(response);
+                    return new AuthResultDto
+                    {
+                        Exito = false,
+                        Bloqueado = false,
+                        Mensaje = detalle ?? "No se pudo validar el acceso con SASI. Intente nuevamente."
+                    };
+                }
+
+                var sasiResult = await response.Content.ReadFromJsonAsync<SasiLoginResponse>();
+
+                if (sasiResult == null)
+                {
+                    return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "No se pudo procesar la respuesta de autenticación. Inténtelo de nuevo." };
+                }
+
+                return ConstruirSesion(sasiResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al canjear el código SSO con SASI: {Message}", ex.Message);
+                return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Error al conectar con el servidor de autenticación. Inténtelo de nuevo." };
+            }
+        }
+
+        // Ping de disponibilidad de SASI (usado por el frontend antes de redirigir al login SSO).
+        public async Task<bool> VerificarDisponibilidadAsync()
+        {
+            try
+            {
+                using var response = await _httpClient.GetAsync("auth/ping");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SASI no disponible al verificar el ping: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        // Construye la sesión local a partir de la respuesta de SASI (login directo o SSO):
+        // valida el sistema Comité de Aula, filtra roles activos, emite el JWT propio y
+        // guarda el token de SASI para las llamadas backend-a-backend.
+        private AuthResultDto ConstruirSesion(SasiLoginResponse sasiResult)
+        {
+            if (!sasiResult.Success)
+            {
+                // 🛡️ M4: El estado de la cuenta (bloqueado/inactivo) se refleja de
+                // forma explícita usando el mensaje que entrega SASI (fuente única
+                // de verdad) para que todos los sistemas integrados muestren el
+                // mismo texto según el estado del usuario.
+                if (sasiResult.Bloqueado)
+                {
+                    return new AuthResultDto
+                    {
+                        Exito = false,
+                        Bloqueado = true,
+                        Mensaje = sasiResult.Message
+                            ?? "Su cuenta se encuentra bloqueada temporalmente por intentos fallidos de inicio de sesión. Contacte al administrador del sistema."
+                    };
+                }
+
+                if (sasiResult.Inactivo)
+                {
+                    return new AuthResultDto
+                    {
+                        Exito = false,
+                        Inactivo = true,
+                        Mensaje = sasiResult.Message
+                            ?? "Su usuario se encuentra inactivo en el sistema. Contacte al administrador para restablecer el acceso."
+                    };
+                }
+
+                // 🛡️ M3: Respuesta GENÉRICA ante credenciales incorrectas.
+                return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Usuario o contraseña incorrectos." };
+            }
+
+            if (sasiResult.Usuario == null)
+            {
+                return new AuthResultDto { Exito = false, Bloqueado = false, Mensaje = "Respuesta inválida de SASI." };
+            }
+
+            // 🚀 VALIDACIÓN CRÍTICA: Verificar si tiene acceso al Sistema de Comité de Aula
+            var sistemaComite = sasiResult.Usuario.Sistemas
+                .FirstOrDefault(s => (s.Id == _sistemaIdTarget) && s.Activo);
+
+            if (sistemaComite == null)
+            {
+                return new AuthResultDto
+                {
+                    Exito = false,
+                    Bloqueado = false,
+                    Mensaje = "Acceso denegado: Tu usuario no tiene asignado el rol/sistema 'Comité de Aula' en SASI."
+                };
+            }
+
+            // 🛡️ ROLES CON TOGGLE ACTIVADO: SASI envía todos los roles asignados
+            // (activos e inactivos). Los roles desactivados (activo=false) no deben
+            // entregarse al frontend ni emitirse como claims del JWT local.
+            sistemaComite.Roles = sistemaComite.Roles.Where(r => r.Activo).ToList();
+
+            if (sistemaComite.Roles.Count == 0)
+            {
+                return new AuthResultDto
+                {
+                    Exito = false,
+                    Bloqueado = false,
+                    Mensaje = "Acceso denegado: Tu usuario no tiene un rol activo en el sistema 'Comité de Aula' en SASI."
+                };
+            }
+
+            // Emitir un JWT propio de la aplicación, firmado con la clave local
+            // (JwtSettings), para que los endpoints [Authorize] lo acepten.
+            var tokenLocal = _jwtTokenService.GenerarToken(sasiResult.Usuario, sistemaComite);
+
+            // 🛡️ SASI-DOWN/FIX: El catálogo de apoderados vive en un endpoint de SASI
+            // protegido por JWT ([Authorize]). Guardamos el token emitido por SASI en el
+            // login (y su refresh token) para autenticar (Bearer) y renovar las llamadas
+            // backend-a-backend posteriores sin obligar al usuario a volver a iniciar sesión.
+            if (!string.IsNullOrWhiteSpace(sasiResult.Token))
+            {
+                _sasiTokenStore.Guardar(sasiResult.Usuario.Id, sasiResult.Token, sasiResult.RefreshToken);
+            }
+
+            return new AuthResultDto
+            {
+                Exito = true,
+                Bloqueado = sasiResult.Bloqueado,
+                Token = tokenLocal,
+                NombreUsuario = sasiResult.Usuario.NombreCompleto ?? string.Empty,
+                Email = sasiResult.Usuario.Email ?? string.Empty,
+                SistemaComite = sistemaComite
+            };
+        }
+
+        private static async Task<string?> LeerDescripcionSsoAsync(HttpResponseMessage response)
+        {
+            try
+            {
+                if (response.Content == null) return null;
+                var error = await response.Content.ReadFromJsonAsync<SasiSsoErrorResponse>();
+                if (error == null) return null;
+                if (!string.IsNullOrWhiteSpace(error.ErrorDescription)) return error.ErrorDescription;
+                if (!string.IsNullOrWhiteSpace(error.Message)) return error.Message;
+                return null;
+            }
+            catch
+            {
+                return null;
             }
         }
 

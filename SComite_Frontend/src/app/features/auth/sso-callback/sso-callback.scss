@@ -1,0 +1,48 @@
+.sso-callback-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #0f172a;
+}
+
+.sso-callback-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 48px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.sso-callback-card h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.sso-callback-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.sso-spinner {
+  width: 64px;
+  height: 64px;
+  border: 6px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-bottom-color: #60a5fa;
+  border-radius: 50%;
+  animation: sso-spin 0.9s linear infinite;
+}
+
+@keyframes sso-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

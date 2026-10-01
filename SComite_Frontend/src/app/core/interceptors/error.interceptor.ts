@@ -31,7 +31,8 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       });
   }
 
-  const esSolicitudLogin = req.url.toLowerCase().includes('/auth/login');
+  const url = req.url.toLowerCase();
+  const esSolicitudLogin = url.includes('/auth/login') || url.includes('/auth/sso');
 
   return next(req).pipe(
     catchError((error: unknown) => {

@@ -89,7 +89,7 @@ export class LayoutComponent {
       allowEscapeKey: false
     }).then((result) => {
       if (result.isConfirmed) {
-        this.authService.logout();
+        this.authService.logoutSso();
       }
     });
   }

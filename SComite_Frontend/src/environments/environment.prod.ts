@@ -8,7 +8,11 @@
 const apiUrlInyectada =
   (window as unknown as { __APP_API_URL__?: string }).__APP_API_URL__;
 
+const SASI_HOST = 'https://sasi-app.runasp.net';
+
 export const environment = {
   production: true,
-  apiUrl: apiUrlInyectada || 'https://comite-app.runasp.net/api'
+  apiUrl: apiUrlInyectada || 'https://comite-app.runasp.net/api',
+  sasiSsoLoginUrl: `${SASI_HOST}/SASI/Cuenta/Login`,
+  sasiLogoutUrl: `${SASI_HOST}/SASI/Cuenta/Logout`
 };

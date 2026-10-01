@@ -1,9 +1,16 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, defer, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthResponse, MenuItemNode, MenuObjeto, RolComite } from '../models/sasi.model';
+
+// Cliente SSO registrado en SASI para el sistema Comité de Aula.
+const SSO_CLIENT_ID = 'comite';
+const SSO_REDIRECT_PATH = '/sso-callback';
+const SSO_VERIFIER_KEY = 'sso_code_verifier';
+const SSO_STATE_KEY = 'sso_state';
+const SSO_RETURN_URL_KEY = 'sso_return_url';
 
 @Injectable({
   providedIn: 'root'
@@ -60,28 +67,142 @@ export class AuthService {
 
   login(credentials: { userName: string; password: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
-      tap(res => {
-        if (res.exito && res.sistemaComite?.roles?.length > 0) {
-          sessionStorage.setItem('token_aula', res.token);
-          sessionStorage.setItem('usuario_nombre', res.nombreUsuario);
-
-          // 1. Guardar solo los roles ACTIVOS entregados por SASI (los desactivados
-          //    en el toggle de SASI no deben aparecer en el selector de rol)
-          const roles = AuthService.filtrarRolesActivos(res.sistemaComite.roles);
-          if (roles.length === 0) return;
-          sessionStorage.setItem('roles_aula', JSON.stringify(roles));
-
-          // 2. Establecer por defecto el rol principal (o el primero)
-          const rolPrincipal = roles.find(r => r.esPrincipal === true) || roles[0];
-          sessionStorage.setItem('rol_activo_id', rolPrincipal.idRol.toString());
-
-          // 3. Actualizar Signals reactivas
-          this.usuarioActual.set(res.nombreUsuario);
-          this.rolesDisponibles.set(roles);
-          this.rolActivoId.set(rolPrincipal.idRol);
-        }
-      })
+      tap(res => this.establecerSesion(res))
     );
+  }
+
+  // ====== SSO provisto por SASI (authorization code + PKCE) ======
+
+  // Inicia el flujo SSO: verifica disponibilidad, genera PKCE/state y redirige al login de SASI.
+  async iniciarSsoSesion(returnUrl?: string): Promise<void> {
+    const disponible = await this.verificarSasiDisponibleAsync();
+    if (!disponible) {
+      throw new Error('No se pudo conectar con el servicio de autenticación (SASI). Verifique que esté disponible e intente nuevamente.');
+    }
+
+    const verifier = this.generarCodeVerifier();
+    const challenge = await this.generarCodeChallenge(verifier);
+    const state = this.generarState();
+
+    sessionStorage.setItem(SSO_VERIFIER_KEY, verifier);
+    sessionStorage.setItem(SSO_STATE_KEY, state);
+    sessionStorage.setItem(SSO_RETURN_URL_KEY, returnUrl ?? '');
+
+    const params = new URLSearchParams({
+      client_id: SSO_CLIENT_ID,
+      returnUrl: this.redirectUriSso(),
+      state,
+      code_challenge: challenge,
+      code_challenge_method: 'S256'
+    });
+
+    window.location.href = `${environment.sasiSsoLoginUrl}?${params.toString()}`;
+  }
+
+  // Canjea el authorization code devuelto por SASI y establece la sesión local.
+  completarSsoSesion(code: string, state: string): Observable<AuthResponse> {
+    return defer(() => {
+      const savedState = sessionStorage.getItem(SSO_STATE_KEY);
+      if (!savedState || savedState !== state) {
+        throw new Error('El estado de la solicitud no coincide. Inicie sesión nuevamente.');
+      }
+
+      const verifier = sessionStorage.getItem(SSO_VERIFIER_KEY);
+      if (!verifier) {
+        throw new Error('No se encontró el verificador PKCE. Inicie sesión nuevamente.');
+      }
+
+      const body = { code, codeVerifier: verifier, redirectUri: this.redirectUriSso() };
+
+      return this.http.post<AuthResponse>(`${this.apiUrl}/sso`, body).pipe(
+        tap(res => this.establecerSesion(res))
+      );
+    });
+  }
+
+  obtenerReturnUrlSso(): string | null {
+    const returnUrl = sessionStorage.getItem(SSO_RETURN_URL_KEY);
+    return returnUrl && returnUrl.trim() ? returnUrl : null;
+  }
+
+  // Establece la sesión local a partir de la respuesta del backend (login directo o SSO).
+  private establecerSesion(res: AuthResponse): void {
+    // 1. Guardar solo los roles ACTIVOS entregados por SASI (los desactivados en el
+    //    toggle de SASI no deben aparecer en el selector de rol).
+    const roles = AuthService.filtrarRolesActivos(res.sistemaComite?.roles ?? []);
+
+    if (!res.exito || roles.length === 0) {
+      throw new Error(res.mensaje || "Tu usuario no tiene un rol activo en el sistema 'Comité de Aula'.");
+    }
+
+    sessionStorage.setItem('token_aula', res.token);
+    sessionStorage.setItem('usuario_nombre', res.nombreUsuario);
+    sessionStorage.setItem('roles_aula', JSON.stringify(roles));
+
+    // 2. Establecer por defecto el rol principal (o el primero)
+    const rolPrincipal = roles.find(r => r.esPrincipal === true) || roles[0];
+    sessionStorage.setItem('rol_activo_id', rolPrincipal.idRol.toString());
+
+    // 3. Actualizar Signals reactivas
+    this.usuarioActual.set(res.nombreUsuario);
+    this.rolesDisponibles.set(roles);
+    this.rolActivoId.set(rolPrincipal.idRol);
+
+    this.limpiarTemporalesSso();
+  }
+
+  private limpiarTemporalesSso(): void {
+    sessionStorage.removeItem(SSO_VERIFIER_KEY);
+    sessionStorage.removeItem(SSO_STATE_KEY);
+    sessionStorage.removeItem(SSO_RETURN_URL_KEY);
+  }
+
+  private redirectUriSso(): string {
+    return `${window.location.origin}${SSO_REDIRECT_PATH}`;
+  }
+
+  // Consulta al backend (que a su vez hace ping a SASI) para no redirigir si el SSO
+  // está caído. Se usa fetch para no disparar las alertas globales del interceptor.
+  private async verificarSasiDisponibleAsync(): Promise<boolean> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const res = await fetch(`${this.apiUrl}/sso/ping`, {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      if (!res.ok) return false;
+      const data = (await res.json()) as { disponible?: boolean };
+      return data?.disponible === true;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private generarCodeVerifier(): string {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return this.base64Url(bytes);
+  }
+
+  private async generarCodeChallenge(verifier: string): Promise<string> {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+    return this.base64Url(new Uint8Array(digest));
+  }
+
+  private generarState(): string {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return this.base64Url(bytes);
+  }
+
+  private base64Url(bytes: Uint8Array): string {
+    let binario = '';
+    bytes.forEach(b => (binario += String.fromCharCode(b)));
+    return btoa(binario).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
   // Cambiar de Rol en tiempo real y redirigir
@@ -100,6 +221,13 @@ export class AuthService {
   logout(): void {
     this.limpiarSesion();
     this.router.navigate(['/login']);
+  }
+
+  // Cierre de sesión único (SSO): limpia la sesión local y cierra también la de SASI.
+  logoutSso(): void {
+    this.limpiarSesion();
+    const returnUrl = `${window.location.origin}/login`;
+    window.location.href = `${environment.sasiLogoutUrl}?returnUrl=${encodeURIComponent(returnUrl)}`;
   }
 
   limpiarSesion(): void {

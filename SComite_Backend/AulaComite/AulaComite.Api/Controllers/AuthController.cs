@@ -1,4 +1,5 @@
-﻿using AulaComite.Application.Common.Interfaces;
+﻿using AulaComite.Application.Common.Dto;
+using AulaComite.Application.Common.Interfaces;
 using AulaComite.Application.Common.Models;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -50,6 +51,46 @@ namespace AulaComite.Api.Controllers
             }
 
             return Ok(result);
+        }
+
+        // Canje del authorization code del flujo SSO de SASI (usado por /sso-callback
+        // del frontend). Establece la misma sesión local que el login directo.
+        [HttpPost("sso")]
+        [AllowAnonymous]
+        [EnableRateLimiting("LoginLimiter")]
+        public async Task<IActionResult> Sso([FromBody] SsoLoginRequestDto request)
+        {
+            if (request == null
+                || string.IsNullOrWhiteSpace(request.Code)
+                || string.IsNullOrWhiteSpace(request.CodeVerifier)
+                || string.IsNullOrWhiteSpace(request.RedirectUri))
+            {
+                return BadRequest(new { mensaje = "La solicitud de acceso SSO no es válida." });
+            }
+
+            var result = await _sasiAuthService.AutenticarConCodigoSsoAsync(
+                request.Code, request.CodeVerifier, request.RedirectUri);
+
+            if (!result.Exito)
+            {
+                return BadRequest(new
+                {
+                    mensaje = result.Mensaje,
+                    bloqueado = result.Bloqueado,
+                    inactivo = result.Inactivo
+                });
+            }
+
+            return Ok(result);
+        }
+
+        // Comprueba que SASI esté disponible antes de que el frontend redirija al login SSO.
+        [HttpGet("sso/ping")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SsoPing()
+        {
+            var disponible = await _sasiAuthService.VerificarDisponibilidadAsync();
+            return Ok(new { disponible });
         }
     }
 }
